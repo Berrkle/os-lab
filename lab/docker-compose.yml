@@ -1,0 +1,67 @@
+# Compact Agentic Mobile Security Lab — docker-compose stack
+# Maps to docker-android-cheat-sheet.md §5–§8 and segmentation.md WF1/WF2 DAGs.
+# Host requirement: Linux with /dev/kvm (see ../docker-android-cheat-sheet.md §0–§4).
+
+name: apk-compact-lab
+
+services:
+  # Dynamic analysis target: rooted emulator, noVNC on :6080, ADB on :5555
+  android:
+    image: budtmo/docker-android:${ANDROID_TAG:-emulator_11.0}
+    container_name: lab-android
+    ports:
+      - "6080:6080"   # noVNC browser UI
+      - "5554:5554"   # emulator console
+      - "5555:5555"   # ADB
+    environment:
+      EMULATOR_DEVICE: "${EMULATOR_DEVICE:-Samsung Galaxy S10}"
+      WEB_VNC: "true"
+    devices:
+      - /dev/kvm      # mandatory; compose up fails on hosts without KVM by design
+    volumes:
+      - android_data:/home/androidusr
+      - ./apks:/apks:ro
+    networks: [labnet]
+
+  # Static + dynamic analysis: MobSF (workflow WF1 entry point)
+  mobsf:
+    image: opensecurity/mobile-security-framework-mobsf:latest
+    container_name: lab-mobsf
+    ports:
+      - "8000:8000"
+    environment:
+      MOBSF_API_KEY: "${MOBSF_API_KEY:-compact-lab-key}"
+    volumes:
+      - mobsf_data:/home/mobsf
+    networks: [labnet]
+
+  # Traffic interception: mitmweb (proxy :8080, UI :8081) streaming flows to disk
+  mitmproxy:
+    image: mitmproxy/mitmproxy:latest
+    container_name: lab-mitmproxy
+    command: mitmweb --set block_global=false --set web_host=0.0.0.0 -w /artifacts/flows.mitm
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    volumes:
+      - mitm_data:/home/mitmproxy/.mitmproxy
+      - ./artifacts:/artifacts
+    networks: [labnet]
+
+  # Static toolkit: JADX / apktool / dex2jar / radare2 / androguard (kept warm for exec)
+  tools:
+    image: cryptax/android-re:latest
+    container_name: lab-tools
+    entrypoint: ["/bin/sh", "-c", "sleep infinity"]
+    volumes:
+      - ./artifacts:/work
+      - ./apks:/apks:ro
+    networks: [labnet]
+
+networks:
+  labnet:
+
+volumes:
+  android_data:
+  mobsf_data:
+  mitm_data:

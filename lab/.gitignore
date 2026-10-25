@@ -1,0 +1,8 @@
+.env
+artifacts/*
+!artifacts/.gitkeep
+apks/*
+!apks/.gitkeep
+frida/*
+!frida/.gitkeep
+*.mitm
