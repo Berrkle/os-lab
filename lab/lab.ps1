@@ -20,7 +20,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet("help", "preflight", "setup", "vbox-create", "vbox-start", "vbox-stop", "vbox-status", "podman-status", "wf1", "wf2", "hook", "report", "clean", "monitor", "telemetry", "dump-sandbox", "scan-secrets", "trace-crypto", "parse-flows")]
+    [ValidateSet("help", "preflight", "setup", "vbox-create", "vbox-start", "vbox-stop", "vbox-status", "podman-status", "wf1", "wf2", "hook", "report", "clean", "monitor", "telemetry", "dump-sandbox", "scan-secrets", "trace-crypto", "parse-flows", "analyze-app", "generate-report")]
     [string]$Command = "help",
 
     [Parameter()]
@@ -113,8 +113,10 @@ function Show-Help {
     Write-Host "  vbox-status            List all configured and running VirtualBox VMs"
     Write-Host "  podman-status          Check Podman CLI, machines, and connection endpoints"
     Write-Host "`nWorkflows & Analysis:"
-    Write-Host "  wf1 -Apk <file>        Run Static Analysis (JADX + Manifest Analyzer + MobSF)"
+    Write-Host "  wf1 -Apk <file>        Run Full Static Pipeline (JADX + Manifest + Analyzer + HTML Report)"
     Write-Host "  wf2 -Apk <f> -Pkg <p>  Run Dynamic Analysis (ADB connect, mitmproxy, launch)"
+    Write-Host "  analyze-app -Apk <f>   Run comprehensive security analysis & OWASP Top 10 evaluation"
+    Write-Host "  generate-report -Apk <f> Generate standalone HTML5 dashboard, Markdown & JSON reports"
     Write-Host "  scan-secrets -Apk <f>  Deep scan APK or sources for hardcoded API keys and credentials"
     Write-Host "`nDynamic Instrumentation & Hooks:"
     Write-Host "  hook -Pkg <p> -Hook <h> Run custom Frida hook against package"
@@ -411,13 +413,20 @@ function Invoke-Wf1 {
         Write-Info "MobSF container is not active (Local static analysis completed successfully)."
     }
 
+    # Step 4: Comprehensive App Security Analysis & Multi-Format Reports
+    Write-Host "`n[4/4] Generating Interactive HTML5 Security Audit Dashboard..." -ForegroundColor Yellow
+    $reporterScript = Join-Path $ScriptDir "scripts\app_reporter.py"
+    & $py $reporterScript $apkItem.FullName -o $outDir
+
     Write-Host "`n=== WF1 Static Analysis Complete ===" -ForegroundColor Green
-    Write-Host "  Report Markdown : $outDir\static-report.md"
-    Write-Host "  Report JSON     : $outDir\static-manifest-analysis.json"
+    Write-Host "  🌐 Interactive HTML Dashboard : $outDir\security-report.html"
+    Write-Host "  📝 Report Markdown            : $outDir\security-report.md"
+    Write-Host "  💾 Machine-Readable JSON      : $outDir\security-report.json"
     if (Test-Path (Join-Path $outDir "jadx_out")) {
-        Write-Host "  Decompiled Code : $outDir\jadx_out"
+        Write-Host "  📂 Decompiled Java Sources    : $outDir\jadx_out"
     }
 }
+
 
 # ---------------------------------------------------------------------------
 # COMMAND: WF2 DYNAMIC ANALYSIS
@@ -606,6 +615,38 @@ function Invoke-ParseFlows {
 }
 
 # ---------------------------------------------------------------------------
+# COMMAND: ANALYZE-APP
+# ---------------------------------------------------------------------------
+function Invoke-AnalyzeApp {
+    if (-not $Apk -or -not (Test-Path $Apk)) {
+        Write-Bad "Usage: .\lab.ps1 analyze-app -Apk <path\to\app.apk>"
+        return
+    }
+    $py = if (Test-Path $VenvPython) { $VenvPython } else { "python" }
+    $analyzerScript = Join-Path $ScriptDir "scripts\app_analyzer.py"
+    $stem = [System.IO.Path]::GetFileNameWithoutExtension($Apk)
+    $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
+    $outDir = Join-Path $ScriptDir "artifacts\$stem-analysis-$stamp"
+    & $py $analyzerScript $Apk $outDir
+}
+
+# ---------------------------------------------------------------------------
+# COMMAND: GENERATE-REPORT
+# ---------------------------------------------------------------------------
+function Invoke-GenerateReport {
+    if (-not $Apk -or -not (Test-Path $Apk)) {
+        Write-Bad "Usage: .\lab.ps1 generate-report -Apk <path\to\app.apk>"
+        return
+    }
+    $py = if (Test-Path $VenvPython) { $VenvPython } else { "python" }
+    $reporterScript = Join-Path $ScriptDir "scripts\app_reporter.py"
+    $stem = [System.IO.Path]::GetFileNameWithoutExtension($Apk)
+    $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
+    $outDir = Join-Path $ScriptDir "artifacts\$stem-report-$stamp"
+    & $py $reporterScript $Apk -o $outDir
+}
+
+# ---------------------------------------------------------------------------
 # COMMAND: CLEAN
 # ---------------------------------------------------------------------------
 function Invoke-Clean {
@@ -621,28 +662,31 @@ function Invoke-Clean {
 # DISPATCH
 # ---------------------------------------------------------------------------
 switch ($Command) {
-    "help"          { Show-Help }
-    "preflight"     { Invoke-Preflight }
-    "setup"         { Invoke-Setup }
-    "vbox-create"   { Invoke-VBoxCreate }
-    "vbox-start"    { Invoke-VBoxStart }
-    "vbox-stop"     { Invoke-VBoxStop }
-    "vbox-status"   { Invoke-VBoxStatus }
-    "podman-status" { 
+    "help"            { Show-Help }
+    "preflight"       { Invoke-Preflight }
+    "setup"           { Invoke-Setup }
+    "vbox-create"     { Invoke-VBoxCreate }
+    "vbox-start"      { Invoke-VBoxStart }
+    "vbox-stop"       { Invoke-VBoxStop }
+    "vbox-status"     { Invoke-VBoxStatus }
+    "podman-status"   { 
         $cmd = Get-Command podman -ErrorAction SilentlyContinue
         if ($cmd) { & podman system info } else { Write-Warn "Podman CLI not installed." }
     }
-    "wf1"           { Invoke-Wf1 }
-    "wf2"           { Invoke-Wf2 }
-    "hook"          { Invoke-Hook }
-    "trace-crypto"  { Invoke-TraceCrypto }
-    "monitor"       { Invoke-Monitor }
-    "telemetry"     { Invoke-Telemetry }
-    "dump-sandbox"  { Invoke-DumpSandbox }
-    "scan-secrets"  { Invoke-ScanSecrets }
-    "parse-flows"   { Invoke-ParseFlows }
-    "report"        { Invoke-Report }
-    "clean"         { Invoke-Clean }
-    Default         { Show-Help }
+    "wf1"             { Invoke-Wf1 }
+    "wf2"             { Invoke-Wf2 }
+    "analyze-app"     { Invoke-AnalyzeApp }
+    "generate-report" { Invoke-GenerateReport }
+    "hook"            { Invoke-Hook }
+    "trace-crypto"    { Invoke-TraceCrypto }
+    "monitor"         { Invoke-Monitor }
+    "telemetry"       { Invoke-Telemetry }
+    "dump-sandbox"    { Invoke-DumpSandbox }
+    "scan-secrets"    { Invoke-ScanSecrets }
+    "parse-flows"     { Invoke-ParseFlows }
+    "report"          { Invoke-Report }
+    "clean"           { Invoke-Clean }
+    Default           { Show-Help }
 }
+
 

@@ -132,6 +132,13 @@ def main():
     sandbox_parser = subparsers.add_parser("dump-sandbox", help="Extract and audit app sandbox")
     sandbox_parser.add_argument("--pkg", required=True, help="Target package name")
 
+    analyze_parser = subparsers.add_parser("analyze-app", help="Run comprehensive app vulnerability analysis")
+    analyze_parser.add_argument("--apk", required=True, help="Path to APK file")
+
+    report_parser = subparsers.add_parser("generate-report", help="Generate multi-format security reports")
+    report_parser.add_argument("--input", required=True, help="Path to APK or app-analysis.json")
+    report_parser.add_argument("--out", help="Output directory")
+
     flows_parser = subparsers.add_parser("parse-flows", help="Parse mitmproxy flows")
     flows_parser.add_argument("--file", default=os.path.join(ARTIFACTS_DIR, "flows.mitm"), help="Path to flows.mitm")
 
@@ -160,9 +167,19 @@ def main():
     elif args.command == "dump-sandbox":
         dumper = os.path.join(SCRIPTS_DIR, "sandbox_dumper.py")
         subprocess.run([sys.executable, dumper, "-p", args.pkg])
+    elif args.command == "analyze-app":
+        analyzer = os.path.join(SCRIPTS_DIR, "app_analyzer.py")
+        subprocess.run([sys.executable, analyzer, args.apk])
+    elif args.command == "generate-report":
+        reporter = os.path.join(SCRIPTS_DIR, "app_reporter.py")
+        cmd = [sys.executable, reporter, args.input]
+        if args.out:
+            cmd.extend(["-o", args.out])
+        subprocess.run(cmd)
     elif args.command == "parse-flows":
         flow_parser = os.path.join(SCRIPTS_DIR, "mitm_flow_parser.py")
         subprocess.run([sys.executable, flow_parser, args.file])
+
     elif args.command == "clean":
         if os.path.exists(ARTIFACTS_DIR):
             for item in os.listdir(ARTIFACTS_DIR):

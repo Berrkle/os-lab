@@ -53,8 +53,10 @@ cd lab
 | `vbox-stop` | `[-VmName <name>]` | Gracefully shuts down the VirtualBox VM |
 | `vbox-status` | — | Lists all registered and running VirtualBox VMs |
 | `podman-status`| — | Checks Podman CLI and connection endpoints |
-| `wf1` | `-Apk <path>` | **WF1 Static Analysis**: Manifest analysis, security flags, JADX decompile, MobSF |
+| `wf1` | `-Apk <path>` | **WF1 Static Analysis**: Full static pipeline (JADX + Manifest + Analyzer + HTML Report) |
 | `wf2` | `-Apk <path> [-Pkg <pkg>]` | **WF2 Dynamic Analysis**: ADB connection, APK installation, mitmproxy, launch |
+| `analyze-app` | `-Apk <path>` | **Comprehensive App Analyzer**: OWASP Mobile Top 10 audit, crypto, WebView, permissions |
+| `generate-report`| `-Apk <path>` | **Multi-Format Reporter**: Generates standalone interactive HTML5 dashboard, MD, and JSON |
 | `scan-secrets`| `-Apk <path>` | **Deep Secret Scanner**: Scans APK/sources for Google, AWS, JWT, API tokens |
 | `hook` | `-Pkg <pkg> -Hook <path>` | Injects runtime Frida script into target app package |
 | `trace-crypto`| `-Pkg <pkg>` | **Crypto Tracer**: Intercepts AES/RSA keys, IVs, plaintexts/ciphertexts, HMACs |
