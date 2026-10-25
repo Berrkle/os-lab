@@ -1,0 +1,111 @@
+# 🪟 Windows Non-Admin Lab Runbook
+
+This guide covers running the **Agentic Mobile Security Lab** on **Windows 10/11 without Administrator privileges** using **PowerShell**, **VirtualBox**, **Podman**, or the **Native Userland Engine**.
+
+---
+
+## ⚡ Quick Start (Zero-Admin PowerShell)
+
+Open a standard (unprivileged) PowerShell prompt:
+
+```powershell
+cd lab
+
+# 1. Run Pre-flight verification (checks OS, VBox, Podman, Python, Java, ports, disk)
+.\lab.ps1 preflight
+
+# 2. Bootstrap userland environment (creates .venv, installs Frida, mitmproxy, fetches tools)
+.\lab.ps1 setup
+
+# 3. Execute WF1 Static Analysis on an APK (decompilation + manifest security report)
+.\lab.ps1 wf1 -Apk path\to\app.apk
+
+# 4. Execute WF2 Dynamic Analysis (ADB connect, install, mitmproxy capture, launch)
+.\lab.ps1 wf2 -Apk path\to\app.apk -Pkg com.example.app
+
+# 5. Inject a Frida hook
+.\lab.ps1 hook -Pkg com.example.app -Hook hooks\ssl-pinning-bypass.js
+
+# 6. Aggregate report and telemetry
+.\lab.ps1 report
+```
+
+---
+
+## 🏗️ Supported Operating Models (Choose Your Path)
+
+| Model | Setup & Execution | When to Use | Admin Needed? |
+|---|---|---|---|
+| **Model 1: Native Userland (Default)** | Python `.venv` + Portable ADB + Portable JADX | Any Windows host, especially if VT-x is disabled in BIOS | ❌ **No (Zero-Admin)** |
+| **Model 2: VirtualBox Headless VM** | `.\lab.ps1 vbox-create` & `.\lab.ps1 vbox-start` | Full Android-x86 or Ubuntu guest with port forwarding | ❌ **No (Zero-Admin)** |
+| **Model 3: Podman Container Stack** | `podman compose -f docker-compose.win.yml up -d` | Running MobSF & RE tools via rootless Podman | ❌ **No (Zero-Admin)** |
+
+---
+
+## 📋 PowerShell Command Reference (`lab.ps1`)
+
+| Command | Arguments | Description |
+|---|---|---|
+| `preflight` | — | Validates system environment, non-admin status, and prerequisites |
+| `setup` | — | Initializes `.venv`, installs dependencies, and downloads portable tools |
+| `vbox-create` | `[-VmName <name>] [-Memory <mb>] [-Cpus <n>]` | Provisions a VirtualBox headless VM with NAT port forwardings (6080, 5555, 8000, 8080, 8081) |
+| `vbox-start` | `[-VmName <name>]` | Boots the VirtualBox VM in headless background mode |
+| `vbox-stop` | `[-VmName <name>]` | Gracefully shuts down the VirtualBox VM |
+| `vbox-status` | — | Lists all registered and running VirtualBox VMs |
+| `podman-status`| — | Checks Podman CLI and connection endpoints |
+| `wf1` | `-Apk <path>` | **WF1 Static Analysis**: Manifest analysis, security flags, JADX decompile, MobSF |
+| `wf2` | `-Apk <path> [-Pkg <pkg>]` | **WF2 Dynamic Analysis**: ADB connection, APK installation, mitmproxy, launch |
+| `hook` | `-Pkg <pkg> -Hook <path>` | Injects runtime Frida script into target app package |
+| `report` | — | Sweeps logcat, mitm flows, and findings into `artifacts/report-<timestamp>/` |
+| `clean` | — | Wipes all artifacts in `artifacts/` |
+
+---
+
+## 📦 VirtualBox Headless Setup Guide
+
+VirtualBox stores VMs inside your user profile directory (`$HOME\VirtualBox VMs\`), meaning **no administrator rights are needed to create or run VMs**.
+
+To set up an Android-x86 or Ubuntu lab VM:
+
+```powershell
+# Create VM with pre-configured port forwarding:
+.\lab.ps1 vbox-create -VmName "apk-lab-vm" -Memory 4096 -Cpus 2
+
+# Check status:
+.\lab.ps1 vbox-status
+
+# Boot headless in background:
+.\lab.ps1 vbox-start -VmName "apk-lab-vm"
+
+# Once booted, the following ports are mapped to localhost:
+#   http://127.0.0.1:6080 -> Web VNC (Emulator display)
+#   127.0.0.1:5555       -> ADB bridge (connect with 'adb connect 127.0.0.1:5555')
+#   http://127.0.0.1:8000 -> MobSF Web UI & REST API
+#   127.0.0.1:8080       -> mitmproxy HTTP interception
+#   http://127.0.0.1:8081 -> mitmweb interactive dashboard
+```
+
+---
+
+## 🦭 Podman Setup Guide (Windows Non-Admin)
+
+When using Podman on Windows without admin:
+1. The modified `docker-compose.win.yml` isolates the Linux `/dev/kvm` requirement so that MobSF, mitmproxy, and tools run seamlessly:
+   ```powershell
+   podman compose -f docker-compose.win.yml up -d mobsf mitmproxy tools
+   ```
+2. If connecting to a remote lab machine or VirtualBox VM:
+   ```powershell
+   podman system connection add lab-vm ssh://user@127.0.0.1:2222/run/user/1000/podman/podman.sock
+   podman system connection default lab-vm
+   ```
+
+---
+
+## 📊 Verification Checklist
+
+- [x] Pre-flight checks pass without elevation (`.\lab.ps1 preflight`)
+- [x] Python virtual environment successfully initialized (`.venv`)
+- [x] Frida and mitmproxy available in user space
+- [x] Manifest & attack surface analysis executes offline (`scripts/static_analyzer.py`)
+- [x] VirtualBox VM creation and headless control verified via `VBoxManage`

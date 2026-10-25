@@ -12,7 +12,9 @@ MobSF, mitmproxy, Frida, and containerized RE toolkits.
 | Path | What it is |
 |---|---|
 | [`lab/`](lab/) | **The compact lab** — compose stack + both workflow DAGs + Frida hooks. Start here to run things. |
-| [`lab/README.md`](lab/README.md) | Lab runbook: setup, workflows, make targets, agent brief |
+| [`lab/README.md`](lab/README.md) | Lab runbook (Linux / macOS): setup, workflows, make targets, agent brief |
+| [`lab/README-WINDOWS.md`](lab/README-WINDOWS.md) | **Windows Non-Admin runbook**: PowerShell CLI (`lab.ps1`), VirtualBox, Podman, userland |
+| [`knowledge/windows-nonadmin-lab.md`](knowledge/windows-nonadmin-lab.md) | **Windows Non-Admin architecture**: zero-elevation setup, VirtualBox, Podman, and native engine |
 | [`docker-android-cheat-sheet.md`](docker-android-cheat-sheet.md) | Master verified command reference (per-OS setup, run/lifecycle, pentest tools, troubleshooting) |
 | [`knowledge/draft.md`](knowledge/draft.md) | Docker-Android technical overview: capabilities, use cases, constraints |
 | [`knowledge/setup.md`](knowledge/setup.md) | Per-platform deployment guides (Kali, WSL2, VirtualBox, macOS) |
@@ -24,9 +26,7 @@ MobSF, mitmproxy, Frida, and containerized RE toolkits.
 
 ## Quick start (the lab)
 
-Requires a Linux host with `/dev/kvm` — native, WSL2 (Win11), or Ubuntu VM.
-macOS has no native path (see the [platform decision matrix](docker-android-cheat-sheet.md#-platform-decision-matrix)).
-
+### Linux / WSL2 (with KVM)
 ```bash
 cd lab
 cp .env.example .env
@@ -35,6 +35,17 @@ make boot           # start stack, wait for emulator — noVNC at http://localho
 make wf1 APK=app.apk                    # static:  MobSF scan + JADX
 make wf2 APK=app.apk PKG=com.example    # dynamic: emulator + mitmproxy + frida
 make report                             # collect artifacts
+```
+
+### Windows (Zero-Admin / PowerShell)
+No Administrator privileges or `/dev/kvm` required. Supports VirtualBox, Podman, and pure userland:
+```powershell
+cd lab
+.\lab.ps1 preflight                     # check environment & non-admin status
+.\lab.ps1 setup                         # setup .venv, frida, mitmproxy, portable tools
+.\lab.ps1 wf1 -Apk path\to\app.apk      # static: manifest analysis + JADX + MobSF
+.\lab.ps1 wf2 -Apk path\to\app.apk -Pkg com.example  # dynamic: ADB + mitmproxy + frida
+.\lab.ps1 report                        # collect telemetry & artifacts
 ```
 
 ## Architecture

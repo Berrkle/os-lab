@@ -6,3 +6,7 @@ apks/*
 frida/*
 !frida/.gitkeep
 *.mitm
+.venv/
+tools/
+__pycache__/
+*.pyc
