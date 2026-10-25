@@ -69,5 +69,10 @@ backend core those future agents and UI drive via `make` targets and scripts.
 - [x] Knowledge base & verified cheat sheet
 - [x] Agent handover format
 - [x] Compact lab (compose stack, WF1/WF2, hooks, runbook)
-- [ ] Agentic orchestrator (Orchestrator / Analyst / Exploit per segmentation.md)
-- [ ] Frontend shell (`/`, `/providers`, `/workflows`, `/console-report`, `/analytics`, `/sitemap`)
+- [x] Windows Zero-Admin & VirtualBox/Podman lab suite
+- [x] Agentic orchestrator (Orchestrator / Analyst / Exploit per segmentation.md)
+- [x] Interactive web console (`/`, `/providers`, `/workflows`, `/console`, `/reports`, `/sitemap`)
+- [x] Automated IPC & Component Fuzzer
+- [x] Zero-Admin APK Patcher & Frida Gadget Injector
+- [x] GitHub Actions CI/CD Security Audit Workflow
+

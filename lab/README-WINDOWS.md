@@ -57,7 +57,11 @@ cd lab
 | `wf2` | `-Apk <path> [-Pkg <pkg>]` | **WF2 Dynamic Analysis**: ADB connection, APK installation, mitmproxy, launch |
 | `analyze-app` | `-Apk <path>` | **Comprehensive App Analyzer**: OWASP Mobile Top 10 audit, crypto, WebView, permissions |
 | `generate-report`| `-Apk <path>` | **Multi-Format Reporter**: Generates standalone interactive HTML5 dashboard, MD, and JSON |
+| `agentic-plan`| `-Apk <path>` | **Autonomous Agent**: Synthesizes threat models, attack hypotheses & tailored Frida hooks |
+| `fuzz-ipc`    | `-Pkg <pkg>` | **IPC Fuzzer**: Probes exported Activities, Providers with boundaries & SQLi payloads |
+| `patch-apk`   | `-Apk <path> [-Gadget]` | **APK Patcher**: Injects permissive network config & Frida Gadget for non-root testing |
 | `scan-secrets`| `-Apk <path>` | **Deep Secret Scanner**: Scans APK/sources for Google, AWS, JWT, API tokens |
+| `ui`          | `[-Port <n>]` | **Interactive Web GUI**: Launches live web console on `http://127.0.0.1:5050` |
 | `hook` | `-Pkg <pkg> -Hook <path>` | Injects runtime Frida script into target app package |
 | `trace-crypto`| `-Pkg <pkg>` | **Crypto Tracer**: Intercepts AES/RSA keys, IVs, plaintexts/ciphertexts, HMACs |
 | `monitor` | `[-Pkg <pkg>] [-Filter <pat>]` | **Live Logcat Security Monitor**: Real-time token leak & URL detection |
@@ -66,6 +70,7 @@ cd lab
 | `parse-flows` | `[-FlowFile <path>]` | **Traffic Auditor**: Analyzes mitmproxy flows for cleartext HTTP & auth headers |
 | `report` | — | Sweeps logcat, mitm flows, and findings into `artifacts/report-<timestamp>/` |
 | `clean` | — | Wipes all artifacts in `artifacts/` |
+
 
 ---
 

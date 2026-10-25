@@ -20,7 +20,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet("help", "preflight", "setup", "vbox-create", "vbox-start", "vbox-stop", "vbox-status", "podman-status", "wf1", "wf2", "hook", "report", "clean", "monitor", "telemetry", "dump-sandbox", "scan-secrets", "trace-crypto", "parse-flows", "analyze-app", "generate-report")]
+    [ValidateSet("help", "preflight", "setup", "vbox-create", "vbox-start", "vbox-stop", "vbox-status", "podman-status", "wf1", "wf2", "hook", "report", "clean", "monitor", "telemetry", "dump-sandbox", "scan-secrets", "trace-crypto", "parse-flows", "analyze-app", "generate-report", "fuzz-ipc", "patch-apk", "agentic-plan", "ui")]
     [string]$Command = "help",
 
     [Parameter()]
@@ -37,6 +37,12 @@ param(
 
     [Parameter()]
     [string]$FlowFile = "",
+
+    [Parameter()]
+    [switch]$Gadget,
+
+    [Parameter()]
+    [int]$Port = 5050,
 
     [Parameter()]
     [string]$VmName = "apk-lab-vm",
@@ -118,6 +124,9 @@ function Show-Help {
     Write-Host "  analyze-app -Apk <f>   Run comprehensive security analysis & OWASP Top 10 evaluation"
     Write-Host "  generate-report -Apk <f> Generate standalone HTML5 dashboard, Markdown & JSON reports"
     Write-Host "  scan-secrets -Apk <f>  Deep scan APK or sources for hardcoded API keys and credentials"
+    Write-Host "  agentic-plan -Apk <f>  Synthesize prioritized attack hypotheses & tailored Frida hooks"
+    Write-Host "  patch-apk -Apk <f>     Patch networkSecurityConfig & inject Frida Gadget for non-root"
+    Write-Host "  fuzz-ipc -Pkg <p>      Probe exported Activities, Content Providers with boundary payloads"
     Write-Host "`nDynamic Instrumentation & Hooks:"
     Write-Host "  hook -Pkg <p> -Hook <h> Run custom Frida hook against package"
     Write-Host "  trace-crypto -Pkg <p>  Trace cryptographic keys, ciphers, and hashes via Frida"
@@ -127,8 +136,10 @@ function Show-Help {
     Write-Host "  dump-sandbox -Pkg <p>  Extract and audit SharedPreferences XML and SQLite databases"
     Write-Host "  parse-flows [-FlowFile] Analyze mitmproxy network traffic flows"
     Write-Host "  report                 Gather device status, logcat, and flows into artifacts\"
+    Write-Host "  ui [-Port <n>]         Launch interactive web console and real-time dashboard"
     Write-Host "  clean                  Clear artifacts directory"
 }
+
 
 # ---------------------------------------------------------------------------
 # COMMAND: PREFLIGHT
@@ -647,6 +658,64 @@ function Invoke-GenerateReport {
 }
 
 # ---------------------------------------------------------------------------
+# COMMAND: FUZZ-IPC
+# ---------------------------------------------------------------------------
+function Invoke-FuzzIpc {
+    if (-not $Pkg) {
+        Write-Bad "Usage: .\lab.ps1 fuzz-ipc -Pkg <package.name>"
+        return
+    }
+    $py = if (Test-Path $VenvPython) { $VenvPython } else { "python" }
+    $fuzzerScript = Join-Path $ScriptDir "scripts\ipc_fuzzer.py"
+    $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
+    $outDir = Join-Path $ScriptDir "artifacts\ipc-fuzz-$Pkg-$stamp"
+    & $py $fuzzerScript -p $Pkg -o $outDir
+}
+
+# ---------------------------------------------------------------------------
+# COMMAND: PATCH-APK
+# ---------------------------------------------------------------------------
+function Invoke-PatchApk {
+    if (-not $Apk -or -not (Test-Path $Apk)) {
+        Write-Bad "Usage: .\lab.ps1 patch-apk -Apk <path\to\app.apk> [-Gadget]"
+        return
+    }
+    $py = if (Test-Path $VenvPython) { $VenvPython } else { "python" }
+    $patcherScript = Join-Path $ScriptDir "scripts\apk_patcher.py"
+    $stem = [System.IO.Path]::GetFileNameWithoutExtension($Apk)
+    $outApk = Join-Path $ScriptDir "artifacts\$stem-patched.apk"
+    $argsList = @($Apk, "-o", $outApk)
+    if ($Gadget) { $argsList += "--gadget" }
+    & $py $patcherScript @argsList
+}
+
+# ---------------------------------------------------------------------------
+# COMMAND: AGENTIC-PLAN
+# ---------------------------------------------------------------------------
+function Invoke-AgenticPlan {
+    if (-not $Apk -or -not (Test-Path $Apk)) {
+        Write-Bad "Usage: .\lab.ps1 agentic-plan -Apk <path\to\app.apk>"
+        return
+    }
+    $py = if (Test-Path $VenvPython) { $VenvPython } else { "python" }
+    $agenticScript = Join-Path $ScriptDir "scripts\agentic_engine.py"
+    $stem = [System.IO.Path]::GetFileNameWithoutExtension($Apk)
+    $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
+    $outDir = Join-Path $ScriptDir "artifacts\$stem-agentic-$stamp"
+    & $py $agenticScript $Apk -o $outDir
+}
+
+# ---------------------------------------------------------------------------
+# COMMAND: UI
+# ---------------------------------------------------------------------------
+function Invoke-Ui {
+    $py = if (Test-Path $VenvPython) { $VenvPython } else { "python" }
+    $uiScript = Join-Path $ScriptDir "web_ui.py"
+    Write-Host "=== 🌐 Starting Interactive Web Console on http://127.0.0.1:$Port ===" -ForegroundColor Cyan
+    & $py $uiScript $Port
+}
+
+# ---------------------------------------------------------------------------
 # COMMAND: CLEAN
 # ---------------------------------------------------------------------------
 function Invoke-Clean {
@@ -677,6 +746,10 @@ switch ($Command) {
     "wf2"             { Invoke-Wf2 }
     "analyze-app"     { Invoke-AnalyzeApp }
     "generate-report" { Invoke-GenerateReport }
+    "fuzz-ipc"        { Invoke-FuzzIpc }
+    "patch-apk"       { Invoke-PatchApk }
+    "agentic-plan"    { Invoke-AgenticPlan }
+    "ui"              { Invoke-Ui }
     "hook"            { Invoke-Hook }
     "trace-crypto"    { Invoke-TraceCrypto }
     "monitor"         { Invoke-Monitor }
@@ -688,5 +761,6 @@ switch ($Command) {
     "clean"           { Invoke-Clean }
     Default           { Show-Help }
 }
+
 
 

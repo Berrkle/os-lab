@@ -139,10 +139,24 @@ def main():
     report_parser.add_argument("--input", required=True, help="Path to APK or app-analysis.json")
     report_parser.add_argument("--out", help="Output directory")
 
+    fuzz_parser = subparsers.add_parser("fuzz-ipc", help="Fuzz exported components and IPC attack surface")
+    fuzz_parser.add_argument("--pkg", required=True, help="Target package name")
+
+    patch_parser = subparsers.add_parser("patch-apk", help="Patch APK for network security and Frida Gadget")
+    patch_parser.add_argument("--apk", required=True, help="Path to APK file")
+    patch_parser.add_argument("--gadget", action="store_true", help="Inject Frida Gadget")
+
+    agentic_parser = subparsers.add_parser("agentic-plan", help="Synthesize agentic threat model and tailored hooks")
+    agentic_parser.add_argument("--input", required=True, help="Path to APK or app-analysis.json")
+
+    ui_parser = subparsers.add_parser("ui", help="Launch interactive web console")
+    ui_parser.add_argument("--port", type=int, default=5050, help="Port to bind (default: 5050)")
+
     flows_parser = subparsers.add_parser("parse-flows", help="Parse mitmproxy flows")
     flows_parser.add_argument("--file", default=os.path.join(ARTIFACTS_DIR, "flows.mitm"), help="Path to flows.mitm")
 
     subparsers.add_parser("clean", help="Clean artifacts directory")
+
 
     args = parser.parse_args()
 
@@ -176,9 +190,25 @@ def main():
         if args.out:
             cmd.extend(["-o", args.out])
         subprocess.run(cmd)
+    elif args.command == "fuzz-ipc":
+        fuzzer = os.path.join(SCRIPTS_DIR, "ipc_fuzzer.py")
+        subprocess.run([sys.executable, fuzzer, "-p", args.pkg])
+    elif args.command == "patch-apk":
+        patcher = os.path.join(SCRIPTS_DIR, "apk_patcher.py")
+        cmd = [sys.executable, patcher, args.apk]
+        if args.gadget:
+            cmd.append("--gadget")
+        subprocess.run(cmd)
+    elif args.command == "agentic-plan":
+        agentic = os.path.join(SCRIPTS_DIR, "agentic_engine.py")
+        subprocess.run([sys.executable, agentic, args.input])
+    elif args.command == "ui":
+        ui_script = os.path.join(SCRIPT_DIR, "web_ui.py")
+        subprocess.run([sys.executable, ui_script, str(args.port)])
     elif args.command == "parse-flows":
         flow_parser = os.path.join(SCRIPTS_DIR, "mitm_flow_parser.py")
         subprocess.run([sys.executable, flow_parser, args.file])
+
 
     elif args.command == "clean":
         if os.path.exists(ARTIFACTS_DIR):

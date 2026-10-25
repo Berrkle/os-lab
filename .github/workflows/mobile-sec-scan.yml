@@ -1,0 +1,56 @@
+name: Mobile Security Audit & OWASP Scanner
+
+on:
+  push:
+    branches: [ master, main, 'feat/**' ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  security-audit:
+    name: APK Security Analysis & Report
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Verify Environment Pre-Flight
+        run: |
+          cd lab
+          python orchestrator.py preflight
+
+      - name: Build / Prepare Target APK
+        run: |
+          cd lab
+          python scripts/create_sample_apk.py
+
+      - name: Run Deep App Security Analyzer
+        run: |
+          cd lab
+          python scripts/app_analyzer.py scripts/vulnerable-test.apk artifacts/security-scan
+
+      - name: Generate Multi-Format HTML5, MD & JSON Reports
+        run: |
+          cd lab
+          python scripts/app_reporter.py artifacts/security-scan/app-analysis.json -o artifacts/security-scan
+
+      - name: Publish Security Audit to GitHub Job Summary
+        run: |
+          if [ -f lab/artifacts/security-scan/security-report.md ]; then
+            cat lab/artifacts/security-scan/security-report.md >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload Security Report Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-security-audit-report
+          path: |
+            lab/artifacts/security-scan/security-report.html
+            lab/artifacts/security-scan/security-report.md
+            lab/artifacts/security-scan/security-report.json
