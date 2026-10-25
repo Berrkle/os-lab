@@ -1,0 +1,501 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Agent Build Brief</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a spec sheet. Sticky section index on the left, numbered brief sections on the right, each with its template behind a modal. */
+:root {
+  --bg: #F3F5F7;
+  --surface: #FFFFFF;
+  --ink: #15202B;
+  --muted: #5B6875;
+  --line: #DBE1E7;
+  --accent: #0A6B6B;
+  --accent-ink: #FFFFFF;
+  --accent-soft: #DFEFEE;
+  --req: #9A5600;
+  --req-soft: #FBEEDC;
+  --code-bg: #EDF1F4;
+  --shadow: 0 18px 50px rgba(15, 30, 45, .18);
+  --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1317; --surface: #151C22; --ink: #E4EAF0; --muted: #94A2AF; --line: #25303A;
+    --accent: #4CC0BA; --accent-ink: #062322; --accent-soft: #11302F; --req: #E6A84E; --req-soft: #33250F;
+    --code-bg: #0A0F13; --shadow: 0 18px 50px rgba(0, 0, 0, .5); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1317; --surface: #151C22; --ink: #E4EAF0; --muted: #94A2AF; --line: #25303A;
+  --accent: #4CC0BA; --accent-ink: #062322; --accent-soft: #11302F; --req: #E6A84E; --req-soft: #33250F;
+  --code-bg: #0A0F13; --shadow: 0 18px 50px rgba(0, 0, 0, .5); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font: 400 15px/1.6 var(--f-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 64px;
+}
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; line-height: 1.15; margin: 0; }
+code, pre { font-family: var(--f-mono); }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 48px; }
+header.hero { max-width: 1120px; margin: 0 auto; padding-block: 48px 32px; display: grid; gap: 16px; }
+.eyebrow { font: 500 12px/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.hero h1 { font-size: clamp(32px, 5vw, 50px); font-weight: 700; letter-spacing: -.01em; }
+.hero p { max-width: 64ch; color: var(--muted); margin: 0; font-size: 16px; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+
+button { font: 500 13px/1 var(--f-body); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 7px; padding: 9px 13px; cursor: pointer; }
+button:hover { border-color: var(--accent); }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+button.ghost { background: transparent; }
+body.no-dl .dl { display: none; }
+
+nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 20px); align-self: start; display: grid; gap: 2px; font-size: 13px; }
+nav.toc .label { font: 500 11px/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+nav.toc a { display: grid; grid-template-columns: 26px 1fr; text-decoration: none; color: var(--muted); padding: 5px 8px; border-radius: 6px; }
+nav.toc a:hover { color: var(--ink); background: var(--surface); }
+nav.toc a span { font: 400 12px/1.6 var(--f-mono); font-variant-numeric: tabular-nums; }
+
+main { display: grid; gap: 28px; min-width: 0; }
+.block { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 26px 28px; display: grid; gap: 16px; min-width: 0; }
+.block.plain { background: transparent; border: 0; padding: 0; }
+.sec-head { display: flex; gap: 14px; align-items: baseline; flex-wrap: wrap; }
+.sec-num { font: 500 13px/1 var(--f-mono); color: var(--accent); font-variant-numeric: tabular-nums; }
+.sec-head h2 { font-size: 24px; font-weight: 700; flex: 1 1 auto; }
+.chip { font: 500 11px/1 var(--f-mono); letter-spacing: .06em; text-transform: uppercase; padding: 5px 8px; border-radius: 999px; }
+.chip.req { color: var(--req); background: var(--req-soft); }
+.chip.opt { color: var(--muted); background: var(--code-bg); }
+.why { margin: 0; max-width: 68ch; }
+.ask { margin: 0; color: var(--muted); font-style: italic; max-width: 68ch; }
+
+.fields { display: grid; grid-template-columns: minmax(150px, 220px) minmax(0, 1fr); border-top: 1px solid var(--line); }
+.fields > div { padding: 10px 0; border-bottom: 1px solid var(--line); min-width: 0; }
+.fields .f-label { font-weight: 600; padding-right: 16px; }
+.fields .f-hint { color: var(--muted); }
+.fields .f-hint code { font-size: 12.5px; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+.repeat-note { font-size: 13px; color: var(--muted); margin: 0; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+table.compare { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 680px; }
+.scroll { overflow-x: auto; min-width: 0; }
+table.compare th, table.compare td { text-align: left; vertical-align: top; padding: 10px 12px 10px 0; border-bottom: 1px solid var(--line); }
+table.compare th { font: 500 11px/1.3 var(--f-mono); text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+table.compare td:first-child { font-weight: 600; white-space: nowrap; }
+.twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.twocol > div { border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; min-width: 0; }
+.twocol h3 { font-size: 16px; margin-bottom: 8px; }
+.twocol ul, .tips { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+.yes h3 { color: var(--accent); }
+.no h3 { color: var(--req); }
+
+dialog { width: min(920px, calc(100vw - 32px)); max-height: calc(100vh - 48px); padding: 0; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+dialog::backdrop { background: rgba(10, 18, 26, .55); }
+dialog[open] { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; }
+.m-head { display: flex; align-items: center; gap: 12px; padding: 18px 20px 12px; }
+.m-head h3 { font-size: 19px; flex: 1; }
+.m-bar { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; padding: 0 20px 12px; border-bottom: 1px solid var(--line); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; }
+.seg button { border: 0; border-radius: 0; background: transparent; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--ink); }
+.m-body { overflow: auto; min-height: 0; background: var(--code-bg); }
+.m-body pre { margin: 0; padding: 18px 20px; font-size: 12.5px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+.m-foot { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; padding: 12px 20px; border-top: 1px solid var(--line); }
+
+.toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 24px); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 8px; font-size: 13px; z-index: 50; }
+
+@media (max-width: 860px) {
+  .wrap { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  nav.toc { position: static; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+  nav.toc .label { grid-column: 1 / -1; }
+  .block { padding: 20px 18px; }
+  .fields { grid-template-columns: minmax(0, 1fr); }
+  .fields .f-label { border-bottom: 0 !important; padding-bottom: 0; }
+  .twocol { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: no-preference) { button { transition: border-color .15s, background .15s; } }
+</style>
+
+<header class="hero">
+  <div class="eyebrow">Handover template</div>
+  <h1>Agent Build Brief</h1>
+  <p>What to give a developer who builds you an agent, with subagents, skills and tools where the task needs them. Fill in each section, or hand over the whole template. Every section has a blank template and a filled example in Markdown and XML.</p>
+  <div class="toolbar">
+    <button class="primary" data-open="full" data-mode="template">Full template</button>
+    <button data-open="full" data-mode="example">Full example</button>
+    <button class="dl" data-zip="all">Download everything (.zip)</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <nav class="toc" id="toc" aria-label="Sections"><div class="label">Sections</div></nav>
+  <main id="main">
+    <section class="block" id="pieces">
+      <div class="sec-head"><span class="sec-num">00</span><h2>Which pieces do you need?</h2><span class="chip opt">Read first</span></div>
+      <p class="why">Decide this before you write the brief, or let the developer propose it. You describe the job. The developer picks the parts, but they need to know what each part costs and what information it needs from you.</p>
+      <div class="scroll">
+        <table class="compare">
+          <thead><tr><th>Piece</th><th>What it is</th><th>Add it when</th><th>What you give the developer</th></tr></thead>
+          <tbody>
+            <tr><td>Agent</td><td>The model loop that owns the task: it plans, calls tools, talks to the user and decides when it is done.</td><td>Always. One per task.</td><td>Mission, workflow, guardrails, budget.</td></tr>
+            <tr><td>Subagent</td><td>A separate agent with its own context, prompt, tools and model. The main agent calls it and gets back a short result.</td><td>Work splits into independent chunks, a step reads a lot but only a summary matters, or a step needs other permissions or a cheaper model.</td><td>Purpose, input, the exact return shape, tools, model.</td></tr>
+            <tr><td>Skill</td><td>A folder with <code>SKILL.md</code> plus references and scripts. It loads only when its description matches the task.</td><td>Know-how you want applied the same way every time: house style, procedures, domain rules, checking scripts.</td><td>The trigger description, the source material, approved example outputs.</td></tr>
+            <tr><td>Tool</td><td>A function with a typed input schema. It does the real reading and writing.</td><td>The agent has to touch a system: an API, a database, files, messages.</td><td>Name, schema, output, side effects, auth, rate limits, errors.</td></tr>
+            <tr><td>MCP server</td><td>A bundle of tools served over the Model Context Protocol, reusable by any client.</td><td>The tools already exist as a server (GitHub, Slack, a database), or several agents should share them.</td><td>Which server, which tools are allowed, auth scopes.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="twocol">
+        <div class="yes"><h3>A subagent is worth it if</h3><ul>
+          <li>There are many independent items to process in parallel (one per PR, file, ticket).</li>
+          <li>A step would flood the context with diffs, logs or long documents.</li>
+          <li>A step should run read-only or with stricter tools than the main agent.</li>
+          <li>A step does fine on a faster, cheaper model.</li>
+        </ul></div>
+        <div class="no"><h3>Skip it if</h3><ul>
+          <li>Steps are short and depend on each other in order.</li>
+          <li>Each step needs the whole conversation so far.</li>
+          <li>The task fits comfortably in one context.</li>
+          <li>It would only add another persona with the same tools.</li>
+        </ul></div>
+      </div>
+      <ul class="tips">
+        <li>Give real samples, not descriptions of samples. One real input and one accepted output beat a page of explanation.</li>
+        <li>Say what is out of scope. Developers fill silence with features.</li>
+        <li>Arrange access (API keys, accounts, test data) before kickoff, and name one person who answers questions.</li>
+      </ul>
+    </section>
+  </main>
+</div>
+
+<dialog id="modal" aria-labelledby="m-title">
+  <div class="m-head"><h3 id="m-title">Template</h3><button class="ghost" id="m-close" aria-label="Close">Close</button></div>
+  <div class="m-bar">
+    <div class="seg" role="group" aria-label="Content"><button data-mode="template">Template</button><button data-mode="example">Example</button></div>
+    <div class="seg" role="group" aria-label="Format"><button data-fmt="md">Markdown</button><button data-fmt="xml">XML</button></div>
+  </div>
+  <div class="m-body"><pre id="m-pre" tabindex="0"></pre></div>
+  <div class="m-foot">
+    <button class="dl" id="m-dl">Download</button>
+    <button class="primary" id="m-copy">Copy</button>
+  </div>
+</dialog>
+<div class="toast" id="toast" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script id="brief-gen">
+const SECTIONS = [
+  { id: "mission", title: "Mission and outcome", required: true,
+    why: "The developer designs everything around the outcome. A vague goal produces an agent that does a lot and finishes nothing.",
+    ask: "What job does the agent do from start to finish, how will you know it worked, and what must it not do?",
+    fields: [
+      { key: "name", label: "Agent name", hint: "short, kebab-case", example: "release-notes-agent" },
+      { key: "summary", label: "One-sentence job", hint: "verb + object + result", example: "Turns merged pull requests into a draft release note and sends it for approval." },
+      { key: "problem", label: "Problem today", hint: "who does it now, how long it takes, what goes wrong", example: "An engineer spends about 2 hours per release reading PRs. Notes are inconsistent and often miss breaking changes." },
+      { key: "success", label: "Success criteria", hint: "measurable, one per line", example: "- Draft ready within 10 minutes of the tag push\n- Every merged PR appears exactly once\n- Breaking changes listed first, each with a migration note" },
+      { key: "non_goals", label: "Out of scope", hint: "what it must not try to do", example: "- Publishes nothing without approval\n- Never edits PRs or code" }
+    ] },
+  { id: "environment", title: "Users and environment", required: true,
+    why: "Where the agent runs and who starts it decides the framework, the auth model and the interface.",
+    ask: "Who uses it, what starts a run, and where does it live?",
+    fields: [
+      { key: "users", label: "Users", hint: "roles, and what each one does with it", example: "Release manager (starts and approves runs); engineers (read the result)" },
+      { key: "trigger", label: "Trigger", hint: "manual command, schedule, webhook or chat message", example: "GitHub tag pushed (webhook), or /release-notes v2.4.0 in Slack" },
+      { key: "runtime", label: "Runtime", hint: "Claude Code, Agent SDK, Claude API, Managed Agents, or your own app", example: "Claude Agent SDK (TypeScript) on Cloudflare Workers" },
+      { key: "model", label: "Model and effort", hint: "or ask the developer to recommend one", example: "claude-sonnet-5-5 for the main agent; claude-haiku-5-5 for per-PR summaries" },
+      { key: "interface", label: "Interface", hint: "chat, Slack, web UI, CLI, API", example: "Slack thread with Approve and Edit buttons" },
+      { key: "scale", label: "Volume and speed", hint: "runs per day or week, size of each run, acceptable wait", example: "About 4 releases a week, 20 to 150 PRs each; draft in under 10 minutes" }
+    ] },
+  { id: "io", title: "Inputs and outputs", required: true,
+    why: "Exact formats remove most of the guesswork. Paste real data, with secrets removed.",
+    ask: "What goes in, what comes out, and where does the output go?",
+    fields: [
+      { key: "inputs", label: "Inputs", hint: "every value the agent receives", example: "Tag name, previous tag, repository (org/name)" },
+      { key: "input_example", label: "Real input sample", hint: "paste one", code: true, example: "tag: v2.4.0\nprevious: v2.3.2\nrepo: acme/web" },
+      { key: "outputs", label: "Output and format", hint: "structure, length, file type, schema", example: "Markdown note with sections Breaking, Features, Fixes, Internal. One line per PR with its number and author." },
+      { key: "output_example", label: "Accepted output sample", hint: "paste one you would sign off on", code: true, example: "## Breaking\n- Removed the legacy_auth flag; set AUTH_MODE=oidc (#812, @lee)\n\n## Features\n- Bulk export for reports (#799, @sam)" },
+      { key: "destination", label: "Destination", hint: "where the output is saved or sent", example: "Draft posted to #releases; after approval, written to the GitHub release body" }
+    ] },
+  { id: "workflow", title: "Workflow", required: true,
+    why: "This is how you do the job by hand today. The developer turns it into the agent's plan, its checkpoints and its error handling.",
+    ask: "What are the steps, where are the decisions, and where must a person step in?",
+    fields: [
+      { key: "steps", label: "Steps", hint: "numbered happy path", example: "1. Find PRs merged between the previous tag and the new tag\n2. Summarize each PR from its description, labels and diff\n3. Sort into categories and flag breaking changes\n4. Assemble the note using the style skill\n5. Post the draft to Slack and wait for approval\n6. On approval, update the GitHub release" },
+      { key: "decisions", label: "Decision rules", hint: "if X then Y", example: "- Label breaking, or BREAKING CHANGE: in the body, goes under Breaking\n- PRs labelled skip-changelog are left out" },
+      { key: "human", label: "Human checkpoints", hint: "approvals, reviews, handoffs", example: "Approval is required before step 6. Edits posted in the Slack thread replace the draft." },
+      { key: "failure", label: "When a step fails", hint: "retry, stop, notify whom", example: "GitHub API error: retry 3 times with backoff, then post the failing step and error in the thread" }
+    ] },
+  { id: "agent", title: "Main agent", required: true,
+    why: "These notes become the system prompt and the run limits.",
+    ask: "How should the agent behave, and what are its limits?",
+    fields: [
+      { key: "role", label: "Role", hint: "what it owns and what it delegates", example: "Orchestrator: plans the run, hands PR summaries to the subagent, assembles and checks the note" },
+      { key: "instructions", label: "Rules for the prompt", hint: "the non-negotiables, one per line", example: "- Never invent a change; every line cites a PR number\n- Use customer-facing wording, not internal jargon" },
+      { key: "tone", label: "Tone and language", hint: "voice, length, language", example: "Plain and concise, past tense, English" },
+      { key: "memory", label: "State and memory", hint: "what it remembers between runs, and where", example: "Stateless per run; run ID and approval status stored in D1" },
+      { key: "limits", label: "Budget", hint: "max turns, cost, time per run", example: "At most 40 turns, $1.50 and 15 minutes per run" }
+    ] },
+  { id: "subagents", title: "Subagents", required: false,
+    why: "Add one only when it earns its cost (see section 00). The contract matters most: what goes in and the exact shape that comes back.",
+    ask: "Which parts of the work should run in their own context?",
+    repeat: { label: "Subagent", tag: "subagent", fields: [
+      { key: "name", label: "Name", hint: "kebab-case" },
+      { key: "purpose", label: "Purpose", hint: "one sentence" },
+      { key: "when", label: "When it is called", hint: "and whether in parallel" },
+      { key: "input", label: "Input", hint: "what the main agent passes in" },
+      { key: "returns", label: "Returns", hint: "exact shape, ideally JSON" },
+      { key: "tools", label: "Tools", hint: "only what it needs" },
+      { key: "model", label: "Model", hint: "often smaller than the main agent" },
+      { key: "isolation", label: "Why separate", hint: "context, permissions, parallelism or cost" }
+    ] },
+    example: [
+      { name: "pr-summarizer", purpose: "Reads one PR and returns a structured summary.", when: "Once per PR, up to 8 in parallel", input: "PR number and repository", returns: "JSON: {number, title, category, breaking, summary, migration_note}", tools: "github.get_pull_request, github.get_pr_diff (read-only)", model: "claude-haiku-5-5", isolation: "Diffs stay inside the subagent; only the JSON comes back" }
+    ] },
+  { id: "skills", title: "Skills", required: false,
+    why: "A skill holds know-how the agent should apply the same way every run. You supply the material; the developer packages it.",
+    ask: "What rules, style or procedures should the agent always follow for this kind of work?",
+    repeat: { label: "Skill", tag: "skill", fields: [
+      { key: "name", label: "Name", hint: "kebab-case" },
+      { key: "description", label: "Trigger description", hint: "what it does and when to use it" },
+      { key: "contents", label: "What SKILL.md covers", hint: "rules, steps, examples" },
+      { key: "resources", label: "Bundled files", hint: "references, scripts, templates" },
+      { key: "source", label: "Source material", hint: "who provides it, and where it lives" }
+    ] },
+    example: [
+      { name: "release-notes-style", description: "House style for release notes. Use when writing or editing release notes or changelogs.", contents: "Section order, wording rules, how to write migration notes, 3 approved examples", resources: "references/examples.md; scripts/check_note.py (checks every PR is listed exactly once)", source: "Docs team supplies the current style guide" }
+    ] },
+  { id: "tools", title: "Tools and MCP servers", required: true,
+    why: "Tools are where the agent touches real systems. Most production bugs and risk sit here, so be specific about side effects and errors.",
+    ask: "Which systems does it read, which does it change, and with what access?",
+    repeat: { label: "Tool", tag: "tool", fields: [
+      { key: "name", label: "Name", hint: "server.tool or function name" },
+      { key: "purpose", label: "Purpose", hint: "one sentence" },
+      { key: "kind", label: "Kind", hint: "custom function, MCP server or built-in" },
+      { key: "input", label: "Input schema", hint: "parameters and types" },
+      { key: "output", label: "Output", hint: "shape of the result" },
+      { key: "side_effects", label: "Side effects", hint: "read-only, or what it changes and whether it can be undone" },
+      { key: "auth", label: "Auth and scopes", hint: "least privilege" },
+      { key: "limits", label: "Rate limits", hint: "quotas, pagination" },
+      { key: "errors", label: "Errors", hint: "known failures and what to do" }
+    ] },
+    example: [
+      { name: "github.list_merged_prs", purpose: "Lists PRs merged between two refs.", kind: "MCP server (GitHub)", input: "{repo: string, base: string, head: string}", output: "[{number, title, author, labels, merged_at}]", side_effects: "Read-only", auth: "GitHub App with contents:read and pull_requests:read", limits: "5,000 requests an hour; 100 per page", errors: "404 when a tag is missing: stop and report" },
+      { name: "slack.post_draft", purpose: "Posts the draft with Approve and Edit buttons.", kind: "Custom function", input: "{channel: string, markdown: string, run_id: string}", output: "{ts, permalink}", side_effects: "Writes a message (can be deleted)", auth: "Slack bot token with chat:write", limits: "1 message per second per channel", errors: "channel_not_found: fail the run" },
+      { name: "github.update_release", purpose: "Writes the approved note to the release.", kind: "MCP server (GitHub)", input: "{repo: string, tag: string, body: string}", output: "{url}", side_effects: "Changes a public release. Only after approval.", auth: "GitHub App with contents:write", limits: "Same as above", errors: "422 when the release is missing: create it as a draft" }
+    ] },
+  { id: "knowledge", title: "Knowledge and data", required: false,
+    why: "The agent knows only what it is given. List the documents and data it needs, and how it gets to them.",
+    ask: "What does someone need to know to do this job well?",
+    fields: [
+      { key: "sources", label: "Documents and data", hint: "links, databases, files", example: "Style guide, CONTRIBUTING.md, the label list" },
+      { key: "access", label: "Access", hint: "how credentials are provided; never paste secrets in the brief", example: "Read-only GitHub App on acme/web; secrets in Workers environment variables, never in prompts" },
+      { key: "freshness", label: "How often it changes", hint: "and who updates it", example: "Style guide changes about monthly; docs team updates the skill" },
+      { key: "glossary", label: "Terms", hint: "words with a specific meaning here", example: "Breaking: a change that requires customers to change config or code" }
+    ] },
+  { id: "guardrails", title: "Guardrails and permissions", required: true,
+    why: "Spell out what the agent may do alone, what needs a person, and what it must never do. Developers turn this into permission settings and approval steps.",
+    ask: "Where is the line between acting and asking?",
+    fields: [
+      { key: "allowed", label: "Allowed without asking", hint: "", example: "Read repositories and PRs; post drafts to #releases" },
+      { key: "approval", label: "Needs approval", hint: "and from whom", example: "Publishing the GitHub release; posting anywhere outside #releases (release manager)" },
+      { key: "forbidden", label: "Never", hint: "", example: "Push code, merge PRs, delete anything, share private repository content outside the company" },
+      { key: "data", label: "Sensitive data", hint: "personal data, secrets, compliance", example: "Diffs can contain secrets: quote at most 3 lines of code and mask anything that looks like a token" },
+      { key: "audit", label: "Logging", hint: "what must be recorded", example: "Every tool call with run ID, masked inputs and result status" }
+    ] },
+  { id: "examples", title: "Examples and edge cases", required: true,
+    why: "Examples are the strongest instruction you can give, for the developer and for the model.",
+    ask: "What does good look like, what does bad look like, and what odd cases come up?",
+    fields: [
+      { key: "golden", label: "Good examples", hint: "3 to 5 real cases with accepted results", example: "The last 3 releases (v2.1.0, v2.2.0, v2.3.0) with the notes as published" },
+      { key: "bad", label: "Bad outputs", hint: "mistakes you have seen or fear", example: "Listing commits instead of PRs; putting a breaking change under Fixes" },
+      { key: "edge", label: "Edge cases", hint: "one per line", example: "- A release with no customer-facing PRs\n- A PR reverted inside the same range\n- A PR from a fork with no labels\n- More than 300 PRs" }
+    ] },
+  { id: "evaluation", title: "Evaluation and acceptance", required: true,
+    why: "Agree up front how you will decide the agent is done. Without it, the project never ends or ends too early.",
+    ask: "How will you test it, and what numbers mean ready?",
+    fields: [
+      { key: "tests", label: "Test set", hint: "real cases to replay", example: "Replay the last 10 releases and compare with the published notes" },
+      { key: "metrics", label: "Pass thresholds", hint: "measurable", example: "100% of PRs covered; 100% of breaking changes caught; approver changes fewer than 3 lines on average" },
+      { key: "signoff", label: "Sign-off", hint: "who approves go-live", example: "Release manager reviews 5 live runs before launch" }
+    ] },
+  { id: "delivery", title: "Delivery", required: true,
+    why: "Name the deliverables so you receive something you can run, change and hand on.",
+    ask: "What do you get at the end, and under which constraints?",
+    fields: [
+      { key: "deliverables", label: "Deliverables", hint: "one per line", example: "- Agent code and config\n- Subagent definitions\n- Skill folders with SKILL.md\n- Tool definitions with schemas\n- README: setup, environment variables, how to run\n- Evaluation script and results" },
+      { key: "layout", label: "File layout", hint: "if you have a preference", code: true, example: ".claude/agents/pr-summarizer.md\nskills/release-notes-style/SKILL.md\nsrc/tools/\nevals/" },
+      { key: "constraints", label: "Technical constraints", hint: "language, hosting, budget", example: "TypeScript and Bun, deployed with wrangler; no new paid services" },
+      { key: "timeline", label: "Timeline and contacts", hint: "milestones, who answers questions", example: "Demo in 1 week, launch in 3; questions go to the release manager" }
+    ] }
+];
+
+const ex = SECTIONS[0].fields[0].example;
+
+function mdField(f, v, code) {
+  const body = v ? (code ? "```text\n" + v + "\n```" : v) : "_TODO: " + (f.hint || f.label) + "_";
+  return (v && (v.includes("\n") || code)) ? "**" + f.label + "**\n\n" + body + "\n\n" : "**" + f.label + ":** " + body + "\n\n";
+}
+function mdSection(s, i, mode) {
+  const t = mode === "template";
+  let out = "## " + (i + 1) + ". " + s.title + (s.required ? "" : (t ? " (optional, delete if not needed)" : "")) + "\n\n";
+  if (t) out += "> " + s.ask + "\n\n";
+  if (s.repeat) {
+    const items = t ? [null] : s.example;
+    items.forEach((it, n) => {
+      out += "### " + s.repeat.label + " " + (n + 1) + (it ? ": " + it.name : "") + "\n\n";
+      s.repeat.fields.forEach(f => { out += mdField(f, it ? it[f.key] : null); });
+    });
+    if (t) out += "_Repeat the block above for each " + s.repeat.label.toLowerCase() + "._\n\n";
+  } else {
+    s.fields.forEach(f => { out += mdField(f, t ? null : f.example, f.code); });
+  }
+  return out;
+}
+function mdHeader(mode) {
+  return mode === "template"
+    ? "# Agent brief: [agent name]\n\nPrepared by: [name]  |  Date: [date]  |  Version: 1\n\n"
+    : "# Agent brief: " + ex + "\n\nPrepared by: Release manager  |  Date: 2026-10-25  |  Version: 1\n\n";
+}
+function fullMd(mode) { return (mdHeader(mode) + SECTIONS.map((s, i) => mdSection(s, i, mode)).join("")).trimEnd() + "\n"; }
+
+function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+function xmlField(tag, f, v, ind) {
+  if (!v) return ind + "<" + tag + "><!-- " + (f.hint || f.label) + " --></" + tag + ">\n";
+  if (v.includes("\n")) return ind + "<" + tag + ">\n" + v.split("\n").map(l => ind + "  " + esc(l)).join("\n") + "\n" + ind + "</" + tag + ">\n";
+  return ind + "<" + tag + ">" + esc(v) + "</" + tag + ">\n";
+}
+function xmlSection(s, i, mode) {
+  const t = mode === "template";
+  let out = '  <section n="' + (i + 1) + '" id="' + s.id + '" title="' + esc(s.title) + '" required="' + s.required + '">\n';
+  if (t) out += "    <!-- " + s.ask + " -->\n";
+  if (s.repeat) {
+    const items = t ? [null] : s.example;
+    items.forEach(it => {
+      out += "    <" + s.repeat.tag + ">\n";
+      s.repeat.fields.forEach(f => { out += xmlField(f.key, f, it ? it[f.key] : null, "      "); });
+      out += "    </" + s.repeat.tag + ">\n";
+    });
+    if (t) out += "    <!-- Repeat <" + s.repeat.tag + "> for each " + s.repeat.label.toLowerCase() + ". -->\n";
+  } else {
+    s.fields.forEach(f => { out += xmlField(f.key, f, t ? null : f.example, "    "); });
+  }
+  return out + "  </section>\n";
+}
+function fullXml(mode) {
+  const t = mode === "template";
+  return '<?xml version="1.0" encoding="UTF-8"?>\n<agent_brief version="1" name="' + (t ? "[agent name]" : ex) + '" prepared_by="' + (t ? "[name]" : "Release manager") + '" date="' + (t ? "[date]" : "2026-10-25") + '">\n'
+    + SECTIONS.map((s, i) => xmlSection(s, i, mode)).join("") + "</agent_brief>\n";
+}
+function sectionXml(i, mode) { return '<?xml version="1.0" encoding="UTF-8"?>\n<agent_brief_part>\n' + xmlSection(SECTIONS[i], i, mode) + "</agent_brief_part>\n"; }
+function render(target, mode, fmt) {
+  if (target === "full") return fmt === "md" ? fullMd(mode) : fullXml(mode);
+  const i = SECTIONS.findIndex(s => s.id === target);
+  return fmt === "md" ? mdSection(SECTIONS[i], i, mode).trimEnd() + "\n" : sectionXml(i, mode);
+}
+</script>
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const pad = n => String(n).padStart(2, "0");
+const main = $("#main"), toc = $("#toc");
+toc.insertAdjacentHTML("beforeend", '<a href="#pieces"><span>00</span>Which pieces</a>');
+
+function inline(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+SECTIONS.forEach((s, i) => {
+  const fields = s.repeat ? s.repeat.fields : s.fields;
+  const rows = fields.map(f => '<div class="f-label">' + f.label + '</div><div class="f-hint">' + inline(f.hint || "") + "</div>").join("");
+  main.insertAdjacentHTML("beforeend",
+    '<section class="block" id="' + s.id + '">' +
+      '<div class="sec-head"><span class="sec-num">' + pad(i + 1) + "</span><h2>" + s.title + '</h2><span class="chip ' + (s.required ? 'req">Required' : 'opt">Optional') + "</span></div>" +
+      '<p class="why">' + s.why + "</p>" +
+      '<p class="ask">' + s.ask + "</p>" +
+      '<div class="fields">' + rows + "</div>" +
+      (s.repeat ? '<p class="repeat-note">One block per ' + s.repeat.label.toLowerCase() + '.</p>' : "") +
+      '<div class="actions">' +
+        '<button data-open="' + s.id + '" data-mode="template">Template</button>' +
+        '<button data-open="' + s.id + '" data-mode="example">Example</button>' +
+        '<button class="ghost" data-copy="' + s.id + '">Copy Markdown</button>' +
+      "</div>" +
+    "</section>");
+  toc.insertAdjacentHTML("beforeend", '<a href="#' + s.id + '"><span>' + pad(i + 1) + "</span>" + s.title + "</a>");
+});
+
+const toastEl = $("#toast"); let toastT;
+function toast(msg) { toastEl.textContent = msg; toastEl.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { toastEl.hidden = true; }, 2200); }
+
+async function copy(text, pre) {
+  try { await navigator.clipboard.writeText(text); toast("Copied to clipboard"); }
+  catch (e) {
+    if (pre) { const r = document.createRange(); r.selectNodeContents(pre); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); }
+    toast(pre ? "Copy was blocked. Text is selected: press Ctrl+C or Cmd+C" : "Copy was blocked. Open the template and copy from there");
+  }
+}
+
+document.body.classList.add("no-dl");
+let downloads = null;
+if (window.claude && window.claude.use) {
+  window.claude.use("downloads").then(d => { downloads = d; if (d) document.body.classList.remove("no-dl"); }).catch(() => {});
+}
+async function save(filename, data) {
+  if (!downloads) return;
+  try { await downloads.save({ filename, data }); toast("Saved " + filename); }
+  catch (e) {
+    const c = e && e.code;
+    if (c === "declined") return;
+    if (c === "rate_limited") toast("Another save is waiting for your answer");
+    else { toast("Downloads are not available here. Use Copy instead"); if (c !== "too_large") document.body.classList.add("no-dl"); }
+  }
+}
+async function zipOf(files) {
+  const z = new JSZip(); Object.entries(files).forEach(([n, c]) => z.file(n, c));
+  return z.generateAsync({ type: "blob" });
+}
+const base = t => t === "full" ? "agent-brief" : "agent-brief-" + t;
+
+const modal = $("#modal"), pre = $("#m-pre");
+const state = { target: "full", mode: "template", fmt: "md" };
+function refresh() {
+  const s = SECTIONS.find(x => x.id === state.target);
+  $("#m-title").textContent = (s ? s.title : "Full brief") + (state.mode === "template" ? ": template" : ": example");
+  modal.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === state.mode));
+  modal.querySelectorAll("[data-fmt]").forEach(b => b.setAttribute("aria-pressed", b.dataset.fmt === state.fmt));
+  pre.textContent = render(state.target, state.mode, state.fmt);
+  $("#m-dl").textContent = state.fmt === "md" ? "Download .md" : "Download .xml (zipped)";
+  modal.querySelector(".m-body").scrollTop = 0;
+}
+
+document.addEventListener("click", async e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.open) { state.target = b.dataset.open; state.mode = b.dataset.mode; refresh(); modal.showModal(); return; }
+  if (b.dataset.copy) { copy(render(b.dataset.copy, "template", "md")); return; }
+  if (b.dataset.zip === "all") {
+    save("agent-brief.zip", await zipOf({
+      "agent-brief-template.md": fullMd("template"), "agent-brief-template.xml": fullXml("template"),
+      "agent-brief-example.md": fullMd("example"), "agent-brief-example.xml": fullXml("example")
+    }));
+    return;
+  }
+  if (modal.contains(b)) {
+    if (b.dataset.mode) { state.mode = b.dataset.mode; refresh(); }
+    else if (b.dataset.fmt) { state.fmt = b.dataset.fmt; refresh(); }
+    else if (b.id === "m-close") modal.close();
+    else if (b.id === "m-copy") copy(pre.textContent, pre);
+    else if (b.id === "m-dl") {
+      const name = base(state.target) + "-" + state.mode;
+      if (state.fmt === "md") save(name + ".md", pre.textContent);
+      else save(name + "-xml.zip", await zipOf({ [name + ".xml"]: pre.textContent }));
+    }
+  }
+});
+modal.addEventListener("click", e => { if (e.target === modal) modal.close(); });
+</script>
+
+</body></html>
