@@ -20,7 +20,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet("help", "preflight", "setup", "vbox-create", "vbox-start", "vbox-stop", "vbox-status", "podman-status", "wf1", "wf2", "hook", "report", "clean")]
+    [ValidateSet("help", "preflight", "setup", "vbox-create", "vbox-start", "vbox-stop", "vbox-status", "podman-status", "wf1", "wf2", "hook", "report", "clean", "monitor", "telemetry", "dump-sandbox", "scan-secrets", "trace-crypto", "parse-flows")]
     [string]$Command = "help",
 
     [Parameter()]
@@ -31,6 +31,12 @@ param(
 
     [Parameter()]
     [string]$Hook = "",
+
+    [Parameter()]
+    [string]$Filter = "",
+
+    [Parameter()]
+    [string]$FlowFile = "",
 
     [Parameter()]
     [string]$VmName = "apk-lab-vm",
@@ -98,7 +104,7 @@ function Find-Jadx {
 function Show-Help {
     Write-Host "=== 🛡️ apk-lab Windows Lab Orchestrator ===" -ForegroundColor Cyan
     Write-Host "Usage: .\lab.ps1 <command> [options]`n"
-    Write-Host "Commands:"
+    Write-Host "Environment & Virtualization:"
     Write-Host "  preflight              Run environment, non-admin, VBox, ports, and tools checks"
     Write-Host "  setup                  Bootstrap user-space Python .venv, Frida, mitmproxy, and tools"
     Write-Host "  vbox-create [-VmName]  Create userland headless VirtualBox VM with NAT port forwardings"
@@ -106,9 +112,18 @@ function Show-Help {
     Write-Host "  vbox-stop   [-VmName]  Gracefully shut down VirtualBox VM"
     Write-Host "  vbox-status            List all configured and running VirtualBox VMs"
     Write-Host "  podman-status          Check Podman CLI, machines, and connection endpoints"
+    Write-Host "`nWorkflows & Analysis:"
     Write-Host "  wf1 -Apk <file>        Run Static Analysis (JADX + Manifest Analyzer + MobSF)"
     Write-Host "  wf2 -Apk <f> -Pkg <p>  Run Dynamic Analysis (ADB connect, mitmproxy, launch)"
-    Write-Host "  hook -Pkg <p> -Hook <h> Run Frida hook against package"
+    Write-Host "  scan-secrets -Apk <f>  Deep scan APK or sources for hardcoded API keys and credentials"
+    Write-Host "`nDynamic Instrumentation & Hooks:"
+    Write-Host "  hook -Pkg <p> -Hook <h> Run custom Frida hook against package"
+    Write-Host "  trace-crypto -Pkg <p>  Trace cryptographic keys, ciphers, and hashes via Frida"
+    Write-Host "`nLive Monitoring & Telemetry:"
+    Write-Host "  monitor [-Pkg] [-Filter] Live logcat security monitor with automated token leak alerts"
+    Write-Host "  telemetry -Pkg <p>     Capture memory (PSS, heaps), active sockets, and battery stats"
+    Write-Host "  dump-sandbox -Pkg <p>  Extract and audit SharedPreferences XML and SQLite databases"
+    Write-Host "  parse-flows [-FlowFile] Analyze mitmproxy network traffic flows"
     Write-Host "  report                 Gather device status, logcat, and flows into artifacts\"
     Write-Host "  clean                  Clear artifacts directory"
 }
@@ -498,6 +513,99 @@ function Invoke-Report {
 }
 
 # ---------------------------------------------------------------------------
+# COMMAND: MONITOR (LOGCAT)
+# ---------------------------------------------------------------------------
+function Invoke-Monitor {
+    $py = if (Test-Path $VenvPython) { $VenvPython } else { "python" }
+    $monitorScript = Join-Path $ScriptDir "scripts\logcat_monitor.py"
+    $argsList = @()
+    if ($Pkg) { $argsList += @("-p", $Pkg) }
+    if ($Filter) { $argsList += @("-f", $Filter) }
+    $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
+    $logOut = Join-Path $ScriptDir "artifacts\logcat-alerts-$stamp.txt"
+    $argsList += @("-o", $logOut)
+
+    Write-Host "=== 📱 Launching Real-Time Logcat Security Monitor ===" -ForegroundColor Cyan
+    & $py $monitorScript @argsList
+}
+
+# ---------------------------------------------------------------------------
+# COMMAND: TELEMETRY
+# ---------------------------------------------------------------------------
+function Invoke-Telemetry {
+    if (-not $Pkg) {
+        Write-Bad "Usage: .\lab.ps1 telemetry -Pkg <package.name>"
+        return
+    }
+    $py = if (Test-Path $VenvPython) { $VenvPython } else { "python" }
+    $telemetryScript = Join-Path $ScriptDir "scripts\device_monitor.py"
+    $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
+    $outPath = Join-Path $ScriptDir "artifacts\telemetry-$Pkg-$stamp.json"
+    & $py $telemetryScript -p $Pkg -o $outPath
+}
+
+# ---------------------------------------------------------------------------
+# COMMAND: DUMP-SANDBOX
+# ---------------------------------------------------------------------------
+function Invoke-DumpSandbox {
+    if (-not $Pkg) {
+        Write-Bad "Usage: .\lab.ps1 dump-sandbox -Pkg <package.name>"
+        return
+    }
+    $py = if (Test-Path $VenvPython) { $VenvPython } else { "python" }
+    $dumperScript = Join-Path $ScriptDir "scripts\sandbox_dumper.py"
+    $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
+    $outDir = Join-Path $ScriptDir "artifacts\sandbox-$Pkg-$stamp"
+    & $py $dumperScript -p $Pkg -o $outDir
+}
+
+# ---------------------------------------------------------------------------
+# COMMAND: SCAN-SECRETS
+# ---------------------------------------------------------------------------
+function Invoke-ScanSecrets {
+    if (-not $Apk -or -not (Test-Path $Apk)) {
+        Write-Bad "Usage: .\lab.ps1 scan-secrets -Apk <path\to\app.apk>"
+        return
+    }
+    $py = if (Test-Path $VenvPython) { $VenvPython } else { "python" }
+    $scannerScript = Join-Path $ScriptDir "scripts\secret_scanner.py"
+    $stem = [System.IO.Path]::GetFileNameWithoutExtension($Apk)
+    $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
+    $outDir = Join-Path $ScriptDir "artifacts\$stem-secrets-$stamp"
+    & $py $scannerScript $Apk -o $outDir
+}
+
+# ---------------------------------------------------------------------------
+# COMMAND: TRACE-CRYPTO
+# ---------------------------------------------------------------------------
+function Invoke-TraceCrypto {
+    if (-not $Pkg) {
+        Write-Bad "Usage: .\lab.ps1 trace-crypto -Pkg <package.name>"
+        return
+    }
+    $cryptoHook = Join-Path $ScriptDir "hooks\crypto-tracer.js"
+    $frida = if (Test-Path $VenvFrida) { $VenvFrida } else { "frida" }
+    Write-Host "=== 🔐 Tracing Cryptography & Keys for: $Pkg ===" -ForegroundColor Cyan
+    & $frida -U -f $Pkg -l $cryptoHook --no-pause
+}
+
+# ---------------------------------------------------------------------------
+# COMMAND: PARSE-FLOWS
+# ---------------------------------------------------------------------------
+function Invoke-ParseFlows {
+    $targetFile = if ($FlowFile) { $FlowFile } else { Join-Path $ScriptDir "artifacts\flows.mitm" }
+    if (-not (Test-Path $targetFile)) {
+        Write-Bad "Flows file not found: $targetFile. Run mitmproxy first to generate flows."
+        return
+    }
+    $py = if (Test-Path $VenvPython) { $VenvPython } else { "python" }
+    $parserScript = Join-Path $ScriptDir "scripts\mitm_flow_parser.py"
+    $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
+    $outDir = Join-Path $ScriptDir "artifacts\traffic-audit-$stamp"
+    & $py $parserScript $targetFile -o $outDir
+}
+
+# ---------------------------------------------------------------------------
 # COMMAND: CLEAN
 # ---------------------------------------------------------------------------
 function Invoke-Clean {
@@ -527,7 +635,14 @@ switch ($Command) {
     "wf1"           { Invoke-Wf1 }
     "wf2"           { Invoke-Wf2 }
     "hook"          { Invoke-Hook }
+    "trace-crypto"  { Invoke-TraceCrypto }
+    "monitor"       { Invoke-Monitor }
+    "telemetry"     { Invoke-Telemetry }
+    "dump-sandbox"  { Invoke-DumpSandbox }
+    "scan-secrets"  { Invoke-ScanSecrets }
+    "parse-flows"   { Invoke-ParseFlows }
     "report"        { Invoke-Report }
     "clean"         { Invoke-Clean }
     Default         { Show-Help }
 }
+

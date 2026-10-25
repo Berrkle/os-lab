@@ -55,7 +55,13 @@ cd lab
 | `podman-status`| — | Checks Podman CLI and connection endpoints |
 | `wf1` | `-Apk <path>` | **WF1 Static Analysis**: Manifest analysis, security flags, JADX decompile, MobSF |
 | `wf2` | `-Apk <path> [-Pkg <pkg>]` | **WF2 Dynamic Analysis**: ADB connection, APK installation, mitmproxy, launch |
+| `scan-secrets`| `-Apk <path>` | **Deep Secret Scanner**: Scans APK/sources for Google, AWS, JWT, API tokens |
 | `hook` | `-Pkg <pkg> -Hook <path>` | Injects runtime Frida script into target app package |
+| `trace-crypto`| `-Pkg <pkg>` | **Crypto Tracer**: Intercepts AES/RSA keys, IVs, plaintexts/ciphertexts, HMACs |
+| `monitor` | `[-Pkg <pkg>] [-Filter <pat>]` | **Live Logcat Security Monitor**: Real-time token leak & URL detection |
+| `telemetry` | `-Pkg <pkg>` | **Device Telemetry**: Captures memory footprint (PSS, heaps), sockets, battery |
+| `dump-sandbox`| `-Pkg <pkg>` | **Sandbox Auditor**: Extracts SharedPreferences XML and SQLite databases |
+| `parse-flows` | `[-FlowFile <path>]` | **Traffic Auditor**: Analyzes mitmproxy flows for cleartext HTTP & auth headers |
 | `report` | — | Sweeps logcat, mitm flows, and findings into `artifacts/report-<timestamp>/` |
 | `clean` | — | Wipes all artifacts in `artifacts/` |
 

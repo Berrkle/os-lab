@@ -119,6 +119,22 @@ def main():
     wf1_parser = subparsers.add_parser("wf1", help="Run Static Analysis (WF1)")
     wf1_parser.add_argument("--apk", required=True, help="Path to APK file")
 
+    secrets_parser = subparsers.add_parser("scan-secrets", help="Deep scan APK/directory for secrets")
+    secrets_parser.add_argument("--target", required=True, help="Path to APK or decompiled folder")
+
+    monitor_parser = subparsers.add_parser("monitor", help="Live logcat security monitor")
+    monitor_parser.add_argument("--pkg", help="Target package name")
+    monitor_parser.add_argument("--filter", help="Regex filter")
+
+    telemetry_parser = subparsers.add_parser("telemetry", help="Target device/app telemetry snapshot")
+    telemetry_parser.add_argument("--pkg", required=True, help="Target package name")
+
+    sandbox_parser = subparsers.add_parser("dump-sandbox", help="Extract and audit app sandbox")
+    sandbox_parser.add_argument("--pkg", required=True, help="Target package name")
+
+    flows_parser = subparsers.add_parser("parse-flows", help="Parse mitmproxy flows")
+    flows_parser.add_argument("--file", default=os.path.join(ARTIFACTS_DIR, "flows.mitm"), help="Path to flows.mitm")
+
     subparsers.add_parser("clean", help="Clean artifacts directory")
 
     args = parser.parse_args()
@@ -127,6 +143,26 @@ def main():
         run_preflight()
     elif args.command == "wf1":
         run_wf1(args.apk)
+    elif args.command == "scan-secrets":
+        scanner = os.path.join(SCRIPTS_DIR, "secret_scanner.py")
+        subprocess.run([sys.executable, scanner, args.target])
+    elif args.command == "monitor":
+        monitor = os.path.join(SCRIPTS_DIR, "logcat_monitor.py")
+        cmd = [sys.executable, monitor]
+        if args.pkg:
+            cmd.extend(["-p", args.pkg])
+        if args.filter:
+            cmd.extend(["-f", args.filter])
+        subprocess.run(cmd)
+    elif args.command == "telemetry":
+        telem = os.path.join(SCRIPTS_DIR, "device_monitor.py")
+        subprocess.run([sys.executable, telem, "-p", args.pkg])
+    elif args.command == "dump-sandbox":
+        dumper = os.path.join(SCRIPTS_DIR, "sandbox_dumper.py")
+        subprocess.run([sys.executable, dumper, "-p", args.pkg])
+    elif args.command == "parse-flows":
+        flow_parser = os.path.join(SCRIPTS_DIR, "mitm_flow_parser.py")
+        subprocess.run([sys.executable, flow_parser, args.file])
     elif args.command == "clean":
         if os.path.exists(ARTIFACTS_DIR):
             for item in os.listdir(ARTIFACTS_DIR):
