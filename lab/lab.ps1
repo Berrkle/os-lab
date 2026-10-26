@@ -51,7 +51,10 @@ param(
     [int]$Memory = 4096,
 
     [Parameter()]
-    [int]$Cpus = 2
+    [int]$Cpus = 2,
+
+    [Parameter()]
+    [string]$Iso = ""
 )
 
 $ErrorActionPreference = "Continue"
@@ -325,19 +328,61 @@ function Invoke-VBoxCreate {
     }
 
     Write-Host "=== 📦 Creating Userland VirtualBox Lab VM ($VmName) ===" -ForegroundColor Cyan
-    & $VBoxManagePath createvm --name $VmName --ostype "Ubuntu_64" --register
+    
+    # 1. Register VM if not existing
+    $existing = & $VBoxManagePath list vms
+    if ($existing -notmatch """$VmName""") {
+        & $VBoxManagePath createvm --name $VmName --ostype "Ubuntu_64" --register
+    } else {
+        Write-Info "VM '$VmName' already registered. Configuring parameters..."
+    }
+
+    # 2. Configure CPU, RAM, VRAM and Nested Hardware Virtualization
     & $VBoxManagePath modifyvm $VmName --memory $Memory --cpus $Cpus --vram 32
+    try {
+        & $VBoxManagePath modifyvm $VmName --nested-hw-virt on
+    } catch {}
     & $VBoxManagePath modifyvm $VmName --nic1 nat
 
-    # Port forwardings
+    # 3. Port forwardings
     Write-Info "Configuring NAT port forwardings..."
-    & $VBoxManagePath modifyvm $VmName --natpf1 "novnc,tcp,127.0.0.1,6080,,6080"
-    & $VBoxManagePath modifyvm $VmName --natpf1 "adb,tcp,127.0.0.1,5555,,5555"
-    & $VBoxManagePath modifyvm $VmName --natpf1 "mobsf,tcp,127.0.0.1,8000,,8000"
-    & $VBoxManagePath modifyvm $VmName --natpf1 "mitmproxy,tcp,127.0.0.1,8080,,8080"
-    & $VBoxManagePath modifyvm $VmName --natpf1 "mitmweb,tcp,127.0.0.1,8081,,8081"
+    $forwardRules = @(
+        "novnc,tcp,127.0.0.1,6080,,6080",
+        "adb,tcp,127.0.0.1,5555,,5555",
+        "mobsf,tcp,127.0.0.1,8000,,8000",
+        "mitmproxy,tcp,127.0.0.1,8080,,8080",
+        "mitmweb,tcp,127.0.0.1,8081,,8081"
+    )
+    foreach ($rule in $forwardRules) {
+        $ruleName = $rule.Split(',')[0]
+        & $VBoxManagePath modifyvm $VmName --natpf1 delete $ruleName 2>$null
+        & $VBoxManagePath modifyvm $VmName --natpf1 $rule 2>$null
+    }
 
-    Write-Ok "VirtualBox VM '$VmName' created and configured in user profile."
+    # 4. Storage Controller & Dynamically Allocated Virtual Disk
+    Write-Info "Configuring Storage Controller (SATA)..."
+    & $VBoxManagePath storagectl $VmName --name "SATA" --add sata --controller IntelAhci --bootable on 2>$null
+
+    $userHome = [System.Environment]::GetFolderPath("UserProfile")
+    $vmDir = Join-Path $userHome "VirtualBox VMs\$VmName"
+    if (-not (Test-Path $vmDir)) { New-Item -ItemType Directory -Force -Path $vmDir | Out-Null }
+    $vdiPath = Join-Path $vmDir "$VmName.vdi"
+
+    if (-not (Test-Path $vdiPath)) {
+        Write-Info "Creating dynamically allocated virtual disk ($vdiPath)..."
+        & $VBoxManagePath createmedium disk --filename $vdiPath --size 20480 --format VDI --variant Standard
+    }
+    & $VBoxManagePath storageattach $VmName --storagectl "SATA" --port 0 --device 0 --type hdd --medium $vdiPath
+
+    # 5. DVD Drive (for ISO mounting)
+    if ($Iso -and (Test-Path $Iso)) {
+        Write-Info "Attaching ISO installation media ($Iso)..."
+        & $VBoxManagePath storageattach $VmName --storagectl "SATA" --port 1 --device 0 --type dvddrive --medium $Iso
+    } else {
+        & $VBoxManagePath storageattach $VmName --storagectl "SATA" --port 1 --device 0 --type dvddrive --medium emptydrive
+    }
+
+    Write-Ok "VirtualBox VM '$VmName' fully created, storage attached, and configured in user profile."
 }
 
 function Invoke-VBoxStart {
