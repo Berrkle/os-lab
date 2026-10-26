@@ -20,7 +20,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet("help", "preflight", "setup", "vbox-create", "vbox-download-iso", "vbox-start", "vbox-stop", "vbox-status", "podman-status", "wf1", "wf2", "hook", "report", "clean", "monitor", "telemetry", "dump-sandbox", "scan-secrets", "trace-crypto", "parse-flows", "analyze-app", "generate-report", "fuzz-ipc", "patch-apk", "agentic-plan", "ui")]
+    [ValidateSet("help", "preflight", "setup", "vbox-create", "vbox-download-iso", "vbox-start", "vbox-autoinstall", "vbox-stop", "vbox-status", "podman-status", "wf1", "wf2", "hook", "report", "clean", "monitor", "telemetry", "dump-sandbox", "scan-secrets", "trace-crypto", "parse-flows", "analyze-app", "generate-report", "fuzz-ipc", "patch-apk", "agentic-plan", "ui")]
     [string]$Command = "help",
 
     [Parameter()]
@@ -125,6 +125,7 @@ function Show-Help {
     Write-Host "  vbox-create [-VmName]  Create userland VirtualBox VM with NAT port forwardings & storage"
     Write-Host "  vbox-download-iso      Automatically download & mount Linux ISO (default: alpine, or -Distro ubuntu)"
     Write-Host "  vbox-start  [-Gui]     Start VirtualBox VM (headless by default, or with GUI window via -Gui)"
+    Write-Host "  vbox-autoinstall       Unattended guest OS (Alpine) installation & Docker provisioning"
     Write-Host "  vbox-stop   [-VmName]  Gracefully shut down VirtualBox VM"
     Write-Host "  vbox-status            List all configured and running VirtualBox VMs"
     Write-Host "  podman-status          Check Podman CLI, machines, and connection endpoints"
@@ -462,6 +463,85 @@ function Invoke-VBoxStatus {
     & $VBoxManagePath list vms
     Write-Host "`n=== VirtualBox Running VMs ===" -ForegroundColor Cyan
     & $VBoxManagePath list runningvms
+}
+
+function Invoke-VBoxAutoInstall {
+    if (-not (Test-Path $VBoxManagePath)) {
+        Write-Bad "VirtualBox not found at: $VBoxManagePath"
+        return
+    }
+
+    function Send-VmKeyString([string]$str, [int]$sleepMs = 400) {
+        & $VBoxManagePath controlvm $VmName keyboardputstring $str
+        Start-Sleep -Milliseconds 250
+        & $VBoxManagePath controlvm $VmName keyboardputscancode 1c 9c
+        Start-Sleep -Milliseconds $sleepMs
+    }
+
+    Write-Host "`n=== 🤖 Automated Alpine Linux & Docker Provisioner ===" -ForegroundColor Cyan
+    Write-Info "Target VM: '$VmName'"
+
+    # 1. Start VM if not running
+    $running = & $VBoxManagePath list runningvms
+    if ($running -notmatch "`"$VmName`"") {
+        $mode = if ($Gui) { "gui" } else { "headless" }
+        Write-Info "Starting VM '$VmName' in $mode mode..."
+        & $VBoxManagePath startvm $VmName --type $mode
+        Write-Info "Waiting 12 seconds for VM to boot into Alpine Live ISO..."
+        Start-Sleep -Seconds 12
+    } else {
+        Write-Info "VM '$VmName' is already running."
+    }
+
+    # 2. Login to Live Session
+    Write-Info "Step 1/5: Logging into live session as root..."
+    Send-VmKeyString "root" 1000
+
+    # 3. Bring up network interface
+    Write-Info "Step 2/5: Initializing network interface (eth0 DHCP)..."
+    Send-VmKeyString "ip link set eth0 up && udhcpc -i eth0" 3000
+
+    # 4. Configure package repositories
+    Write-Info "Step 3/5: Configuring Alpine package mirrors (main & community)..."
+    Send-VmKeyString "echo 'https://dl-cdn.alpinelinux.org/alpine/v3.20/main' > /etc/apk/repositories && echo 'https://dl-cdn.alpinelinux.org/alpine/v3.20/community' >> /etc/apk/repositories && apk update" 5000
+
+    # 5. Partition & Install to /dev/sda
+    Write-Info "Step 4/5: Formatting virtual disk (/dev/sda) and installing Alpine system..."
+    Send-VmKeyString "echo 'y' | ERASE_DISKS='/dev/sda' setup-disk -m sys /dev/sda" 15000
+    Write-Info "Waiting for disk installation to finalize..."
+    Start-Sleep -Seconds 10
+
+    # 6. Graceful poweroff and eject ISO
+    Write-Info "Step 5/5: Ejecting installer ISO and rebooting into installed disk..."
+    Send-VmKeyString "poweroff" 3000
+
+    $retries = 10
+    while ($retries -gt 0) {
+        $check = & $VBoxManagePath list runningvms
+        if ($check -notmatch "`"$VmName`"") { break }
+        Start-Sleep -Seconds 2
+        $retries--
+    }
+
+    # Detach ISO
+    Write-Info "Detaching installer ISO from DVD drive..."
+    & $VBoxManagePath storageattach $VmName --storagectl "SATA" --port 1 --device 0 --type dvddrive --medium emptydrive
+
+    # Boot from installed disk
+    $mode = if ($Gui) { "gui" } else { "headless" }
+    Write-Info "Booting VM from installed virtual disk (/dev/sda)..."
+    & $VBoxManagePath startvm $VmName --type $mode
+    Start-Sleep -Seconds 10
+
+    # Configure persistent networking & Docker
+    Write-Info "Configuring persistent networking and installing Docker inside guest..."
+    Send-VmKeyString "root" 1000
+    Send-VmKeyString "echo -e 'auto lo\niface lo inet loopback\n\nauto eth0\niface eth0 inet dhcp' > /etc/network/interfaces && rc-service networking restart" 4000
+    Send-VmKeyString "echo 'https://dl-cdn.alpinelinux.org/alpine/v3.20/main' > /etc/apk/repositories && echo 'https://dl-cdn.alpinelinux.org/alpine/v3.20/community' >> /etc/apk/repositories && apk update && apk add docker curl && rc-update add docker boot && rc-service docker start" 18000
+
+    Write-Ok "VM '$VmName' successfully provisioned with Alpine Linux and Docker!"
+    Write-Host "`nDocker is active. Next: Start docker-android container with:" -ForegroundColor Green
+    Write-Host "  curl -fsSL https://raw.githubusercontent.com/keyvanarasteh/apk-lab/feat/windows-lab-setup/lab/scripts/setup-docker-android.sh | sh" -ForegroundColor Yellow
 }
 
 # ---------------------------------------------------------------------------
@@ -832,6 +912,7 @@ switch ($Command) {
     "vbox-create"       { Invoke-VBoxCreate }
     "vbox-download-iso" { Invoke-VBoxDownloadIso }
     "vbox-start"        { Invoke-VBoxStart }
+    "vbox-autoinstall"  { Invoke-VBoxAutoInstall }
     "vbox-stop"       { Invoke-VBoxStop }
     "vbox-status"     { Invoke-VBoxStatus }
     "podman-status"   { 

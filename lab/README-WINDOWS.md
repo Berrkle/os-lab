@@ -51,6 +51,7 @@ cd lab
 | `vbox-create` | `[-VmName <name>] [-Memory <mb>] [-Cpus <n>] [-Iso <path>]` | Provisions VirtualBox VM with SATA storage, dynamic VDI, nested VT-x, and NAT forwardings |
 | `vbox-download-iso` | `[-Distro <alpine\|ubuntu>]` | Downloads minimal Linux ISO (Alpine: ~219MB, Ubuntu: ~2.1GB) & mounts to VM DVD drive |
 | `vbox-start` | `[-VmName <name>] [-Gui]` | Boots the VirtualBox VM in headless background mode (or with desktop GUI via `-Gui`) |
+| `vbox-autoinstall` | `[-VmName <name>] [-Gui]` | **Fully Automated Installer**: Unattended Alpine installation to disk, ISO ejection, and Docker provisioning |
 | `vbox-stop` | `[-VmName <name>]` | Gracefully shuts down the VirtualBox VM |
 | `vbox-status` | — | Lists all registered and running VirtualBox VMs |
 | `podman-status`| — | Checks Podman CLI and connection endpoints |
@@ -79,24 +80,41 @@ cd lab
 
 VirtualBox stores VMs inside your user profile directory (`$HOME\VirtualBox VMs\`), meaning **no administrator rights are needed to create or run VMs**.
 
-To set up the Linux guest VM and run accelerated `budtmo/docker-android`:
+### Automated 1-Click Provisioning (Recommended)
+
+Run the following commands in PowerShell from the `lab\` directory:
 
 ```powershell
-# 1. Create VM with nested virtualization, SATA storage, and pre-configured port forwarding:
+# 1. Create VM with storage, nested virtualization, and NAT port forwardings:
 .\lab.ps1 vbox-create -VmName "apk-lab-vm" -Memory 4096 -Cpus 2
 
-# 2. Automatically download and mount a lightweight Linux ISO (Alpine: ~219MB, or -Distro ubuntu):
+# 2. Automatically download and attach the lightweight Alpine Linux ISO:
 .\lab.ps1 vbox-download-iso -Distro alpine
 
-# 3. Boot VM with display window to perform one-time OS setup:
+# 3. Run unattended automatic installation (handles disk partitioning, ISO eject, and Docker setup):
+.\lab.ps1 vbox-autoinstall
+
+# 4. Start headless in background anytime:
+.\lab.ps1 vbox-start
+```
+
+### Manual Installation (Alternative)
+
+If you prefer interactive installation with a graphical window:
+```powershell
+# Boot installer with GUI window:
 .\lab.ps1 vbox-start -Gui
 
-# 4. Inside the Linux Guest VM, run the automated docker-android installer:
-#    (Copy or execute scripts/setup-docker-android.sh):
+# Inside the VM console:
+# 1. Login with: root
+# 2. Run: setup-alpine
+#    - Select keymap and timezone
+#    - Pick network interface eth0 (dhcp)
+#    - Set root password
+#    - Target disk: sda, Mode: sys, Confirm erase: y
+# 3. Run in-guest automation script:
 #    curl -fsSL https://raw.githubusercontent.com/keyvanarasteh/apk-lab/feat/windows-lab-setup/lab/scripts/setup-docker-android.sh | sh
-
-# 5. For subsequent runs, start headless in background:
-.\lab.ps1 vbox-start
+```
 
 # Once running, the following ports are mapped to localhost:
 #   http://127.0.0.1:6080 -> Web noVNC (Interactive Android Emulator display)
