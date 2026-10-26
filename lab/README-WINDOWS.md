@@ -48,8 +48,9 @@ cd lab
 |---|---|---|
 | `preflight` | — | Validates system environment, non-admin status, and prerequisites |
 | `setup` | — | Initializes `.venv`, installs dependencies, and downloads portable tools |
-| `vbox-create` | `[-VmName <name>] [-Memory <mb>] [-Cpus <n>]` | Provisions a VirtualBox headless VM with NAT port forwardings (6080, 5555, 8000, 8080, 8081) |
-| `vbox-start` | `[-VmName <name>]` | Boots the VirtualBox VM in headless background mode |
+| `vbox-create` | `[-VmName <name>] [-Memory <mb>] [-Cpus <n>] [-Iso <path>]` | Provisions VirtualBox VM with SATA storage, dynamic VDI, nested VT-x, and NAT forwardings |
+| `vbox-download-iso` | `[-Distro <alpine\|ubuntu>]` | Downloads minimal Linux ISO (Alpine: ~219MB, Ubuntu: ~2.1GB) & mounts to VM DVD drive |
+| `vbox-start` | `[-VmName <name>] [-Gui]` | Boots the VirtualBox VM in headless background mode (or with desktop GUI via `-Gui`) |
 | `vbox-stop` | `[-VmName <name>]` | Gracefully shuts down the VirtualBox VM |
 | `vbox-status` | — | Lists all registered and running VirtualBox VMs |
 | `podman-status`| — | Checks Podman CLI and connection endpoints |
@@ -74,25 +75,32 @@ cd lab
 
 ---
 
-## 📦 VirtualBox Headless Setup Guide
+## 📦 VirtualBox & Docker-Android Setup Guide
 
 VirtualBox stores VMs inside your user profile directory (`$HOME\VirtualBox VMs\`), meaning **no administrator rights are needed to create or run VMs**.
 
-To set up an Android-x86 or Ubuntu lab VM:
+To set up the Linux guest VM and run accelerated `budtmo/docker-android`:
 
 ```powershell
-# Create VM with pre-configured port forwarding:
+# 1. Create VM with nested virtualization, SATA storage, and pre-configured port forwarding:
 .\lab.ps1 vbox-create -VmName "apk-lab-vm" -Memory 4096 -Cpus 2
 
-# Check status:
-.\lab.ps1 vbox-status
+# 2. Automatically download and mount a lightweight Linux ISO (Alpine: ~219MB, or -Distro ubuntu):
+.\lab.ps1 vbox-download-iso -Distro alpine
 
-# Boot headless in background:
-.\lab.ps1 vbox-start -VmName "apk-lab-vm"
+# 3. Boot VM with display window to perform one-time OS setup:
+.\lab.ps1 vbox-start -Gui
 
-# Once booted, the following ports are mapped to localhost:
-#   http://127.0.0.1:6080 -> Web VNC (Emulator display)
-#   127.0.0.1:5555       -> ADB bridge (connect with 'adb connect 127.0.0.1:5555')
+# 4. Inside the Linux Guest VM, run the automated docker-android installer:
+#    (Copy or execute scripts/setup-docker-android.sh):
+#    curl -fsSL https://raw.githubusercontent.com/keyvanarasteh/apk-lab/feat/windows-lab-setup/lab/scripts/setup-docker-android.sh | sh
+
+# 5. For subsequent runs, start headless in background:
+.\lab.ps1 vbox-start
+
+# Once running, the following ports are mapped to localhost:
+#   http://127.0.0.1:6080 -> Web noVNC (Interactive Android Emulator display)
+#   127.0.0.1:5555       -> ADB bridge (connect with '.\tools\platform-tools\adb connect 127.0.0.1:5555')
 #   http://127.0.0.1:8000 -> MobSF Web UI & REST API
 #   127.0.0.1:8080       -> mitmproxy HTTP interception
 #   http://127.0.0.1:8081 -> mitmweb interactive dashboard

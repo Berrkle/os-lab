@@ -20,7 +20,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet("help", "preflight", "setup", "vbox-create", "vbox-start", "vbox-stop", "vbox-status", "podman-status", "wf1", "wf2", "hook", "report", "clean", "monitor", "telemetry", "dump-sandbox", "scan-secrets", "trace-crypto", "parse-flows", "analyze-app", "generate-report", "fuzz-ipc", "patch-apk", "agentic-plan", "ui")]
+    [ValidateSet("help", "preflight", "setup", "vbox-create", "vbox-download-iso", "vbox-start", "vbox-stop", "vbox-status", "podman-status", "wf1", "wf2", "hook", "report", "clean", "monitor", "telemetry", "dump-sandbox", "scan-secrets", "trace-crypto", "parse-flows", "analyze-app", "generate-report", "fuzz-ipc", "patch-apk", "agentic-plan", "ui")]
     [string]$Command = "help",
 
     [Parameter()]
@@ -54,7 +54,13 @@ param(
     [int]$Cpus = 2,
 
     [Parameter()]
-    [string]$Iso = ""
+    [string]$Iso = "",
+
+    [Parameter()]
+    [switch]$Gui,
+
+    [Parameter()]
+    [string]$Distro = "alpine"
 )
 
 $ErrorActionPreference = "Continue"
@@ -116,8 +122,9 @@ function Show-Help {
     Write-Host "Environment & Virtualization:"
     Write-Host "  preflight              Run environment, non-admin, VBox, ports, and tools checks"
     Write-Host "  setup                  Bootstrap user-space Python .venv, Frida, mitmproxy, and tools"
-    Write-Host "  vbox-create [-VmName]  Create userland headless VirtualBox VM with NAT port forwardings"
-    Write-Host "  vbox-start  [-VmName]  Start VirtualBox VM in headless mode"
+    Write-Host "  vbox-create [-VmName]  Create userland VirtualBox VM with NAT port forwardings & storage"
+    Write-Host "  vbox-download-iso      Automatically download & mount Linux ISO (default: alpine, or -Distro ubuntu)"
+    Write-Host "  vbox-start  [-Gui]     Start VirtualBox VM (headless by default, or with GUI window via -Gui)"
     Write-Host "  vbox-stop   [-VmName]  Gracefully shut down VirtualBox VM"
     Write-Host "  vbox-status            List all configured and running VirtualBox VMs"
     Write-Host "  podman-status          Check Podman CLI, machines, and connection endpoints"
@@ -385,13 +392,56 @@ function Invoke-VBoxCreate {
     Write-Ok "VirtualBox VM '$VmName' fully created, storage attached, and configured in user profile."
 }
 
+function Invoke-VBoxDownloadIso {
+    if (-not (Test-Path $VBoxManagePath)) {
+        Write-Bad "VirtualBox not found at: $VBoxManagePath"
+        return
+    }
+
+    $isoDir = Join-Path $ToolsDir "iso"
+    if (-not (Test-Path $isoDir)) { New-Item -ItemType Directory -Force -Path $isoDir | Out-Null }
+
+    $targetUrl = ""
+    $fileName = ""
+
+    if ($Distro -eq "ubuntu") {
+        $fileName = "ubuntu-22.04.5-live-server-amd64.iso"
+        $targetUrl = "https://releases.ubuntu.com/22.04/ubuntu-22.04.5-live-server-amd64.iso"
+    } else {
+        $fileName = "alpine-standard-3.20.3-x86_64.iso"
+        $targetUrl = "https://dl-cdn.alpinelinux.org/alpine/v3.20/releases/x86_64/alpine-standard-3.20.3-x86_64.iso"
+    }
+
+    $targetPath = Join-Path $isoDir $fileName
+    if (-not (Test-Path $targetPath)) {
+        Write-Info "Downloading $Distro Linux ISO from $targetUrl..."
+        Write-Info "Saving to: $targetPath"
+        & curl.exe -L -# -o $targetPath $targetUrl
+        if ($LASTEXITCODE -ne 0 -or -not (Test-Path $targetPath)) {
+            Write-Bad "Failed to download ISO."
+            return
+        }
+        Write-Ok "ISO successfully downloaded: $targetPath"
+    } else {
+        Write-Ok "ISO already exists at: $targetPath"
+    }
+
+    # Mount ISO to VM DVD Drive
+    Write-Info "Mounting ISO to VirtualBox VM '$VmName'..."
+    & $VBoxManagePath storageattach $VmName --storagectl "SATA" --port 1 --device 0 --type dvddrive --medium $targetPath
+    Write-Ok "ISO '$fileName' mounted to '$VmName' (SATA Port 1)."
+    Write-Host "`nTo start the installer with GUI display, run:" -ForegroundColor Cyan
+    Write-Host "  .\lab.ps1 vbox-start -Gui" -ForegroundColor Yellow
+}
+
 function Invoke-VBoxStart {
     if (-not (Test-Path $VBoxManagePath)) {
         Write-Bad "VirtualBox not found at: $VBoxManagePath"
         return
     }
-    Write-Info "Starting VirtualBox VM '$VmName' in headless mode..."
-    & $VBoxManagePath startvm $VmName --type headless
+    $mode = if ($Gui) { "gui" } else { "headless" }
+    Write-Info "Starting VirtualBox VM '$VmName' in $mode mode..."
+    & $VBoxManagePath startvm $VmName --type $mode
 }
 
 function Invoke-VBoxStop {
@@ -779,8 +829,9 @@ switch ($Command) {
     "help"            { Show-Help }
     "preflight"       { Invoke-Preflight }
     "setup"           { Invoke-Setup }
-    "vbox-create"     { Invoke-VBoxCreate }
-    "vbox-start"      { Invoke-VBoxStart }
+    "vbox-create"       { Invoke-VBoxCreate }
+    "vbox-download-iso" { Invoke-VBoxDownloadIso }
+    "vbox-start"        { Invoke-VBoxStart }
     "vbox-stop"       { Invoke-VBoxStop }
     "vbox-status"     { Invoke-VBoxStatus }
     "podman-status"   { 
