@@ -28,10 +28,14 @@ strings_xml = (
     '</resources>'
 )
 
+from build_dex import build_minimal_dex
+
+dex_bytes = build_minimal_dex()
+
 with zipfile.ZipFile(apk_path, "w") as z:
     z.writestr("AndroidManifest.xml", manifest_xml.encode("utf-8"))
     z.writestr("res/values/strings.xml", strings_xml.encode("utf-8"))
-    z.writestr("classes.dex", b"dex\n035\x00")
+    z.writestr("classes.dex", dex_bytes)
 
 print(f"Sample APK generated: {apk_path} ({os.path.getsize(apk_path)} bytes)")
 

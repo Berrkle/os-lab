@@ -48,3 +48,27 @@ def test_web_ui_logs_and_reports_endpoints(web_server):
     assert req_reports.status == 200
     reports_data = json.loads(req_reports.read().decode("utf-8"))
     assert "reports" in reports_data
+
+
+def test_web_ui_upload_endpoint(web_server):
+    boundary = "----TestBoundary12345"
+    file_bytes = b"PK\x03\x04mock_apk_content"
+    body = (
+        f"--{boundary}\r\n"
+        f'Content-Disposition: form-data; name="apk"; filename="uploaded-sample.apk"\r\n'
+        f"Content-Type: application/vnd.android.package-archive\r\n\r\n"
+    ).encode("utf-8") + file_bytes + f"\r\n--{boundary}--\r\n".encode("utf-8")
+
+    req = urllib.request.Request(
+        f"{web_server}/api/upload",
+        data=body,
+        headers={"Content-Type": f"multipart/form-data; boundary={boundary}"}
+    )
+    with urllib.request.urlopen(req) as resp:
+        assert resp.status == 200
+        data = json.loads(resp.read().decode("utf-8"))
+        assert data["status"] == "success"
+        assert data["filename"] == "uploaded-sample.apk"
+        assert data["size"] == len(file_bytes)
+        assert data["path"].endswith("uploaded-sample.apk")
+

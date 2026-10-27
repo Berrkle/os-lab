@@ -20,7 +20,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet("help", "preflight", "setup", "vbox-create", "vbox-download-iso", "vbox-start", "vbox-autoinstall", "vbox-stop", "vbox-status", "podman-status", "wf1", "wf2", "hook", "report", "clean", "monitor", "telemetry", "dump-sandbox", "scan-secrets", "trace-crypto", "parse-flows", "analyze-app", "generate-report", "fuzz-ipc", "patch-apk", "agentic-plan", "ui")]
+    [ValidateSet("help", "preflight", "setup", "vbox-create", "vbox-download-iso", "vbox-start", "vbox-autoinstall", "vbox-deploy-android", "vbox-stop", "vbox-status", "podman-status", "mobsf-status", "mobsf-start", "mobsf-scan", "wf1", "wf2", "hook", "report", "clean", "monitor", "telemetry", "dump-sandbox", "scan-secrets", "trace-crypto", "parse-flows", "analyze-app", "generate-report", "fuzz-ipc", "patch-apk", "agentic-plan", "ui")]
     [string]$Command = "help",
 
     [Parameter()]
@@ -112,7 +112,22 @@ function Find-Adb {
     return $null
 }
 
+function Find-Java {
+    $localJava = Join-Path $ToolsDir "jdk\bin\java.exe"
+    if (Test-Path $localJava) {
+        $env:JAVA_HOME = (Join-Path $ToolsDir "jdk")
+        if ($env:PATH -notlike "*$ToolsDir\jdk\bin*") {
+            $env:PATH = "$ToolsDir\jdk\bin;$env:PATH"
+        }
+        return $localJava
+    }
+    $javaCmd = Get-Command java -ErrorAction SilentlyContinue
+    if ($javaCmd) { return $javaCmd.Source }
+    return $null
+}
+
 function Find-Jadx {
+    Find-Java | Out-Null
     $jadxCmd = Get-Command jadx -ErrorAction SilentlyContinue
     if ($jadxCmd) { return $jadxCmd.Source }
     $localJadx = Join-Path $ToolsDir "jadx\bin\jadx.bat"
@@ -133,9 +148,13 @@ function Show-Help {
     Write-Host "  vbox-download-iso      Automatically download & mount Linux ISO (default: alpine, or -Distro ubuntu)"
     Write-Host "  vbox-start  [-Gui]     Start VirtualBox VM (headless by default, or with GUI window via -Gui)"
     Write-Host "  vbox-autoinstall       Unattended guest OS (Alpine) installation & Docker provisioning"
+    Write-Host "  vbox-deploy-android    Deploy in-guest Android container and connect ADB on 5555"
     Write-Host "  vbox-stop   [-VmName]  Gracefully shut down VirtualBox VM"
     Write-Host "  vbox-status            List all configured and running VirtualBox VMs"
     Write-Host "  podman-status          Check Podman CLI, machines, and connection endpoints"
+    Write-Host "  mobsf-status           Check MobSF server availability on http://127.0.0.1:8000"
+    Write-Host "  mobsf-start            Start MobSF security framework container"
+    Write-Host "  mobsf-scan -Apk <f>    Upload APK to MobSF, trigger scan, and download JSON report"
     Write-Host "`nWorkflows & Analysis:"
     Write-Host "  wf1 -Apk <file>        Run Full Static Pipeline (JADX + Manifest + Analyzer + HTML Report)"
     Write-Host "  wf2 -Apk <f> -Pkg <p>  Run Dynamic Analysis (ADB connect, mitmproxy, launch)"
@@ -212,12 +231,12 @@ function Invoke-Preflight {
     }
 
     # 7. Java Check (required for JADX & Apktool)
-    $javaCmd = Get-Command java -ErrorAction SilentlyContinue
-    if ($javaCmd) {
-        $javaVer = & java -version 2>&1 | Select-Object -First 1
-        Write-Ok "Java: $javaVer"
+    $javaBin = Find-Java
+    if ($javaBin) {
+        $javaVer = & $javaBin -version 2>&1 | Select-Object -First 1
+        Write-Ok "Java: $javaVer ($javaBin)"
     } else {
-        Write-Warn "Java not found in PATH (needed for local JADX/Apktool decompilation)"
+        Write-Warn "Java not found in PATH or lab\tools\jdk (needed for local JADX/Apktool decompilation)"
     }
 
     # 8. ADB Check
@@ -897,6 +916,58 @@ function Invoke-Ui {
     & $py $uiScript $Port
 }
 
+function Invoke-VBoxDeployAndroid {
+    if (-not (Test-Path $VBoxManagePath)) {
+        Write-Bad "VirtualBox not found at: $VBoxManagePath"
+        return
+    }
+
+    $running = & $VBoxManagePath list runningvms
+    if ($running -notmatch "`"$VmName`"") {
+        Write-Info "Starting VM '$VmName' in headless mode..."
+        & $VBoxManagePath startvm $VmName --type headless
+        Start-Sleep -Seconds 8
+    }
+
+    Write-Host "=== 🤖 Deploying In-Guest Android Container in '$VmName' ===" -ForegroundColor Cyan
+    Write-Info "Logging into guest and initiating container launch..."
+    Send-VmKeyString "root" 1000
+
+    Send-VmKeyString "docker run -d --privileged --name android-container -p 5555:5555 -p 6080:6080 redroid/redroid:11.0.0-latest || docker start android-container" 3000
+
+    Write-Info "Probing guest ADB connection over localhost:5555..."
+    Start-Sleep -Seconds 5
+    $adb = Find-Adb
+    if ($adb) {
+        $adbOut = & $adb connect 127.0.0.1:5555 2>&1
+        Write-Host "ADB Output: $adbOut" -ForegroundColor Cyan
+        & $adb devices
+    }
+    Write-Ok "Android deployment command sent to VM."
+}
+
+function Invoke-MobsfStatus {
+    $py = if (Test-Path $VenvPython) { $VenvPython } else { "python" }
+    $client = Join-Path $ScriptDir "scripts\mobsf_client.py"
+    & $py $client status
+}
+
+function Invoke-MobsfStart {
+    $py = if (Test-Path $VenvPython) { $VenvPython } else { "python" }
+    $client = Join-Path $ScriptDir "scripts\mobsf_client.py"
+    & $py $client start
+}
+
+function Invoke-MobsfScan {
+    if (-not $Apk -or -not (Test-Path $Apk)) {
+        Write-Bad "Usage: .\lab.ps1 mobsf-scan -Apk path\to\app.apk"
+        return
+    }
+    $py = if (Test-Path $VenvPython) { $VenvPython } else { "python" }
+    $client = Join-Path $ScriptDir "scripts\mobsf_client.py"
+    & $py $client scan $Apk
+}
+
 # ---------------------------------------------------------------------------
 # COMMAND: CLEAN
 # ---------------------------------------------------------------------------
@@ -913,37 +984,41 @@ function Invoke-Clean {
 # DISPATCH
 # ---------------------------------------------------------------------------
 switch ($Command) {
-    "help"            { Show-Help }
-    "preflight"       { Invoke-Preflight }
-    "setup"           { Invoke-Setup }
-    "vbox-create"       { Invoke-VBoxCreate }
-    "vbox-download-iso" { Invoke-VBoxDownloadIso }
-    "vbox-start"        { Invoke-VBoxStart }
-    "vbox-autoinstall"  { Invoke-VBoxAutoInstall }
-    "vbox-stop"       { Invoke-VBoxStop }
-    "vbox-status"     { Invoke-VBoxStatus }
-    "podman-status"   { 
+    "help"                { Show-Help }
+    "preflight"           { Invoke-Preflight }
+    "setup"               { Invoke-Setup }
+    "vbox-create"         { Invoke-VBoxCreate }
+    "vbox-download-iso"   { Invoke-VBoxDownloadIso }
+    "vbox-start"          { Invoke-VBoxStart }
+    "vbox-autoinstall"    { Invoke-VBoxAutoInstall }
+    "vbox-deploy-android" { Invoke-VBoxDeployAndroid }
+    "vbox-stop"           { Invoke-VBoxStop }
+    "vbox-status"         { Invoke-VBoxStatus }
+    "podman-status"       { 
         $cmd = Get-Command podman -ErrorAction SilentlyContinue
         if ($cmd) { & podman system info } else { Write-Warn "Podman CLI not installed." }
     }
-    "wf1"             { Invoke-Wf1 }
-    "wf2"             { Invoke-Wf2 }
-    "analyze-app"     { Invoke-AnalyzeApp }
-    "generate-report" { Invoke-GenerateReport }
-    "fuzz-ipc"        { Invoke-FuzzIpc }
-    "patch-apk"       { Invoke-PatchApk }
-    "agentic-plan"    { Invoke-AgenticPlan }
-    "ui"              { Invoke-Ui }
-    "hook"            { Invoke-Hook }
-    "trace-crypto"    { Invoke-TraceCrypto }
-    "monitor"         { Invoke-Monitor }
-    "telemetry"       { Invoke-Telemetry }
-    "dump-sandbox"    { Invoke-DumpSandbox }
-    "scan-secrets"    { Invoke-ScanSecrets }
-    "parse-flows"     { Invoke-ParseFlows }
-    "report"          { Invoke-Report }
-    "clean"           { Invoke-Clean }
-    Default           { Show-Help }
+    "mobsf-status"        { Invoke-MobsfStatus }
+    "mobsf-start"         { Invoke-MobsfStart }
+    "mobsf-scan"          { Invoke-MobsfScan }
+    "wf1"                 { Invoke-Wf1 }
+    "wf2"                 { Invoke-Wf2 }
+    "analyze-app"         { Invoke-AnalyzeApp }
+    "generate-report"     { Invoke-GenerateReport }
+    "fuzz-ipc"            { Invoke-FuzzIpc }
+    "patch-apk"           { Invoke-PatchApk }
+    "agentic-plan"        { Invoke-AgenticPlan }
+    "ui"                  { Invoke-Ui }
+    "hook"                { Invoke-Hook }
+    "trace-crypto"        { Invoke-TraceCrypto }
+    "monitor"             { Invoke-Monitor }
+    "telemetry"           { Invoke-Telemetry }
+    "dump-sandbox"        { Invoke-DumpSandbox }
+    "scan-secrets"        { Invoke-ScanSecrets }
+    "parse-flows"         { Invoke-ParseFlows }
+    "report"              { Invoke-Report }
+    "clean"               { Invoke-Clean }
+    Default               { Show-Help }
 }
 
 

@@ -289,6 +289,15 @@ HTML_DASHBOARD = """<!DOCTYPE html>
         </div>
       </div>
 
+      <!-- Direct APK Upload Dropzone -->
+      <div class="card" id="drop-zone" style="margin-bottom: 20px; border: 2px dashed var(--accent); background: rgba(99, 102, 241, 0.05); text-align: center; padding: 24px 20px; cursor: pointer; transition: all 0.2s;" onclick="document.getElementById('apk-file-picker').click()">
+        <input type="file" id="apk-file-picker" accept=".apk" style="display: none;" onchange="handleFileSelect(this.files)">
+        <div style="font-size: 32px; margin-bottom: 8px;">📦</div>
+        <h3 style="margin-bottom: 6px;">Drop APK File Here or Click to Upload</h3>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">Stage native APK package for zero-admin automated scanning</p>
+        <div id="upload-status" style="font-size: 13px; font-weight: 600; color: var(--cyan); display: none;"></div>
+      </div>
+
       <div class="card">
         <h3>Quick Pipeline Launch</h3>
         <p style="color:var(--text-muted); margin-bottom: 16px;">Trigger instant security workflows on target APK:</p>
@@ -443,6 +452,59 @@ HTML_DASHBOARD = """<!DOCTYPE html>
         container.innerHTML = html;
       });
   }
+
+  // Drag and Drop APK Upload Handlers
+  window.addEventListener('DOMContentLoaded', () => {
+    const dropZone = document.getElementById('drop-zone');
+    if (dropZone) {
+      dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = 'var(--cyan)';
+        dropZone.style.background = 'rgba(6, 182, 212, 0.12)';
+      });
+      dropZone.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = 'var(--accent)';
+        dropZone.style.background = 'rgba(99, 102, 241, 0.05)';
+      });
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = 'var(--accent)';
+        dropZone.style.background = 'rgba(99, 102, 241, 0.05)';
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          handleFileSelect(e.dataTransfer.files);
+        }
+      });
+    }
+  });
+
+  function handleFileSelect(files) {
+    if (!files || files.length === 0) return;
+    const file = files[0];
+    const statusEl = document.getElementById('upload-status');
+    statusEl.style.display = 'block';
+    statusEl.innerText = `⏳ Uploading ${file.name} (${Math.round(file.size / 1024)} KB)...`;
+
+    const formData = new FormData();
+    formData.append('apk', file);
+    fetch('/api/upload', {
+      method: 'POST',
+      body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.status === 'success') {
+        statusEl.innerHTML = `✅ Staged <strong>${data.filename}</strong> (${Math.round(data.size / 1024)} KB) into <code>${data.path}</code>`;
+        const apkInput = document.getElementById('target-apk-input');
+        if (apkInput) apkInput.value = data.path;
+      } else {
+        statusEl.innerText = `❌ Upload failed: ${data.error || 'Unknown error'}`;
+      }
+    })
+    .catch(err => {
+      statusEl.innerText = `❌ Upload error: ${err}`;
+    });
+  }
 </script>
 </body>
 </html>
@@ -561,6 +623,60 @@ class LabHttpHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Type", "application/json")
             self.end_headers()
             self.wfile.write(json.dumps({"status": "started", "title": title}).encode("utf-8"))
+
+        elif self.path == "/api/upload":
+            content_type = self.headers.get("Content-Type", "")
+            length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(length)
+
+            filename = "uploaded_app.apk"
+            file_data = b""
+
+            if "multipart/form-data" in content_type and "boundary=" in content_type:
+                boundary = content_type.split("boundary=")[-1].strip()
+                if boundary.startswith('"') and boundary.endswith('"'):
+                    boundary = boundary[1:-1]
+                parts = body.split(f"--{boundary}".encode("utf-8"))
+                for part in parts:
+                    if b'filename="' in part:
+                        import re
+                        m = re.search(rb'filename="([^"]+)"', part)
+                        if m:
+                            filename = os.path.basename(m.group(1).decode("utf-8", errors="ignore"))
+                        header_and_body = part.split(b"\r\n\r\n", 1)
+                        if len(header_and_body) > 1:
+                            file_data = header_and_body[1].rstrip(b"\r\n--")
+                        break
+            else:
+                filename = self.headers.get("X-Filename", "uploaded_app.apk")
+                file_data = body
+
+            if not file_data:
+                self.send_response(400)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": "No file uploaded or empty payload"}).encode("utf-8"))
+                return
+
+            apks_dir = os.path.join(SCRIPT_DIR, "apks")
+            os.makedirs(apks_dir, exist_ok=True)
+            save_path = os.path.join(apks_dir, filename)
+            with open(save_path, "wb") as f:
+                f.write(file_data)
+
+            rel_path = os.path.relpath(save_path, SCRIPT_DIR).replace("\\", "/")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({
+                "status": "success",
+                "filename": filename,
+                "path": rel_path,
+                "size": len(file_data)
+            }).encode("utf-8"))
+        else:
+            self.send_response(404)
+            self.end_headers()
 
 
 def main():

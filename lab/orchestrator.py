@@ -18,6 +18,19 @@ SCRIPTS_DIR = os.path.join(SCRIPT_DIR, "scripts")
 VENV_DIR = os.path.join(SCRIPT_DIR, ".venv")
 VBOX_MANAGE = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe" if sys.platform == "win32" else "VBoxManage"
 
+# Configure userland portable JDK and platform-tools if present
+JDK_DIR = os.path.join(SCRIPT_DIR, "tools", "jdk")
+if os.path.isdir(JDK_DIR):
+    os.environ["JAVA_HOME"] = JDK_DIR
+    jdk_bin = os.path.join(JDK_DIR, "bin")
+    if jdk_bin not in os.environ.get("PATH", ""):
+        os.environ["PATH"] = jdk_bin + os.pathsep + os.environ.get("PATH", "")
+
+ADB_DIR = os.path.join(SCRIPT_DIR, "tools", "platform-tools")
+if os.path.isdir(ADB_DIR):
+    if ADB_DIR not in os.environ.get("PATH", ""):
+        os.environ["PATH"] = ADB_DIR + os.pathsep + os.environ.get("PATH", "")
+
 
 def run_preflight() -> bool:
     print("=== 🔍 Mobile Security Lab Pre-Flight Checks ===")
@@ -100,7 +113,7 @@ def run_wf1(apk_path: str):
         jadx_out = os.path.join(out_dir, "jadx_out")
         print(f"Decompiling with JADX to {jadx_out}...")
         try:
-            subprocess.run([jadx, "-d", jadx_out, apk_abs], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            subprocess.run([jadx, "-d", jadx_out, apk_abs], env=os.environ.copy(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             print("JADX decompilation complete.")
         except Exception as e:
             print(f"JADX decompilation error: {e}")

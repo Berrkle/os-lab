@@ -153,49 +153,123 @@ def parse_manifest_details(manifest_bytes: bytes) -> dict:
         "receivers": [],
         "providers": [],
         "exported_components": [],
+        "deep_links": [],
     }
 
-    raw_strings = extract_strings_from_bytes(manifest_bytes)
-    raw_text = " ".join(raw_strings)
+    parsed_xml = False
+    try:
+        import xml.etree.ElementTree as ET
+        xml_text = manifest_bytes.decode('utf-8', errors='ignore')
+        if "<manifest" in xml_text:
+            root = ET.fromstring(xml_text)
+            parsed_xml = True
+            details["package_name"] = root.attrib.get("package", details["package_name"])
+            ns = "{http://schemas.android.com/apk/res/android}"
+            details["version_name"] = root.attrib.get(f"{ns}versionName", "unknown")
+            details["version_code"] = root.attrib.get(f"{ns}versionCode", "unknown")
 
-    # Detect package name
-    m_pkg = re.search(r'package=["\']([a-zA-Z0-9_\.]+)["\']', raw_text)
-    if m_pkg:
-        details["package_name"] = m_pkg.group(1)
-    else:
-        candidates = [s for s in raw_strings if re.match(r'^[a-z][a-z0-9_]*(\.[a-z0-9_]+)+$', s) and not s.startswith("android.") and not s.startswith("androidx.")]
-        if candidates:
-            details["package_name"] = candidates[0]
+            app_elem = root.find("application")
+            if app_elem is not None:
+                if f"{ns}debuggable" in app_elem.attrib:
+                    details["flags"]["debuggable"] = app_elem.attrib[f"{ns}debuggable"].lower() == "true"
+                if f"{ns}allowBackup" in app_elem.attrib:
+                    details["flags"]["allowBackup"] = app_elem.attrib[f"{ns}allowBackup"].lower() == "true"
+                if f"{ns}usesCleartextTraffic" in app_elem.attrib:
+                    details["flags"]["usesCleartextTraffic"] = app_elem.attrib[f"{ns}usesCleartextTraffic"].lower() == "true"
 
-    # Flags
-    if "debuggable" in raw_text:
-        details["flags"]["debuggable"] = True
-    if "allowBackup" in raw_text:
-        details["flags"]["allowBackup"] = True
-    if "usesCleartextTraffic" in raw_text:
-        details["flags"]["usesCleartextTraffic"] = True
-    if "testOnly" in raw_text:
-        details["flags"]["testOnly"] = True
+                for child in app_elem:
+                    tag = child.tag
+                    name = child.attrib.get(f"{ns}name", "")
+                    exported_attr = child.attrib.get(f"{ns}exported")
+                    perm = child.attrib.get(f"{ns}permission", None)
+                    intent_filters = child.findall("intent-filter")
 
-    # Permissions
-    perm_set = set()
-    for s in raw_strings:
-        if "android.permission." in s:
-            m = re.search(r'(android\.permission\.[A-Za-z0-9_]+)', s)
-            if m:
-                perm_set.add(m.group(1))
-    details["permissions"] = sorted(list(perm_set))
+                    is_exported = False
+                    if exported_attr is not None:
+                        is_exported = exported_attr.lower() == "true"
+                    elif len(intent_filters) > 0:
+                        is_exported = True
 
-    # Detect components
-    for s in raw_strings:
-        if s.endswith("Activity"):
-            details["activities"].append(s)
-        elif s.endswith("Service"):
-            details["services"].append(s)
-        elif s.endswith("Receiver"):
-            details["receivers"].append(s)
-        elif s.endswith("Provider"):
-            details["providers"].append(s)
+                    if tag == "activity":
+                        details["activities"].append(name)
+                    elif tag == "service":
+                        details["services"].append(name)
+                    elif tag == "receiver":
+                        details["receivers"].append(name)
+                    elif tag == "provider":
+                        details["providers"].append(name)
+
+                    if is_exported and name:
+                        details["exported_components"].append({
+                            "type": tag,
+                            "name": name,
+                            "permission": perm
+                        })
+
+                    for inf in intent_filters:
+                        auto_verify = inf.attrib.get(f"{ns}autoVerify", "false").lower() == "true"
+                        for data in inf.findall("data"):
+                            scheme = data.attrib.get(f"{ns}scheme")
+                            host = data.attrib.get(f"{ns}host", "")
+                            path = data.attrib.get(f"{ns}path") or data.attrib.get(f"{ns}pathPrefix") or ""
+                            if scheme:
+                                details["deep_links"].append({
+                                    "component": name,
+                                    "scheme": scheme,
+                                    "host": host,
+                                    "path": path,
+                                    "autoVerify": auto_verify
+                                })
+
+            for perm in root.findall("uses-permission"):
+                pname = perm.attrib.get(f"{ns}name")
+                if pname:
+                    details["permissions"].append(pname)
+    except Exception:
+        pass
+
+    if not parsed_xml:
+        raw_strings = extract_strings_from_bytes(manifest_bytes)
+        raw_text = " ".join(raw_strings)
+
+        # Detect package name
+        m_pkg = re.search(r'package=["\']([a-zA-Z0-9_\.]+)["\']', raw_text)
+        if m_pkg:
+            details["package_name"] = m_pkg.group(1)
+        else:
+            candidates = [s for s in raw_strings if re.match(r'^[a-z][a-z0-9_]*(\.[a-z0-9_]+)+$', s) and not s.startswith("android.") and not s.startswith("androidx.")]
+            if candidates:
+                details["package_name"] = candidates[0]
+
+        # Flags
+        if "debuggable" in raw_text:
+            details["flags"]["debuggable"] = True
+        if "allowBackup" in raw_text:
+            details["flags"]["allowBackup"] = True
+        if "usesCleartextTraffic" in raw_text:
+            details["flags"]["usesCleartextTraffic"] = True
+        if "testOnly" in raw_text:
+            details["flags"]["testOnly"] = True
+
+        # Permissions
+        perm_set = set()
+        for s in raw_strings:
+            if "android.permission." in s:
+                m = re.search(r'(android\.permission\.[A-Za-z0-9_]+)', s)
+                if m:
+                    perm_set.add(m.group(1))
+        details["permissions"] = sorted(list(perm_set))
+
+        # Detect components
+        for s in raw_strings:
+            if s.endswith("Activity"):
+                details["activities"].append(s)
+            elif s.endswith("Service"):
+                details["services"].append(s)
+            elif s.endswith("Receiver"):
+                details["receivers"].append(s)
+            elif s.endswith("Provider"):
+                details["providers"].append(s)
 
     details["activities"] = sorted(list(set(details["activities"])))
     details["services"] = sorted(list(set(details["services"])))
@@ -291,6 +365,35 @@ def analyze_app(apk_path: str, out_dir: str = None) -> dict:
                     "desc": "The android:allowBackup attribute is enabled. App sandbox data can be backed up and extracted via adb backup.",
                     "remediation": "Set android:allowBackup=\"false\" unless cloud backup is required, in which case restrict fullBackupContent."
                 })
+
+            # Exported components without permissions check
+            if pkg_info.get("exported_components"):
+                unprotected = [c for c in pkg_info["exported_components"] if not c.get("permission")]
+                if unprotected:
+                    comp_names = [c["name"] for c in unprotected[:3]]
+                    results["vulnerabilities"].append({
+                        "id": "INTENT-UNPROTECTED-EXPORT",
+                        "title": f"Unprotected Exported Components ({len(unprotected)})",
+                        "severity": "HIGH",
+                        "owasp": "M4",
+                        "desc": f"Exported components ({', '.join(comp_names)}) do not require permissions. Malicious apps on the device can send implicit or explicit intents to invoke them without authorization.",
+                        "remediation": "Set android:exported=\"false\" for internal components or enforce custom android:permission."
+                    })
+
+            # Deep links & custom URL schemes
+            if pkg_info.get("deep_links"):
+                results["attack_surface"]["deep_links_count"] = len(pkg_info["deep_links"])
+                custom_schemes = [dl for dl in pkg_info["deep_links"] if dl["scheme"].lower() not in ("http", "https")]
+                if custom_schemes:
+                    schemes_list = list(set(f"{dl['scheme']}://{dl['host']}" for dl in custom_schemes))
+                    results["vulnerabilities"].append({
+                        "id": "DEEPLINK-CUSTOM-SCHEME",
+                        "title": f"Custom URL Scheme Deep Links ({', '.join(schemes_list[:2])})",
+                        "severity": "MEDIUM",
+                        "owasp": "M4",
+                        "desc": "Custom URL schemes can be registered by any other application on the device without verification, risking URL hijacking and parameter injection.",
+                        "remediation": "Upgrade custom schemes to verified Android App Links with android:autoVerify=\"true\" and Digital Asset Links."
+                    })
 
         # 2. Network Security Config presence
         nsc_files = [f for f in file_list if "network_security_config" in f.lower() or "network_security" in f.lower()]

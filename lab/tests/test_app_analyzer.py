@@ -16,6 +16,9 @@ def test_app_analyzer_finds_vulnerabilities(sample_apk, tmp_path):
     assert "MAN-DEBUGGABLE" in vuln_ids
     assert "MAN-CLEARTEXT" in vuln_ids
     assert "MAN-BACKUP" in vuln_ids
+    assert "INTENT-UNPROTECTED-EXPORT" in vuln_ids
+    assert "DEEPLINK-CUSTOM-SCHEME" in vuln_ids
+    assert result["attack_surface"]["deep_links_count"] >= 1
 
     # Check secrets integrated into analysis
     assert len(result["secrets"]) >= 3
