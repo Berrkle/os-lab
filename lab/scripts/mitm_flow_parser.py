@@ -118,6 +118,7 @@ def parse_flows_fallback(flow_file: str, out_dir: str):
     http_urls = [u.decode('ascii', errors='ignore') for u in urls if u.startswith(b'http://')]
     https_urls = [u.decode('ascii', errors='ignore') for u in urls if u.startswith(b'https://')]
 
+    os.makedirs(out_dir, exist_ok=True)
     md_path = os.path.join(out_dir, "traffic-summary.md")
     with open(md_path, "w", encoding="utf-8") as f:
         f.write("# 🌐 Captured Traffic (Binary Stream Extraction)\n\n")
@@ -131,6 +132,15 @@ def parse_flows_fallback(flow_file: str, out_dir: str):
         f.write("## 🔒 HTTPS Endpoints\n\n")
         for u in https_urls[:50]:
             f.write(f"- `{u}`\n")
+
+    json_path = os.path.join(out_dir, "traffic-audit-fallback.json")
+    with open(json_path, "w", encoding="utf-8") as f:
+        json.dump({
+            "flow_file": flow_file,
+            "total_endpoints_found": len(urls),
+            "cleartext_http_count": len(http_urls),
+            "extracted_endpoints": sorted(list(http_urls + https_urls))
+        }, f, indent=2)
 
     print(f"Fallback report saved to: {md_path}")
 

@@ -11,3 +11,5 @@ tools/*
 !tools/platform-tools/
 __pycache__/
 *.pyc
+scripts/*.apk
+.pytest_cache/

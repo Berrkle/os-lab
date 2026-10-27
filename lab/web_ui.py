@@ -460,6 +460,12 @@ class LabHttpHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(HTML_DASHBOARD.encode("utf-8"))
 
+        elif path == "/api/health" or path == "/healthz":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"status": "ok", "app": "apk-lab", "version": "1.0.0"}).encode("utf-8"))
+
         elif path == "/api/logs":
             self.send_response(200)
             self.send_header("Content-Type", "application/json")

@@ -64,6 +64,13 @@ param(
 )
 
 $ErrorActionPreference = "Continue"
+
+# Resolve relative file parameters against the caller's working directory BEFORE changing directory
+if ($Apk -and (Test-Path $Apk)) { $Apk = (Resolve-Path $Apk).Path }
+if ($Hook -and (Test-Path $Hook)) { $Hook = (Resolve-Path $Hook).Path }
+if ($FlowFile -and (Test-Path $FlowFile)) { $FlowFile = (Resolve-Path $FlowFile).Path }
+if ($Iso -and (Test-Path $Iso)) { $Iso = (Resolve-Path $Iso).Path }
+
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $ScriptDir
 

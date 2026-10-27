@@ -159,9 +159,13 @@ def parse_manifest_details(manifest_bytes: bytes) -> dict:
     raw_text = " ".join(raw_strings)
 
     # Detect package name
-    candidates = [s for s in raw_strings if re.match(r'^[a-z][a-z0-9_]*(\.[a-z0-9_]+)+$', s) and not s.startswith("android.") and not s.startswith("androidx.")]
-    if candidates:
-        details["package_name"] = candidates[0]
+    m_pkg = re.search(r'package=["\']([a-zA-Z0-9_\.]+)["\']', raw_text)
+    if m_pkg:
+        details["package_name"] = m_pkg.group(1)
+    else:
+        candidates = [s for s in raw_strings if re.match(r'^[a-z][a-z0-9_]*(\.[a-z0-9_]+)+$', s) and not s.startswith("android.") and not s.startswith("androidx.")]
+        if candidates:
+            details["package_name"] = candidates[0]
 
     # Flags
     if "debuggable" in raw_text:
