@@ -6,3 +6,12 @@ apks/*
 frida/*
 !frida/.gitkeep
 *.mitm
+.venv/
+tools/*
+!tools/platform-tools/
+__pycache__/
+*.pyc
+scripts/*.apk
+scripts/*.dex
+.pytest_cache/
+

@@ -12,6 +12,7 @@
 | 0 | Global Pre-Flight (OS check) | check os / setup | setup.md |
 | 1 | Kali Linux — Native Path | install / run / verify | setup.md |
 | 2 | Windows 11 — WSL2 Path | setup / run / verify | setup.md |
+| 2b| Windows Non-Admin (VBox/Podman/Userland) | setup / run / verify | windows-nonadmin-lab.md |
 | 3 | VirtualBox Ubuntu VM (cross-platform fallback) | setup / run | setup.md |
 | 4 | macOS — VM-only path | setup | setup.md |
 | 5 | Universal Docker-Android run & lifecycle | run / execute / follow | setup.md, draft.md |
@@ -117,6 +118,40 @@ sudo chown root:kvm /dev/kvm && sudo chmod 660 /dev/kvm
 
 # Step 5 — Run (identical docker run as Section 1)
 # Browser → http://localhost:6080 (WSL2 forwards localhost by default)
+```
+
+---
+
+## 2b. 🪟 Windows Non-Admin Path (Zero-Elevation: VirtualBox, Podman & Userland)
+
+**Classification:** `Infrastructure → Environment (Non-Admin)` | For users without Administrator rights / UAC elevation, or where firmware VT-x is disabled.
+
+See [`knowledge/windows-nonadmin-lab.md`](knowledge/windows-nonadmin-lab.md) and [`lab/README-WINDOWS.md`](lab/README-WINDOWS.md).
+
+```powershell
+# Step 1 — Pre-flight (OS, ports, VBox, tools)
+cd lab
+.\lab.ps1 preflight
+
+# Step 2 — Bootstrap userland .venv (frida, mitmproxy, portable ADB & JADX)
+.\lab.ps1 setup
+
+# Step 3 — VirtualBox Headless VM (User-space, no admin required)
+.\lab.ps1 vbox-create -VmName "apk-lab-vm" -Memory 4096 -Cpus 2
+.\lab.ps1 vbox-start -VmName "apk-lab-vm"
+.\lab.ps1 vbox-status
+
+# Step 4 — Run Static Analysis (WF1)
+.\lab.ps1 wf1 -Apk path\to\app.apk
+
+# Step 5 — Run Dynamic Analysis (WF2)
+.\lab.ps1 wf2 -Apk path\to\app.apk -Pkg com.example.app
+
+# Step 6 — Hook with Frida
+.\lab.ps1 hook -Pkg com.example.app -Hook hooks\ssl-pinning-bypass.js
+
+# Step 7 — Collect reports
+.\lab.ps1 report
 ```
 
 ---
