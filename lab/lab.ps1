@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Windows Mobile Security Lab Orchestrator (Zero-Admin / Non-Elevated Compatible)
 .DESCRIPTION
@@ -491,17 +491,17 @@ function Invoke-VBoxStatus {
     & $VBoxManagePath list runningvms
 }
 
+function Send-VmKeyString([string]$str, [int]$sleepMs = 400) {
+    & $VBoxManagePath controlvm $VmName keyboardputstring $str
+    Start-Sleep -Milliseconds 250
+    & $VBoxManagePath controlvm $VmName keyboardputscancode 1c 9c
+    Start-Sleep -Milliseconds $sleepMs
+}
+
 function Invoke-VBoxAutoInstall {
     if (-not (Test-Path $VBoxManagePath)) {
         Write-Bad "VirtualBox not found at: $VBoxManagePath"
         return
-    }
-
-    function Send-VmKeyString([string]$str, [int]$sleepMs = 400) {
-        & $VBoxManagePath controlvm $VmName keyboardputstring $str
-        Start-Sleep -Milliseconds 250
-        & $VBoxManagePath controlvm $VmName keyboardputscancode 1c 9c
-        Start-Sleep -Milliseconds $sleepMs
     }
 
     Write-Host "`n=== 🤖 Automated Alpine Linux & Docker Provisioner ===" -ForegroundColor Cyan
