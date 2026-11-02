@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Windows Mobile Security Lab Orchestrator (Zero-Admin / Non-Elevated Compatible)
 .DESCRIPTION
@@ -64,6 +64,9 @@ param(
 )
 
 $ErrorActionPreference = "Continue"
+
+# Ensure TLS 1.2 is enabled for Invoke-WebRequest across Windows PowerShell 5.1 & Core
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12 -bor [System.Net.SecurityProtocolType]::Tls11 -bor [System.Net.SecurityProtocolType]::Tls
 
 # Resolve relative file parameters against the caller's working directory BEFORE changing directory
 if ($Apk -and (Test-Path $Apk)) { $Apk = (Resolve-Path $Apk).Path }
@@ -308,7 +311,9 @@ function Invoke-Setup {
     Write-Ok "Installed Python tools in .venv"
 
     # Freeze requirements
-    & $VenvPip freeze > (Join-Path $ScriptDir "requirements.txt")
+    $reqFile = Join-Path $ScriptDir "requirements.txt"
+    $freezeOut = & $VenvPip freeze
+    [System.IO.File]::WriteAllLines($reqFile, $freezeOut, (New-Object System.Text.UTF8Encoding($false)))
     Write-Ok "State saved to requirements.txt"
 
     # 3. Download portable Android platform-tools if ADB is missing
@@ -567,7 +572,7 @@ function Invoke-VBoxAutoInstall {
 
     Write-Ok "VM '$VmName' successfully provisioned with Alpine Linux and Docker!"
     Write-Host "`nDocker is active. Next: Start docker-android container with:" -ForegroundColor Green
-    Write-Host "  curl -fsSL https://raw.githubusercontent.com/keyvanarasteh/apk-lab/feat/windows-lab-setup/lab/scripts/setup-docker-android.sh | sh" -ForegroundColor Yellow
+    Write-Host "  curl -fsSL https://raw.githubusercontent.com/keyvanarasteh/apk-lab/master/lab/scripts/setup-docker-android.sh | sh" -ForegroundColor Yellow
 }
 
 # ---------------------------------------------------------------------------
