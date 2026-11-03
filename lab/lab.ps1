@@ -496,17 +496,30 @@ function Invoke-VBoxStatus {
     & $VBoxManagePath list runningvms
 }
 
+$script:LastKeySendSucceeded = $true
+
+function Send-VmKeyString([string]$str, [int]$sleepMs = 400) {
+    & $VBoxManagePath controlvm $VmName keyboardputstring $str
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warn "Failed to send keystrokes to VM '$VmName' (VBoxManage exit code $LASTEXITCODE). Is the VM still running?"
+        $script:LastKeySendSucceeded = $false
+        return
+    }
+    Start-Sleep -Milliseconds 250
+    & $VBoxManagePath controlvm $VmName keyboardputscancode 1c 9c
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warn "Failed to send Enter keystroke to VM '$VmName' (VBoxManage exit code $LASTEXITCODE)."
+        $script:LastKeySendSucceeded = $false
+        return
+    }
+    Start-Sleep -Milliseconds $sleepMs
+    $script:LastKeySendSucceeded = $true
+}
+
 function Invoke-VBoxAutoInstall {
     if (-not (Test-Path $VBoxManagePath)) {
         Write-Bad "VirtualBox not found at: $VBoxManagePath"
         return
-    }
-
-    function Send-VmKeyString([string]$str, [int]$sleepMs = 400) {
-        & $VBoxManagePath controlvm $VmName keyboardputstring $str
-        Start-Sleep -Milliseconds 250
-        & $VBoxManagePath controlvm $VmName keyboardputscancode 1c 9c
-        Start-Sleep -Milliseconds $sleepMs
     }
 
     Write-Host "`n=== 🤖 Automated Alpine Linux & Docker Provisioner ===" -ForegroundColor Cyan
@@ -937,18 +950,48 @@ function Invoke-VBoxDeployAndroid {
     Write-Host "=== 🤖 Deploying In-Guest Android Container in '$VmName' ===" -ForegroundColor Cyan
     Write-Info "Logging into guest and initiating container launch..."
     Send-VmKeyString "root" 1000
+    if (-not $script:LastKeySendSucceeded) {
+        Write-Bad "Could not log into guest VM '$VmName'. Aborting deployment."
+        return
+    }
 
     Send-VmKeyString "docker run -d --privileged --name android-container -p 5555:5555 -p 6080:6080 redroid/redroid:11.0.0-latest || docker start android-container" 3000
-
-    Write-Info "Probing guest ADB connection over localhost:5555..."
-    Start-Sleep -Seconds 5
-    $adb = Find-Adb
-    if ($adb) {
-        $adbOut = & $adb connect 127.0.0.1:5555 2>&1
-        Write-Host "ADB Output: $adbOut" -ForegroundColor Cyan
-        & $adb devices
+    if (-not $script:LastKeySendSucceeded) {
+        Write-Bad "Could not send the docker run command to guest VM '$VmName'. Aborting deployment."
+        return
     }
-    Write-Ok "Android deployment command sent to VM."
+
+    Write-Info "Waiting for the Android container to come up and ADB to go online (up to 60s)..."
+    $adb = Find-Adb
+    if (-not $adb) {
+        Write-Warn "ADB not found; skipping connection probe. Deployment command was sent, but could not verify the device came online."
+        return
+    }
+
+    $timeoutSeconds = 60
+    $pollIntervalSeconds = 5
+    $elapsed = 0
+    $deviceOnline = $false
+    while ($elapsed -lt $timeoutSeconds) {
+        Start-Sleep -Seconds $pollIntervalSeconds
+        $elapsed += $pollIntervalSeconds
+        $adbOut = & $adb connect 127.0.0.1:5555 2>&1
+        $devices = & $adb devices
+        if ($devices -match "127\.0\.0\.1:5555\s+device\b") {
+            $deviceOnline = $true
+            break
+        }
+        Write-Info "Still waiting for ADB device to come online... (${elapsed}s/${timeoutSeconds}s)"
+    }
+
+    Write-Host "ADB Output: $adbOut" -ForegroundColor Cyan
+    & $adb devices
+
+    if ($deviceOnline) {
+        Write-Ok "Android container is up and ADB device is online."
+    } else {
+        Write-Warn "Android deployment command was sent, but ADB device did not come online within ${timeoutSeconds}s. It may still be booting; re-run '.\lab.ps1 vbox-deploy-android' or check the VM console."
+    }
 }
 
 function Invoke-MobsfStatus {
