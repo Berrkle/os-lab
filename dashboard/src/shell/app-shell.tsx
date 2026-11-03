@@ -159,7 +159,7 @@ function buildMeta(): Record<string, SpotlightMeta> {
     "lab-macos": { description: "Native Xcode Simulator and Appium on a Mac", aliases: ["mac", "appium", "xcuitest"] },
     "lab-linux": { description: "Linux VM with web console and SSH", aliases: ["linux", "ssh", "vm"] },
     health: { description: "GET /api/health", aliases: ["status", "api"] },
-    contribute: { description: "How to set up, test, rebuild and open a pull request", aliases: ["contribute", "contributing", "pull request", "pr", "development", "tests"] },
+    contribute: { description: "How to set up, test, rebuild, open a pull request and view roadmap TODOs", aliases: ["contribute", "contributing", "pull request", "pr", "development", "tests", "todos", "roadmap", "pentesting", "firewall", "tasks"] },
     "legal-terms": { description: "Licence, authorized use, OS licences, no warranty", aliases: ["legal", "terms", "license", "warranty", "liability"] },
     "legal-acceptable-use": { description: "Supported and unsupported use, responsible disclosure", aliases: ["legal", "aup", "policy", "disclosure"] },
     "legal-privacy": { description: "Local-only console, browser storage, network connections, analytics", aliases: ["legal", "privacy", "gdpr", "kvkk", "telemetry", "cookies"] },
