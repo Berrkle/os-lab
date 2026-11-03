@@ -58,7 +58,27 @@ banner() {
 EOF
   printf '%s\n' "$RESET"
 }
-usage() { sed -n '2,29p' "$0" | sed 's/^#\{0,1\} \{0,1\}//'; }
+# Self-contained so it works when piped via `curl | bash` (no readable $0).
+usage() {
+  cat <<'EOF'
+os-lab one-command setup — macOS
+
+Usage: install-macos.sh [options]   (or: curl -fsSL .../install-macos.sh | bash)
+
+Options:
+  -d, --dir DIR      install/checkout directory      (default: $HOME/os-lab)
+  -b, --branch NAME  git branch to track             (default: master)
+  -p, --port N       web console port                (default: 5050)
+      --report-only  detect + report only; change nothing
+      --no-install   do not install prerequisites via Homebrew
+      --no-run       set up but do not launch the web console
+      --minimal      virtualenv for the UI only (skip heavy tool deps)
+      --update       pull latest even if the checkout already exists
+  -h, --help         show this help
+
+Environment overrides: OSLAB_REPO, OSLAB_DIR, OSLAB_BRANCH, OSLAB_PORT
+EOF
+}
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -130,12 +150,29 @@ print_report() {
   hr
 }
 
+# Make a Homebrew install visible on PATH in the current shell.
+brew_shellenv() {
+  local p
+  for p in /opt/homebrew/bin/brew /usr/local/bin/brew; do
+    [ -x "$p" ] && { eval "$("$p" shellenv)" 2>/dev/null || true; return; }
+  done
+  have brew && eval "$(brew shellenv)" 2>/dev/null || true
+}
+
 ensure_prereqs() {
   if ! have brew; then
-    warn "Homebrew not found — it is the recommended way to install prerequisites."
-    printf '   install it with:\n     %s/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"%s\n' "$DIM" "$RESET"
-    have git && have python3 && { ok "git and python3 already present; continuing without Homebrew"; return 0; }
-    die "git and/or python3 missing and Homebrew unavailable"
+    if have git && have python3; then
+      ok "git and python3 already present; continuing without Homebrew"; return 0
+    fi
+    step "Homebrew not found — bootstrapping it (non-interactive)"
+    NONINTERACTIVE=1 /bin/bash -c \
+      "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" \
+      || warn "Homebrew bootstrap reported errors; continuing"
+    brew_shellenv
+    have brew || {
+      have git && have python3 && { ok "prerequisites present despite no brew; continuing"; return 0; }
+      die "Homebrew unavailable and git/python3 missing — install Homebrew manually, then re-run"
+    }
   fi
   local want=()
   have git     || want+=("git")
@@ -143,6 +180,7 @@ ensure_prereqs() {
   if [ "${#want[@]}" -eq 0 ]; then ok "all core prerequisites already present"; return 0; fi
   step "installing via Homebrew: ${want[*]}"
   brew install "${want[@]}" || warn "brew install reported errors; continuing"
+  brew_shellenv   # expose newly installed python3/git on PATH for this run
 }
 
 REPO_ROOT=""; CLONED=0
@@ -163,7 +201,8 @@ locate_or_clone() {
     local cur; cur="$(git -C "$REPO_ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null)"
     step "updating checkout (branch: $cur)"
     git -C "$REPO_ROOT" fetch --quiet origin "$cur" 2>/dev/null || warn "git fetch failed (offline?)"
-    if git -C "$REPO_ROOT" diff --quiet && git -C "$REPO_ROOT" diff --cached --quiet; then
+    # porcelain is empty only when tracked AND untracked trees are clean
+    if [ -z "$(git -C "$REPO_ROOT" status --porcelain)" ]; then
       git -C "$REPO_ROOT" pull --quiet --ff-only origin "$cur" 2>/dev/null \
         && ok "updated to $(git -C "$REPO_ROOT" rev-parse --short HEAD)" \
         || warn "could not fast-forward; leaving checkout as-is"
@@ -177,8 +216,11 @@ VENV_DIR=""
 provision_venv() {
   VENV_DIR="$REPO_ROOT/.venv"
   local req="$REPO_ROOT/android-lab/lab/requirements.txt"
+  brew_shellenv
+  local py; py="$(command -v python3 || command -v python || true)"
+  [ -n "$py" ] || die "no python interpreter found; install python3 (run without --no-install)"
   if [ ! -d "$VENV_DIR" ]; then
-    step "creating virtualenv: $VENV_DIR"; python3 -m venv "$VENV_DIR" || die "failed to create virtualenv"
+    step "creating virtualenv: $VENV_DIR"; "$py" -m venv "$VENV_DIR" || die "failed to create virtualenv"
   else
     step "reusing virtualenv: $VENV_DIR"
   fi

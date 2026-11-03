@@ -53,6 +53,21 @@ function Hr()     { Write-Host ("-" * 60) }
 
 function Have($name) { return [bool](Get-Command $name -ErrorAction SilentlyContinue) }
 
+# Resolve a REAL python interpreter, skipping the Windows Store execution alias
+# (a 0-byte stub under ...\WindowsApps that just opens the Store). Returns the
+# usable path, or $null when only the alias / nothing is present.
+function Get-PythonExe {
+  foreach ($name in @('python','python3')) {
+    foreach ($c in @(Get-Command $name -All -ErrorAction SilentlyContinue)) {
+      $src = $c.Source
+      if (-not $src) { continue }
+      if ($src -like '*\WindowsApps\*') { continue }   # Store alias stub
+      try { & $src --version *> $null; if ($LASTEXITCODE -eq 0) { return $src } } catch {}
+    }
+  }
+  return $null
+}
+
 function Banner {
   Write-Host @'
    ___  ____    _          _
@@ -123,8 +138,8 @@ function Ensure-Prereqs {
     Die "git and/or python missing and no package manager available. Install winget (App Installer) or Chocolatey."
   }
   $want = @()
-  if (-not (Have git))    { $want += "git" }
-  if (-not (Have python)) { $want += "python" }
+  if (-not (Have git))     { $want += "git" }
+  if (-not (Get-PythonExe)) { $want += "python" }
   if ($want.Count -eq 0) { Ok "all core prerequisites already present"; return }
   Step ("installing: {0}" -f ($want -join ", "))
   foreach ($pkg in $want) {
@@ -174,9 +189,11 @@ function Locate-OrClone {
 function Provision-Venv {
   $venv = Join-Path $script:RepoRoot ".venv"
   $req  = Join-Path $script:RepoRoot "android-lab\lab\requirements.txt"
+  $pyExe = Get-PythonExe
+  if (-not $pyExe) { Die "no real Python interpreter found (only the Store alias?); install Python and re-run" }
   if (-not (Test-Path $venv)) {
     Step "creating virtualenv: $venv"
-    python -m venv $venv
+    & $pyExe -m venv $venv
     if ($LASTEXITCODE -ne 0) { Die "failed to create virtualenv" }
   } else { Step "reusing virtualenv: $venv" }
   $py = Join-Path $venv "Scripts\python.exe"
