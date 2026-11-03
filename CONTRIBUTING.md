@@ -1,78 +1,125 @@
 # Contributing to os-lab
 
-Thanks for your interest in contributing! os-lab is a research and
-documentation project for **authorized** Android and iOS application security
-testing. Contributions of all kinds are welcome — code, documentation, Frida
-hooks, workflow recipes, and bug reports.
+Thanks for your interest in contributing! os-lab builds isolated security labs
+(Android, Windows, Linux and macOS/iOS) and a web console that drives them.
+Contributions of all kinds are welcome: code, documentation, Frida hooks,
+workflow recipes, translations and bug reports.
 
-## 🛡️ Ground rules
+## Ground rules
 
-- **Authorization only.** Everything in this repo is for testing apps you own
-  or have explicit, written permission to assess, inside isolated lab
-  containers. Do not contribute content, artifacts, or examples derived from
-  systems you are not authorized to test.
-- Be respectful. See the [Code of Conduct](CODE_OF_CONDUCT.md).
-- Found a security vulnerability in the lab itself? Follow the
-  [Security Policy](SECURITY.md) — do **not** open a public issue.
+- **Authorization only.** Everything here is for testing systems and apps you
+  own or are authorized in writing to assess, inside isolated labs. Do not
+  contribute content, artifacts or examples taken from systems you were not
+  authorized to test. See the [Acceptable Use Policy](docs/legal/ACCEPTABLE_USE.md).
+- **No third-party binaries or proprietary media.** Do not commit APKs you do
+  not own, Windows or macOS images, Google's platform-tools or other vendor
+  binaries. Download them at setup time from the vendor instead (see
+  `android-lab/lab/scripts/get_platform_tools.py`).
+- **Compatible licences only.** New dependencies must have a licence compatible
+  with Apache-2.0 and must be added to the
+  [Third-Party Notices](docs/legal/THIRD_PARTY_NOTICES.md).
+- **No secrets or personal data** in code, tests, fixtures or screenshots.
+- Be respectful: see the [Code of Conduct](CODE_OF_CONDUCT.md).
+- Found a vulnerability in os-lab itself? Follow the [Security Policy](SECURITY.md);
+  do **not** open a public issue.
 
-## Getting started
+## Step 1: Set up
+
+You need git, Python 3.11 or newer and bash (Linux, macOS or WSL2). Node.js 22+
+is only needed to work on the dashboard.
 
 ```bash
-git clone https://github.com/keyvanarasteh/os-lab
+git clone https://github.com/<you>/os-lab   # your fork
 cd os-lab
-./scripts/run-tests.sh           # local test runner (creates .venv-test, runs the suite)
+git remote add upstream https://github.com/keyvanarasteh/os-lab
+./labctl ui                                  # the web console at http://127.0.0.1:5050
 ```
 
-> **CI note:** GitHub Actions is **disabled** for this repo (to avoid any
-> hosted-runner usage). [`scripts/run-tests.sh`](scripts/run-tests.sh) is the
-> local replacement — run it before opening a PR. It runs the android unit
-> tests, a sample-analysis smoke test, a repo-wide `bash -n` check, and
-> `lat check` when `lat` is installed. Use `--quick` for just the unit tests.
+The one-command installers in [`scripts/setup/`](scripts/setup/README.md) also
+set up a virtualenv and the dashboard.
 
-For the Android lab runbook see [`lab/README.md`](lab/README.md), for Windows
-non-admin see [`lab/README-WINDOWS.md`](lab/README-WINDOWS.md), and for iOS see
-[`ios-lab/README.md`](ios-lab/README.md).
+## Step 2: Create a branch
 
-## Development workflow
+```bash
+git fetch upstream
+git checkout -b feat/short-description upstream/master   # or fix/…, docs/…, chore/…
+```
 
-1. **Fork** the repo and create a topic branch off `master`:
-   `git checkout -b feat/short-description` (or `fix/…`, `docs/…`, `chore/…`).
-2. Make your change. Keep it focused — one logical change per PR.
-3. **Add or update tests** in `android-lab/lab/tests/` for any behavior change.
-4. Run the suite locally: `./scripts/run-tests.sh` (or
-   `cd android-lab/lab && python3 -m pytest tests -v`).
-5. If you touched architecture, behavior, or tests, update the knowledge graph
-   in [`lat.md/`](lat.md/) and run `lat check`.
-6. Commit using [Conventional Commits](https://www.conventionalcommits.org/)
-   (e.g. `fix(lab): …`, `feat(ios): …`, `docs: …`).
-7. Push and open a Pull Request against `master`, filling out the PR template.
+Keep each pull request to one logical change.
 
-## Coding conventions
+## Step 3: Make the change
 
-- **Python**: target 3.11+. Standard library is preferred for lab scripts so
-  they run with minimal dependencies. Keep functions small and testable; most
-  scripts expose a `main()` and importable helpers (see existing scripts in
-  [`lab/scripts/`](lab/scripts/)).
-- **Shell**: `bash`, `set -euo pipefail` where practical, POSIX-friendly.
-- **PowerShell** (`lab/lab.ps1`): must parse under both Windows PowerShell 5.1
-  and PowerShell 7. Keep the file saved as **UTF-8 with BOM** so 5.1 reads the
-  multi-byte characters correctly.
-- **Frida hooks** (`lab/hooks/`): one concern per file, with a header comment
-  describing what it bypasses/traces and how to load it.
+| Area | Where | Notes |
+|------|-------|-------|
+| Android lab scripts | `android-lab/lab/scripts/` | Prefer the Python standard library; expose a `main()` and importable helpers |
+| Frida hooks | `android-lab/lab/hooks/` | One concern per file, with a header comment saying what it bypasses or traces and how to load it |
+| Web console API and lab engine | `android-lab/lab/web_ui.py`, `console/oslab.py` | Lab actions must stay typed and validated; never accept command strings from the page |
+| Dashboard | `dashboard/src/` | Astro + React + Tailwind; run `npm run dev` with the console on port 5050 |
+| VM labs | `win-lab/`, `linux-lab/`, `ios-lab/`, `labctl` | `bash` with `set -euo pipefail` |
+| Windows lab script | `android-lab/lab/lab.ps1`, `scripts/setup/install.ps1` | Must parse in Windows PowerShell 5.1 and PowerShell 7; keep **UTF-8 with BOM** |
+| Legal documents | `docs/legal/` | Shown in the dashboard at `/legal/`; every statement must match what the code does |
 
-## Documentation & the knowledge graph
+For the Android lab runbook see [`android-lab/lab/README.md`](android-lab/lab/README.md),
+for Windows non-admin use [`android-lab/lab/README-WINDOWS.md`](android-lab/lab/README-WINDOWS.md),
+and for iOS [`ios-lab/README.md`](ios-lab/README.md).
 
-- Narrative docs live in `knowledge/`, `ios-lab/knowledge/`, and the READMEs.
-- `lat.md/` is the structured, cross-linked knowledge graph describing **what**
-  the project does and **why**. Keep it a focused snapshot of the current
-  implemented state — not a changelog. Run `lat check` after editing it.
+## Step 4: Add tests
 
-## Reporting bugs & requesting features
+Add or update tests in `android-lab/lab/tests/` for any change in behaviour.
+Tests run offline: mock network calls and never download from the internet.
+
+## Step 5: Run the checks
+
+GitHub Actions is disabled for this repository; the local runner replaces CI.
+Run it before every pull request:
+
+```bash
+./scripts/run-tests.sh          # everything
+./scripts/run-tests.sh --quick  # unit tests only
+```
+
+It runs the pytest suite, a sample-analysis smoke test, `bash -n` on every
+shell script, `lat check` when `lat` is installed, and, when
+`dashboard/node_modules` exists, the dashboard typecheck plus a check that the
+committed build is current.
+
+## Step 6: Rebuild the dashboard if you changed it
+
+`dashboard/dist/` is committed so hosts without Node.js still get the
+dashboard. After changing anything in `dashboard/src/` or `docs/legal/`:
+
+```bash
+cd dashboard
+npm ci
+npm run check
+npm run build      # refreshes dashboard/dist; commit it with your change
+```
+
+## Step 7: Update the docs and the knowledge graph
+
+- Update the README of the area you changed.
+- If you changed architecture, behaviour or tests, update the knowledge graph in
+  [`lat.md/`](lat.md/) (what the project does and why, not a changelog) and run
+  `lat check`.
+- If you changed what data is stored or sent, or added a dependency, update
+  [`docs/legal/`](docs/legal/).
+
+## Step 8: Commit and open a pull request
+
+1. Commit with [Conventional Commits](https://www.conventionalcommits.org/),
+   for example `fix(android): …`, `feat(dashboard): …`, `docs: …`.
+2. Push to your fork and open a pull request against `master`.
+3. Fill in the [pull request template](.github/PULL_REQUEST_TEMPLATE.md),
+   including how you tested the change.
+4. Respond to review comments; maintainers merge once the checks pass and the
+   review is done.
+
+## Reporting bugs and requesting features
 
 Use the [issue templates](.github/ISSUE_TEMPLATE/). For open-ended questions,
 open a [Discussion](https://github.com/keyvanarasteh/os-lab/discussions).
 
-## License
+## Licence
 
-By contributing, you agree that your contributions will be licensed under the
-[Apache License 2.0](LICENSE), the same license that covers this project.
+By contributing, you agree that your contributions are licensed under the
+[Apache License 2.0](LICENSE), the licence that covers this project.

@@ -1,0 +1,9 @@
+---
+import Base from "../layouts/Base.astro";
+import ContributePage from "../views/contribute-page";
+import { rewriteLinks } from "../lib/legal";
+import * as contributing from "../../../CONTRIBUTING.md";
+
+const html = rewriteLinks(await contributing.compiledContent(), "");
+---
+<Base title="Contribute" description="How to contribute to os-lab: setup, tests, dashboard build and pull requests."><ContributePage html={html} client:only="react" /></Base>

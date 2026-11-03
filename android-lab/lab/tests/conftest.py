@@ -8,6 +8,9 @@ TESTS_DIR = os.path.dirname(os.path.abspath(__file__))
 LAB_DIR = os.path.abspath(os.path.join(TESTS_DIR, ".."))
 SCRIPTS_DIR = os.path.join(LAB_DIR, "scripts")
 
+# Tests run offline: preflight must never download platform-tools from Google
+os.environ.setdefault("OSLAB_NO_DOWNLOAD", "1")
+
 for p in [LAB_DIR, SCRIPTS_DIR]:
     if p not in sys.path:
         sys.path.insert(0, p)

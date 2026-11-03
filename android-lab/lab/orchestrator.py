@@ -67,12 +67,14 @@ def run_preflight() -> bool:
     else:
         print("  [WARN] Java not detected in PATH.")
 
-    # 5. ADB
-    adb = shutil.which("adb") or (os.path.exists(os.path.join(SCRIPT_DIR, "tools", "platform-tools", "adb.exe")))
+    # 5. ADB: from PATH, else Google's platform-tools downloaded into tools/ on demand
+    sys.path.insert(0, SCRIPTS_DIR)
+    from get_platform_tools import ensure_platform_tools
+    adb = ensure_platform_tools()
     if adb:
-        print(f"  [OK]   ADB available.")
+        print(f"  [OK]   ADB available: {adb}")
     else:
-        print("  [WARN] ADB not in PATH. Download platform-tools via setup.")
+        print("  [WARN] ADB unavailable. Install it (apt install adb) or run: python3 scripts/get_platform_tools.py")
 
     # 6. Ports check
     for port in [6080, 5554, 5555, 8000, 8080, 8081]:

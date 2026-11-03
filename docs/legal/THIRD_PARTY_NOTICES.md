@@ -49,9 +49,13 @@ IP address through ipinfo.io. The image honours the opt-out variable
 
 ## Bundled in this repository
 
-- `android-lab/lab/tools/platform-tools/`: Android SDK Platform-Tools for
-  Windows by Google LLC, with Google's `NOTICE.txt`. They are governed by the
-  Android SDK Terms and Conditions, not by os-lab's licence.
+- Nothing from Google: os-lab does **not** redistribute Android SDK
+  Platform-Tools. When `adb` is missing, `android-lab/lab/scripts/get_platform_tools.py`
+  (run by preflight or `make platform-tools`), or `lab.ps1 setup` on Windows,
+  downloads Google's official archive from `dl.google.com` into the git-ignored
+  `android-lab/lab/tools/platform-tools/`. Its use is governed by the
+  [Android SDK Terms and Conditions](https://developer.android.com/studio/terms);
+  set `OSLAB_NO_DOWNLOAD=1` to stop the automatic download.
 - `dashboard/src/shell/` and `dashboard/src/apk-lab/`: user-interface code
   ported from the qLar project by the same maintainers.
 

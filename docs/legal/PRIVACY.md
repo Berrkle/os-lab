@@ -58,7 +58,8 @@ receives your IP address and the request, under its own privacy policy:
 - **Container registries**, mainly Docker Hub, for the lab images.
 - **Microsoft and Apple servers**, contacted by the Windows and macOS images to
   download installation media or recovery images.
-- **Google**: Android platform tools and emulator images.
+- **Google** (`dl.google.com`): Android platform tools, downloaded when `adb`
+  is missing (set `OSLAB_NO_DOWNLOAD=1` to prevent it), and emulator images.
 - **The targets you analyse** and any service a guest or app connects to.
 
 **Docker-Android analytics.** The Android emulator image reports usage analytics

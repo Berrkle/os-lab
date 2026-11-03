@@ -10,13 +10,32 @@ export const LEGAL_DOCS = [
 
 export type LegalSlug = (typeof LEGAL_DOCS)[number]["slug"];
 
-/** Point the Markdown's repo-relative links at dashboard routes or GitHub. */
-export function rewriteLinks(html: string): string {
+export const REPO_TREE = "https://github.com/keyvanarasteh/os-lab/tree/master";
+
+/** Resolve a relative link against the folder of the Markdown file (repo-relative, POSIX). */
+function resolve(baseDir: string, href: string): string {
+  const parts = baseDir.split("/").filter(Boolean);
+  for (const seg of href.split("/")) {
+    if (seg === "..") parts.pop();
+    else if (seg && seg !== ".") parts.push(seg);
+  }
+  return parts.join("/") + (href.endsWith("/") ? "/" : "");
+}
+
+/**
+ * Point a compiled Markdown file's links at dashboard routes or GitHub.
+ * `baseDir` is the repo folder the Markdown lives in ("docs/legal" or "" for the root).
+ */
+export function rewriteLinks(html: string, baseDir = "docs/legal"): string {
   return html.replace(/href="([^"]+)"/g, (whole, href: string) => {
-    const doc = LEGAL_DOCS.find((d) => href === d.file || href.startsWith(`${d.file}#`));
-    if (doc) return `href="/legal/${doc.slug}/${href.slice(doc.file.length)}"`;
-    if (href.startsWith("../../")) return `href="${REPO_BLOB}/${href.slice(6)}" target="_blank" rel="noreferrer"`;
     if (/^https?:/.test(href)) return `href="${href}" target="_blank" rel="noreferrer"`;
-    return whole;
+    if (href.startsWith("#") || href.startsWith("mailto:")) return whole;
+    const [path, anchor = ""] = href.split("#");
+    const target = resolve(baseDir, path);
+    const doc = LEGAL_DOCS.find((d) => target === `docs/legal/${d.file}`);
+    if (doc) return `href="/legal/${doc.slug}/${anchor ? `#${anchor}` : ""}"`;
+    if (target === "CONTRIBUTING.md") return `href="/contribute/${anchor ? `#${anchor}` : ""}"`;
+    const url = `${target.endsWith("/") ? REPO_TREE : REPO_BLOB}/${target}${anchor ? `#${anchor}` : ""}`;
+    return `href="${url}" target="_blank" rel="noreferrer"`;
   });
 }

@@ -25,3 +25,13 @@ Docker-Android reports usage analytics, including a location derived from the
 host's IP address, unless `USER_BEHAVIOR_ANALYTICS=false`. The Android compose
 files and [[android-lab/lab/scripts/setup-docker-android.sh]] set it from
 `DOCKER_ANDROID_ANALYTICS` (default `false`). The dashboard sets no cookies.
+
+## Google platform-tools
+
+Google's adb and fastboot are not redistributed; they are downloaded from Google
+when needed.
+
+[[android-lab/lab/scripts/get_platform_tools.py]] fetches the official archive
+for the host OS into the git-ignored `tools/platform-tools`, extracting safely.
+Preflight in [[android-lab/lab/orchestrator.py]] calls it when `adb` is missing
+unless `OSLAB_NO_DOWNLOAD=1`; `make platform-tools` runs it on demand.

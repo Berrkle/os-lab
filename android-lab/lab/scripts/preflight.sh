@@ -82,7 +82,7 @@ if [[ "$STATIC" -eq 1 ]]; then
 elif command -v adb >/dev/null 2>&1; then
   ok "adb: $(adb version 2>/dev/null | head -1)"
 else
-  warn "adb not found (sudo apt install adb, or use tools/platform-tools/adb.exe on Windows)"
+  warn "adb not found (sudo apt install adb, or: make platform-tools)"
 fi
 
 # --- port availability ---------------------------------------------------

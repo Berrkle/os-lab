@@ -29,7 +29,10 @@ VM labs are kept `bash -n` clean and use `set -euo pipefail`.
 
 Contribution flow, coding conventions and the authorization stance.
 
-They are in [[CONTRIBUTING.md]]; issue and PR templates in
+They are in [[CONTRIBUTING.md]], step by step from setup to pull request, and
+the [[dashboard]] renders the same file at `/contribute/`. Contributions must not
+add vendor binaries or proprietary media (see [[legal#Google platform-tools]]).
+Issue and PR templates are in
 [[.github/ISSUE_TEMPLATE]] and [[.github/PULL_REQUEST_TEMPLATE.md]]; behavior
 expectations in [[CODE_OF_CONDUCT.md]].
 
