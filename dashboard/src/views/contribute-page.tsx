@@ -33,6 +33,8 @@ export interface TodoTask {
   reference: string;
   targetPaths: string[];
   suggestedBranch: string;
+  /** Set when the task is "held": names the prerequisite (lecture / verified lab) it waits on. */
+  prerequisite?: string;
 }
 
 export const CURATED_TASKS: TodoTask[] = [
@@ -324,6 +326,1616 @@ export const CURATED_TASKS: TodoTask[] = [
     reference: "Teached Role-Based VPN vs Exposed Port Architecture",
     targetPaths: ["scripts/setup/vpn.sh", "linux-lab/"],
     suggestedBranch: "feat/wireguard-role-based-vpn"
+  },
+
+  // ===== EXPANSION — scaled to 1.5× enrollment (BGT207 25 · MYO062 23 · MYO203 24 = 72 → ~108 options) =====
+  // Grounded in teached/ transcripts + planned syllabus. "held" items carry a `prerequisite`.
+
+  // --- Penetration Testing (MYO062) continued ---
+  {
+    id: "PENT-06",
+    category: "pentest",
+    categoryLabel: "Penetration Testing",
+    title: "frida-trace Auto-Tracer & Call-Map Builder",
+    priority: "High",
+    effort: "Small",
+    summary:
+      "Wrapper around frida-trace that discovers and traces exported/native functions of a lab process, then renders a call map of which functions fire for a given action, with per-call argument snapshots.",
+    deliverables: [
+      "android-lab/lab/hooks/trace_runner.py: frida-trace wrapper taking a process and a symbol glob, emitting a JSON call map",
+      "labctl action to trace a lab target and save an annotated session log"
+    ],
+    reference: "Teached 05.10 Frida pratik (frida-trace, süreç→fonksiyon→hook)",
+    targetPaths: ["android-lab/lab/hooks/", "console/oslab.py"],
+    suggestedBranch: "feat/frida-trace-runner"
+  },
+  {
+    id: "PENT-07",
+    category: "pentest",
+    categoryLabel: "Penetration Testing",
+    title: "Interceptor retval.replace & Argument-Tampering Script Library",
+    priority: "Medium",
+    effort: "Small",
+    summary:
+      "Parametrized gozlem.js/degistir.js templates that observe onEnter arguments and rewrite onLeave return values against the deterministic lab auth harness, driven by a small JSON policy (which function, which argument, what value).",
+    deliverables: [
+      "android-lab/lab/hooks/tamper_policy.js: policy-driven onEnter/onLeave/retval.replace runner",
+      "Golden-file test asserting the 2-second password check in hedef.c is observed and overridden deterministically"
+    ],
+    reference: "Teached 05.10 degistir.js / retval.replace, hedef.c parola kontrolü",
+    targetPaths: ["android-lab/lab/hooks/", "android-lab/lab/tests/"],
+    suggestedBranch: "feat/frida-retval-tamper"
+  },
+  {
+    id: "PENT-08",
+    category: "pentest",
+    categoryLabel: "Penetration Testing",
+    title: "Java / Objective-C Bridge Class Enumerator & Method Overrider",
+    priority: "Medium",
+    effort: "Medium",
+    prerequisite: "Verified Android lab (26.10 setup not yet student-verified)",
+    summary:
+      "Uses Frida's Java/ObjC bridge to list loaded classes and methods in a lab app and override a chosen method, logging before/after behavior — the class-listing and method-overriding shown for Android/iOS.",
+    deliverables: [
+      "android-lab/lab/hooks/java_bridge.js: class/method enumerator with selective override and logging",
+      "Smoke test against a lab APK confirming an overridden method changes observed behavior"
+    ],
+    reference: "Teached 05.10 Java köprüsü (Android/iOS sınıf listeleme, metot ezme)",
+    targetPaths: ["android-lab/lab/hooks/", "android-lab/lab/tests/"],
+    suggestedBranch: "feat/frida-java-bridge"
+  },
+  {
+    id: "PENT-09",
+    category: "pentest",
+    categoryLabel: "Penetration Testing",
+    title: "Frida Device & Process Inventory Tool",
+    priority: "High",
+    effort: "Tiny–Small",
+    summary:
+      "Wraps frida-ls-devices and frida-ps (USB/TCP) into a single read-only inventory returning attached devices and attachable processes as structured JSON for the console and agents.",
+    deliverables: [
+      "console/frida_inventory.py: JSON inventory of devices and processes with transport (USB/TCP)",
+      "Dashboard jobs-view card listing attachable lab targets"
+    ],
+    reference: "Teached 28.09/05.10 frida-ls-devices, frida-ps, USB/TCP",
+    targetPaths: ["console/frida_inventory.py", "dashboard/src/views/jobs-page.tsx"],
+    suggestedBranch: "feat/frida-inventory"
+  },
+  {
+    id: "PENT-10",
+    category: "pentest",
+    categoryLabel: "Penetration Testing",
+    title: "Electron App Unpacker & Injection-Point Mapper",
+    priority: "Medium",
+    effort: "Small–Medium",
+    summary:
+      "Static analyzer that unpacks an open-source Electron app's asar archive, inventories main/renderer entry points and Node-integration/preload surfaces, and flags where an agent could be injected — reproducing the lab's successful Electron injection case.",
+    deliverables: [
+      "scripts/analysis/electron_asar_inspect.py: asar unpack + entry/preload/nodeIntegration mapper → JSON",
+      "Report highlighting injectable surfaces for a provided open-source Electron lab target"
+    ],
+    reference: "Teached 28.09 açık kaynak Electron uygulamalarında enjeksiyon çalıştı",
+    targetPaths: ["scripts/analysis/", "console/oslab.py"],
+    suggestedBranch: "feat/electron-injection-mapper"
+  },
+  {
+    id: "PENT-11",
+    category: "pentest",
+    categoryLabel: "Penetration Testing",
+    title: "SSL / Certificate Pinning Detector & Classifier (Static)",
+    priority: "High",
+    effort: "Small",
+    summary:
+      "Static scanner that inspects an APK/binary for pinning implementations (OkHttp CertificatePinner, TrustManager, Network Security Config, native BoringSSL) and classifies the pinning method before any dynamic analysis is attempted, in lab scope only.",
+    deliverables: [
+      "scripts/analysis/pinning_detect.py: signature scan classifying pinning type with evidence lines",
+      "Markdown report mapping each detected pin to the recommended lab analysis approach"
+    ],
+    reference: "Teached 28.09 sertifika iğnelemesi; 26.10 proxy/objection",
+    targetPaths: ["scripts/analysis/", "android-lab/lab/"],
+    suggestedBranch: "feat/pinning-detector"
+  },
+  {
+    id: "PENT-12",
+    category: "pentest",
+    categoryLabel: "Penetration Testing",
+    title: "APK Static Triage: aapt Manifest, Permissions & Strings Report",
+    priority: "Medium",
+    effort: "Small–Medium",
+    prerequisite: "Verified Android lab",
+    summary:
+      "Runs aapt over a lab APK to extract AndroidManifest.xml, declared permissions, components and strings.xml, producing a static triage report that precedes any dynamic run.",
+    deliverables: [
+      "android-lab/lab/scripts/apk_triage.py: aapt-based manifest/permissions/strings extractor → JSON + markdown",
+      "Permission risk scoring (exported components, dangerous permissions)"
+    ],
+    reference: "Teached 26.10 aapt, AndroidManifest.xml, strings.xml",
+    targetPaths: ["android-lab/lab/scripts/", "console/oslab.py"],
+    suggestedBranch: "feat/apk-static-triage"
+  },
+  {
+    id: "PENT-13",
+    category: "pentest",
+    categoryLabel: "Penetration Testing",
+    title: "mitmproxy Lab-Traffic Summarizer with Scope Guard",
+    priority: "Medium",
+    effort: "Small–Medium",
+    prerequisite: "Verified Android lab",
+    summary:
+      "Parses a mitmproxy flow dump for a lab app and summarizes hosts, endpoints, tokens seen and data sent/written, refusing to process flows whose hosts fall outside the declared lab scope.",
+    deliverables: [
+      "android-lab/lab/scripts/mitm_summary.py: flow → summary with host-allowlist scope guard",
+      "Report of endpoints, methods and payload categories for the lab target only"
+    ],
+    reference: "Teached 26.10 mitmproxy, ortadaki adam proxy; kapsam kuralı",
+    targetPaths: ["android-lab/lab/scripts/"],
+    suggestedBranch: "feat/mitm-summarizer"
+  },
+  {
+    id: "PENT-14",
+    category: "pentest",
+    categoryLabel: "Penetration Testing",
+    title: "Objection Runtime Toolkit Wrapper (Lab-Only)",
+    priority: "Medium",
+    effort: "Medium",
+    prerequisite: "Verified Android lab",
+    summary:
+      "Thin wrapper exposing objection's common runtime actions (root/emulator detection checks, keystore/heap inspection) as approved, logged steps against a lab app, behind a hard scope guard.",
+    deliverables: [
+      "android-lab/lab/scripts/objection_toolkit.py: curated objection actions with per-step session log",
+      "needsApproval gate on every state-touching action"
+    ],
+    reference: "Teached 26.10 objection, runtime enjeksiyon",
+    targetPaths: ["android-lab/lab/scripts/"],
+    suggestedBranch: "feat/objection-toolkit"
+  },
+  {
+    id: "PENT-15",
+    category: "pentest",
+    categoryLabel: "Penetration Testing",
+    title: "Two-Stage \"Clean Dropper\" Detection Harness",
+    priority: "High",
+    effort: "Medium",
+    summary:
+      "Builds a benign-looking lab artifact that fetches a second stage from a local server, plus a detector that flags the clean→cloud-payload pattern (deferred fetch + eval of remote code) — teaching detection of the new-generation trojan model, entirely in lab.",
+    deliverables: [
+      "scripts/analysis/dropper_lab/: benign first-stage + local second-stage server for reproducible study",
+      "dropper_detect.py flagging deferred remote-code fetch/eval patterns with evidence"
+    ],
+    reference: "Teached 19.10 yeni nesil Truva atı (tertemiz gelir, zararlı sonradan buluttan iner)",
+    targetPaths: ["scripts/analysis/", "console/oslab.py"],
+    suggestedBranch: "feat/dropper-detection"
+  },
+  {
+    id: "PENT-16",
+    category: "pentest",
+    categoryLabel: "Penetration Testing",
+    title: "Browser-Extension Corpus Scanner & Injection Aggregator",
+    priority: "High",
+    effort: "Medium",
+    summary:
+      "Batch scanner that runs the extension audit over a directory of unpacked extensions and aggregates dangerous-call sites across the corpus into a single ranked report — the method used to sweep ~988 extensions.",
+    deliverables: [
+      "scripts/analysis/ext_corpus_scan.py: batch runner producing a corpus-wide injection-point table",
+      "Aggregation and ranking by permission surface and sink density"
+    ],
+    reference: "Teached 19.10 988 eklenti taranıp enjeksiyon noktaları birleştirildi",
+    targetPaths: ["scripts/analysis/", "dashboard/src/views/jobs-page.tsx"],
+    suggestedBranch: "feat/extension-corpus-scanner"
+  },
+  {
+    id: "PENT-17",
+    category: "pentest",
+    categoryLabel: "Penetration Testing",
+    title: "Extension Exfiltration Endpoint & CSP Analyzer",
+    priority: "Medium",
+    effort: "Small",
+    summary:
+      "Extracts remote endpoints, fetch/XHR targets and CSP / declarativeNetRequest rules from an extension and flags likely exfiltration destinations and CSP weakenings.",
+    deliverables: [
+      "scripts/analysis/ext_exfil.py: endpoint + CSP extractor with exfiltration heuristics",
+      "Report listing external hosts contacted and any CSP relaxations"
+    ],
+    reference: "Teached 19.10 çerez çalma riski, uzaktan kod/dış script, CSP",
+    targetPaths: ["scripts/analysis/"],
+    suggestedBranch: "feat/extension-exfil-analyzer"
+  },
+  {
+    id: "PENT-18",
+    category: "pentest",
+    categoryLabel: "Penetration Testing",
+    title: "Extension Native-Messaging Host Risk Analyzer",
+    priority: "Medium",
+    effort: "Small",
+    summary:
+      "Audits an extension's nativeMessaging usage and the referenced native host manifests/binaries, flagging privilege-escalation bridges from the browser sandbox to a local process.",
+    deliverables: [
+      "scripts/analysis/ext_native_host.py: nativeMessaging manifest + allowed_origins + host-binary inspector",
+      "Risk notes on browser → native privilege bridges"
+    ],
+    reference: "Teached 19.10 native messaging izni",
+    targetPaths: ["scripts/analysis/"],
+    suggestedBranch: "feat/extension-native-host"
+  },
+  {
+    id: "PENT-19",
+    category: "pentest",
+    categoryLabel: "Penetration Testing",
+    title: "Analysis Session Brain-Map (lat.md) Generator",
+    priority: "Medium",
+    effort: "Small",
+    summary:
+      "Generates a lat.md-style knowledge graph for an analysis project — nodes for targets, findings and scripts, with links between them — so a long investigation stays navigable, as introduced in class.",
+    deliverables: [
+      "scripts/analysis/latmap.py: emits a lat.md graph from a session's findings/scripts",
+      "lat check-compatible node/link output"
+    ],
+    reference: "Teached 19.10 lat.md ile proje beyin haritası",
+    targetPaths: ["scripts/analysis/", "lat.md/"],
+    suggestedBranch: "feat/analysis-brainmap"
+  },
+  {
+    id: "PENT-20",
+    category: "pentest",
+    categoryLabel: "Penetration Testing",
+    title: "Pentest Session Scribe: Scoped, Logged, AI-Disclosed (Subagent)",
+    priority: "High",
+    effort: "Medium",
+    summary:
+      "A subagent that holds the engagement scope file, records every step, discloses AI use per step, and refuses actions against out-of-scope targets — the method/ethics discipline taught in week 1. Exports a signed markdown report.",
+    deliverables: [
+      "labctl pentest-scribe subagent: scope file, per-step log, AI-use disclosure, out-of-scope refusal",
+      "Session export as a signed markdown report"
+    ],
+    reference: "Teached 28.09 yöntem/etik: kapsam, oturum notu, AI kullanımının belgelenmesi",
+    targetPaths: ["labctl", "console/oslab.py"],
+    suggestedBranch: "feat/pentest-scribe"
+  },
+  {
+    id: "PENT-21",
+    category: "pentest",
+    categoryLabel: "Penetration Testing",
+    title: "Authorization & Scope-Guard Library (Refuses Non-Lab Targets)",
+    priority: "High",
+    effort: "Small",
+    summary:
+      "Shared guard that every lab tool imports to assert a target (host, package, path, device) is inside the declared lab scope, refusing with a clear reason otherwise — enforcing the \"lab only\" rule in code.",
+    deliverables: [
+      "console/scope_guard.py: scope-manifest loader + assert_in_scope() used by lab tools",
+      "Unit tests for allow/deny of hosts, packages and device serials"
+    ],
+    reference: "Teached 19.10 kapsam kuralı; 28.09 yetki olmadan deneme yok",
+    targetPaths: ["console/scope_guard.py", "console/oslab.py"],
+    suggestedBranch: "feat/scope-guard"
+  },
+  {
+    id: "PENT-22",
+    category: "pentest",
+    categoryLabel: "Penetration Testing",
+    title: "AI-Use Disclosure & Analysis Report Generator",
+    priority: "Medium",
+    effort: "Tiny–Small",
+    summary:
+      "Collects a session's AI prompts/outputs and tool calls into a disclosure appendix and a readable analysis report, so each finding is reproducible and each AI contribution is documented.",
+    deliverables: [
+      "console/report_gen.py: session log → markdown report with an AI-use appendix",
+      "Template with findings, evidence and reproducibility steps"
+    ],
+    reference: "Teached 28.09 yapay zeka kullanımının belgelenmesi, her adımda kayıt",
+    targetPaths: ["console/report_gen.py"],
+    suggestedBranch: "feat/ai-disclosure-report"
+  },
+  {
+    id: "PENT-23",
+    category: "pentest",
+    categoryLabel: "Penetration Testing",
+    title: "Windows No-Admin Lab Preflight (VT-x / Podman / VirtualBox / WSL)",
+    priority: "High",
+    effort: "Small",
+    summary:
+      "Checks a Windows 10/11 machine without admin rights for virtualization readiness — VT-x/AMD-V state, Hyper-V/WSL2, VirtualBox/Podman presence — and reports blockers with fixes, reproducing the 26.10 live setup issues.",
+    deliverables: [
+      "win-lab/scripts/preflight.ps1: no-admin capability + virtualization preflight → JSON",
+      "Actionable report (e.g. VT-x disabled in BIOS) with remediation notes"
+    ],
+    reference: "Teached 26.10 yönetici yetkisi olmadan VirtualBox/Podman, VT-x BIOS kapalı",
+    targetPaths: ["win-lab/scripts/", "dashboard/src/views/host-page.tsx"],
+    suggestedBranch: "feat/win-noadmin-preflight"
+  },
+  {
+    id: "PENT-24",
+    category: "pentest",
+    categoryLabel: "Penetration Testing",
+    title: "Docker-Based Android Emulator Provisioner",
+    priority: "Medium",
+    effort: "Large",
+    prerequisite: "Verified Android lab",
+    summary:
+      "One-command provisioner bringing up a containerized Android emulator with adb reachable and frida-server staged — the setup script promised to students for the mobile lab.",
+    deliverables: [
+      "android-lab/lab/scripts/provision_emulator.sh: container emulator + adb + frida-server bootstrap",
+      "Smoke test: adb devices shows the emulator and frida-ps attaches"
+    ],
+    reference: "Teached 26.10 Docker tabanlı Android emulator, kurulum repoda hazır script",
+    targetPaths: ["android-lab/lab/scripts/", "android-lab/Makefile"],
+    suggestedBranch: "feat/android-emulator-provision"
+  },
+  {
+    id: "PENT-25",
+    category: "pentest",
+    categoryLabel: "Penetration Testing",
+    title: "C2 Beacon Traffic Simulator & Blue-Team Detector (Lab)",
+    priority: "Medium",
+    effort: "Medium",
+    prerequisite: "C2 lecture (ders03, planned — not yet taught)",
+    summary:
+      "In an isolated lab network, generates benign beacon-like traffic with tunable jitter/interval/profile plus a detector that spots periodic beaconing — teaching detection rather than operation.",
+    deliverables: [
+      "linux-lab/c2-lab/beacon_sim.py: configurable interval/jitter beacon generator (lab network only)",
+      "beacon_detect.py scoring periodicity and flagging suspected C2 channels"
+    ],
+    reference: "Planned ders03 C2 çatıları (beacon, C2 profilleri, OPSEC)",
+    targetPaths: ["linux-lab/c2-lab/"],
+    suggestedBranch: "feat/c2-beacon-detection"
+  },
+  {
+    id: "PENT-26",
+    category: "pentest",
+    categoryLabel: "Penetration Testing",
+    title: "Loader Behavior Telemetry Harness (Defensive, Lab)",
+    priority: "Medium",
+    effort: "Medium",
+    prerequisite: "AV/EDR lecture (ders04, planned — not yet taught)",
+    summary:
+      "Instruments a lab binary loader to emit telemetry (memory allocation, in-memory execution, syscall sequence) so students study what endpoint sensors observe — an observability exercise, not an evasion toolkit.",
+    deliverables: [
+      "linux-lab/edr-lab/loader_telemetry.py: records allocation/exec/syscall events of a lab loader",
+      "Report mapping observed events to detection opportunities"
+    ],
+    reference: "Planned ders04 AV/EDR (in-memory yürütme, syscall'lar) — savunma odaklı",
+    targetPaths: ["linux-lab/edr-lab/"],
+    suggestedBranch: "feat/loader-telemetry"
+  },
+  {
+    id: "PENT-27",
+    category: "pentest",
+    categoryLabel: "Penetration Testing",
+    title: "Advanced Web Exploitation Lab Targets + Detection",
+    priority: "Medium",
+    effort: "Large",
+    prerequisite: "Advanced-web lecture (ders05, planned — not yet taught)",
+    summary:
+      "Intentionally vulnerable, self-contained lab apps demonstrating SSRF→cloud metadata, SSTI, insecure deserialization and request smuggling, each paired with a detector and a remediation note.",
+    deliverables: [
+      "linux-lab/web-lab/: dockerized vulnerable targets (SSRF, SSTI, deserialization, smuggling)",
+      "Per-target detection rule and remediation writeup"
+    ],
+    reference: "Planned ders05 ileri web (SSRF→cloud metadata, deserialization, SSTI, request smuggling)",
+    targetPaths: ["linux-lab/web-lab/", "linux-lab/docker-compose.yml"],
+    suggestedBranch: "feat/web-exploitation-lab"
+  },
+  {
+    id: "PENT-28",
+    category: "pentest",
+    categoryLabel: "Penetration Testing",
+    title: "Binary Exploitation Teaching Harness with Mitigation Toggles",
+    priority: "Medium",
+    effort: "Medium",
+    prerequisite: "Binary-exploitation lecture (ders06, planned — not yet taught)",
+    summary:
+      "Compiles a vulnerable lab binary with toggleable NX/ASLR/PIE/canary/RELRO so students observe how each mitigation changes exploitability (stack overflow → ROP), complementing the PENT-05 checksec auditor.",
+    deliverables: [
+      "linux-lab/binexp-lab/Makefile: builds the target with per-mitigation flags",
+      "Guided exercises showing behavior with each mitigation on/off (lab only)"
+    ],
+    reference: "Planned ders06 binary exploitation (stack overflow, ROP, ASLR/NX/canary)",
+    targetPaths: ["linux-lab/binexp-lab/"],
+    suggestedBranch: "feat/binexp-teaching-harness"
+  },
+  {
+    id: "PENT-29",
+    category: "pentest",
+    categoryLabel: "Penetration Testing",
+    title: "Linux Privilege-Escalation Audit Tool (GTFOBins / SUID / Caps)",
+    priority: "Medium",
+    effort: "Small–Medium",
+    prerequisite: "Privesc lecture (ders08, planned — not yet taught)",
+    summary:
+      "Read-only auditor enumerating SUID/SGID binaries, capabilities, writable PATH entries and known GTFOBins on a lab host, reporting escalation paths for defenders to close (no exploitation payloads).",
+    deliverables: [
+      "linux-lab/scripts/privesc_audit.py: SUID/caps/GTFOBins enumerator → ranked findings",
+      "Remediation notes per finding"
+    ],
+    reference: "Planned ders08 Linux privesc (GTFOBins/SUID/caps/kernel)",
+    targetPaths: ["linux-lab/scripts/"],
+    suggestedBranch: "feat/linux-privesc-audit"
+  },
+  {
+    id: "PENT-30",
+    category: "pentest",
+    categoryLabel: "Penetration Testing",
+    title: "Windows Privilege-Escalation Audit (Token / UAC / Service)",
+    priority: "Medium",
+    effort: "Small–Medium",
+    prerequisite: "Privesc lecture (ders08, planned — not yet taught)",
+    summary:
+      "Audits a lab Windows host for common escalation surfaces — unquoted service paths, weak service ACLs, token/UAC posture — and reports hardening actions (audit-only).",
+    deliverables: [
+      "win-lab/scripts/privesc_audit.ps1: service ACL / unquoted-path / UAC posture audit → report",
+      "Hardening recommendations per finding"
+    ],
+    reference: "Planned ders08 Windows privesc (token/UAC/potato)",
+    targetPaths: ["win-lab/scripts/"],
+    suggestedBranch: "feat/win-privesc-audit"
+  },
+  {
+    id: "PENT-31",
+    category: "pentest",
+    categoryLabel: "Penetration Testing",
+    title: "Isolated Wireless Lab: WPA2/WPA3 Handshake & PMKID Study",
+    priority: "Medium",
+    effort: "Medium",
+    prerequisite: "Wireless lecture (ders09, planned — not yet taught)",
+    summary:
+      "In a fully isolated RF lab the student owns, captures and analyzes WPA2/WPA3 handshakes and PMKID material to study the protocol, with a strict refusal to operate against any network outside the owned lab.",
+    deliverables: [
+      "linux-lab/wifi-lab/handshake_study.py: capture parsing + PMKID/handshake analysis (owned lab AP only)",
+      "Hard scope guard refusing non-lab BSSIDs"
+    ],
+    reference: "Planned ders09 kablosuz (WPA2/WPA3, PMKID, deauth)",
+    targetPaths: ["linux-lab/wifi-lab/"],
+    suggestedBranch: "feat/wireless-handshake-study"
+  },
+  {
+    id: "PENT-32",
+    category: "pentest",
+    categoryLabel: "Penetration Testing",
+    title: "Pivoting & Tunneling Lab Topology + Detection",
+    priority: "Medium",
+    effort: "Medium",
+    prerequisite: "Pivoting lecture (ders10, planned — not yet taught)",
+    summary:
+      "Spins up a multi-subnet lab where students practice SOCKS / chisel / ligolo tunneling between isolated segments, paired with a detector that flags tunneling and lateral-movement signatures.",
+    deliverables: [
+      "linux-lab/pivot-lab/: multi-subnet compose topology + guided SOCKS/chisel exercises",
+      "pivot_detect.py flagging tunnel / lateral-movement indicators"
+    ],
+    reference: "Planned ders10 pivoting & tünelleme (SOCKS, chisel/ligolo, port yönlendirme)",
+    targetPaths: ["linux-lab/pivot-lab/"],
+    suggestedBranch: "feat/pivoting-lab"
+  },
+  {
+    id: "PENT-33",
+    category: "pentest",
+    categoryLabel: "Penetration Testing",
+    title: "Container & Kubernetes Security Auditor",
+    priority: "Medium",
+    effort: "Medium",
+    prerequisite: "Container/k8s lecture (ders11, planned — not yet taught)",
+    summary:
+      "Audits a lab Docker / Kubernetes setup for escape surfaces — privileged containers, dangerous mounts, over-broad RBAC — and reports least-privilege fixes.",
+    deliverables: [
+      "linux-lab/k8s-lab/container_audit.py: privileged / mount / capability audit for containers",
+      "rbac_audit.py flagging over-broad Kubernetes roles and bindings"
+    ],
+    reference: "Planned ders11 container & k8s (docker escape, yetkili konteyner, RBAC)",
+    targetPaths: ["linux-lab/k8s-lab/"],
+    suggestedBranch: "feat/container-k8s-audit"
+  },
+  {
+    id: "PENT-34",
+    category: "pentest",
+    categoryLabel: "Penetration Testing",
+    title: "Fuzzing Harness: AFL++/libFuzzer Coverage & Crash Triage",
+    priority: "Medium",
+    effort: "Medium",
+    prerequisite: "Fuzzing lecture (ders12, planned — not yet taught)",
+    summary:
+      "Sets up AFL++/libFuzzer against a lab binary with coverage collection and automated crash triage/dedup, extending the PENT-05 smoke runner into a full campaign harness.",
+    deliverables: [
+      "linux-lab/fuzz-lab/run_campaign.py: corpus / coverage / crash-triage orchestration",
+      "Dedup + minimized repro output per unique crash"
+    ],
+    reference: "Planned ders12 fuzzing (AFL++/libFuzzer, coverage, crash triage, N-day)",
+    targetPaths: ["linux-lab/fuzz-lab/"],
+    suggestedBranch: "feat/fuzzing-campaign"
+  },
+  {
+    id: "PENT-35",
+    category: "pentest",
+    categoryLabel: "Penetration Testing",
+    title: "Red-Team Report & MITRE ATT&CK Mapping Generator",
+    priority: "Medium",
+    effort: "Medium",
+    prerequisite: "Red-team reporting lecture (ders13, planned — not yet taught)",
+    summary:
+      "Turns a session log into a professional red-team report with findings, evidence and an automatic MITRE ATT&CK technique mapping, formalizing the scribe's output.",
+    deliverables: [
+      "labctl report tool: session log → ATT&CK-mapped professional report (markdown + PDF)",
+      "Technique inference from logged tool actions"
+    ],
+    reference: "Planned ders13 red team & MITRE ATT&CK eşlemesi & raporlama",
+    targetPaths: ["labctl", "console/oslab.py"],
+    suggestedBranch: "feat/redteam-attack-report"
+  },
+
+  // --- Open Source OS (MYO203) continued ---
+  {
+    id: "OS-06",
+    category: "os",
+    categoryLabel: "Open Source OS",
+    title: "Reproducible Ubuntu Server VM Installer & Snapshot Automation",
+    priority: "High",
+    effort: "Small–Medium",
+    summary:
+      "Scripts a repeatable VirtualBox Ubuntu Server build (2 GB RAM, OpenSSH preselected, bridged adapter) and takes a labeled post-install snapshot so a broken VM can be restored in seconds.",
+    deliverables: [
+      "win-lab/scripts/new_ubuntu_vm.(ps1|sh): unattended VM create + install options + snapshot",
+      "Verification step confirming SSH is reachable after boot"
+    ],
+    reference: "Teached 28.09 VirtualBox Ubuntu Server, OpenSSH; 26.10 VM onarımı",
+    targetPaths: ["win-lab/scripts/", "linux-lab/"],
+    suggestedBranch: "feat/ubuntu-vm-provisioner"
+  },
+  {
+    id: "OS-07",
+    category: "os",
+    categoryLabel: "Open Source OS",
+    title: "Lab Environment Selector: WSL vs VirtualBox for Constrained PCs",
+    priority: "Medium",
+    effort: "Small",
+    summary:
+      "Detects a student's Windows machine constraints and recommends WSL2 or VirtualBox, then runs the matching bootstrap — addressing the restricted lab PCs discussed in week 1.",
+    deliverables: [
+      "win-lab/scripts/env_select.ps1: constraint check → WSL2 | VirtualBox recommendation + bootstrap",
+      "Fallback guidance when virtualization is unavailable"
+    ],
+    reference: "Teached 21.09 kısıtlı lab PC'leri, WSL ve VirtualBox seçenekleri",
+    targetPaths: ["win-lab/scripts/"],
+    suggestedBranch: "feat/lab-env-selector"
+  },
+  {
+    id: "OS-08",
+    category: "os",
+    categoryLabel: "Open Source OS",
+    title: "Distro Comparison & Selector (Ubuntu / Debian / Kali / Alpine)",
+    priority: "Medium",
+    effort: "Tiny–Small",
+    summary:
+      "A reference tool comparing the distros covered in class by base, package manager, footprint and use-case, returning a recommendation for a given lab goal.",
+    deliverables: [
+      "linux-lab/distro_select.py: structured distro dataset + recommender",
+      "Markdown comparison-table generator"
+    ],
+    reference: "Teached 28.09 dağıtımlar: Ubuntu, Debian, Kali, Alpine",
+    targetPaths: ["linux-lab/"],
+    suggestedBranch: "feat/distro-selector"
+  },
+  {
+    id: "OS-09",
+    category: "os",
+    categoryLabel: "Open Source OS",
+    title: "Open-Source License Classifier (GPL / MIT / Apache)",
+    priority: "Medium",
+    effort: "Small",
+    summary:
+      "Scans a repository for license files and SPDX headers and classifies the effective license (copyleft vs permissive), explaining the GPL/MIT distinction taught in week 2.",
+    deliverables: [
+      "linux-lab/scripts/license_scan.py: license/SPDX detector → report with copyleft/permissive note",
+      "Flag for mixed or missing licenses"
+    ],
+    reference: "Teached 28.09 dört özgürlük, GPL ve MIT farkı",
+    targetPaths: ["linux-lab/scripts/"],
+    suggestedBranch: "feat/license-classifier"
+  },
+  {
+    id: "OS-10",
+    category: "os",
+    categoryLabel: "Open Source OS",
+    title: "Linux Filesystem Hierarchy Explorer & Teaching Map",
+    priority: "Medium",
+    effort: "Tiny–Small",
+    summary:
+      "Walks and annotates the standard hierarchy (/, /home, /etc, /opt, /root) with what lives where and why, including a hidden-file (dotfile) explanation — a teaching aid for week 2.",
+    deliverables: [
+      "linux-lab/scripts/fs_explore.py: annotated hierarchy walker with per-directory purpose",
+      "Hidden-file listing and explanation"
+    ],
+    reference: "Teached 28.09 dosya sistemi /, /home, /etc, /opt, /root; gizli dosyalar",
+    targetPaths: ["linux-lab/scripts/"],
+    suggestedBranch: "feat/fs-hierarchy-explorer"
+  },
+  {
+    id: "OS-11",
+    category: "os",
+    categoryLabel: "Open Source OS",
+    title: "Guided Shell-Basics Practice & Auto-Grader",
+    priority: "High",
+    effort: "Small",
+    summary:
+      "An interactive checker for the week-3 exercise (ali/eda/aleyna with odevler/sinavlar/sunumlar/puan.txt) that verifies the student's directory/file structure and gives feedback.",
+    deliverables: [
+      "linux-lab/exercises/shell_basics_check.py: validates the taught directory/file exercise",
+      "Pass/fail feedback per expected path with hints"
+    ],
+    reference: "Teached 05.10 alıştırma: ali/eda/aleyna + odevler/sinavlar/sunumlar/puan.txt",
+    targetPaths: ["linux-lab/exercises/"],
+    suggestedBranch: "feat/shell-basics-grader"
+  },
+  {
+    id: "OS-12",
+    category: "os",
+    categoryLabel: "Open Source OS",
+    title: "Directory-Structure Scaffolder (mkdir -p Templates)",
+    priority: "Medium",
+    effort: "Tiny–Small",
+    summary:
+      "Generates nested directory trees from a simple template spec (the mkdir -p pattern taught in class), for setting up course/exercise folders reproducibly.",
+    deliverables: [
+      "linux-lab/scripts/scaffold.py: YAML/JSON template → mkdir -p tree with touch'd files",
+      "Dry-run preview before creating"
+    ],
+    reference: "Teached 05.10 mkdir -p, birden fazla klasör, touch",
+    targetPaths: ["linux-lab/scripts/"],
+    suggestedBranch: "feat/dir-scaffolder"
+  },
+  {
+    id: "OS-13",
+    category: "os",
+    categoryLabel: "Open Source OS",
+    title: "apt update/upgrade Safe Wrapper (Correct Order + Dry-Run)",
+    priority: "High",
+    effort: "Small",
+    summary:
+      "Enforces the taught update-before-upgrade order, shows a dry-run of what will change, and chains steps safely with clear output — codifying the \"order matters\" lesson.",
+    deliverables: [
+      "linux-lab/scripts/apt_safe.py: ordered update → upgrade with dry-run and summary",
+      "Guard refusing upgrade when update failed"
+    ],
+    reference: "Teached 05.10 apt update≠upgrade, sıra önemli; 19.10 && zincirleme",
+    targetPaths: ["linux-lab/scripts/"],
+    suggestedBranch: "feat/apt-safe-wrapper"
+  },
+  {
+    id: "OS-14",
+    category: "os",
+    categoryLabel: "Open Source OS",
+    title: "Node.js & Python Toolchain Installer with Version Check",
+    priority: "Medium",
+    effort: "Small",
+    summary:
+      "Installs Python and Node (detecting apt's stale Node and offering NodeSource), verifies node -v / python versions, and sets python-is-python3 — reproducing weeks 5–6.",
+    deliverables: [
+      "linux-lab/scripts/install_toolchains.sh: apt vs NodeSource choice + version verification",
+      "python-is-python3 setup and post-install checks"
+    ],
+    reference: "Teached 19.10/26.10 Node apt eski sürüm, python-is-python3",
+    targetPaths: ["linux-lab/scripts/"],
+    suggestedBranch: "feat/toolchain-installer"
+  },
+  {
+    id: "OS-15",
+    category: "os",
+    categoryLabel: "Open Source OS",
+    title: "Disk Reclamation Helper (node_modules / Rust target / apt clean)",
+    priority: "Medium",
+    effort: "Small",
+    summary:
+      "Finds and safely removes space hogs — node_modules, Rust target/, apt caches — with a dry-run and size report, reproducing the in-class disk-full recovery.",
+    deliverables: [
+      "linux-lab/scripts/disk_reclaim.py: scan + dry-run + approved cleanup with reclaimed-size report",
+      "Safety: never deletes outside a chosen root; approval required"
+    ],
+    reference: "Teached 26.10 disk dolunca node_modules ve Rust target temizlendi; apt clean",
+    targetPaths: ["linux-lab/scripts/"],
+    suggestedBranch: "feat/disk-reclaim"
+  },
+  {
+    id: "OS-16",
+    category: "os",
+    categoryLabel: "Open Source OS",
+    title: "Server First-Look Health Report (uname / lsb_release / free / disk / services)",
+    priority: "High",
+    effort: "Small",
+    summary:
+      "Collects the \"first look at a server\" facts taught in week 5 — OS version, CPU architecture, RAM, disk and key service status — as JSON plus a readable report.",
+    deliverables: [
+      "linux-lab/scripts/server_firstlook.py: uname/lsb_release/inxi/free/df/systemctl → JSON + report",
+      "Architecture note affecting package choices"
+    ],
+    reference: "Teached 19.10 sistem bilgisi: uname, lsb_release, inxi, free, /proc",
+    targetPaths: ["linux-lab/scripts/", "console/oslab.py"],
+    suggestedBranch: "feat/server-firstlook"
+  },
+  {
+    id: "OS-17",
+    category: "os",
+    categoryLabel: "Open Source OS",
+    title: "SSH Connection Troubleshooter",
+    priority: "High",
+    effort: "Small",
+    summary:
+      "Diagnoses the exact failures students hit — connection timeout, wrong password, 127.0.1.1 binding, school-firewall block, wrong adapter — and prints the fix for each.",
+    deliverables: [
+      "linux-lab/scripts/ssh_doctor.py: targeted checks that classify the failure cause",
+      "Remediation per cause (bridged adapter, hosts file, firewall)"
+    ],
+    reference: "Teached 12.10 SSH hataları: zaman aşımı, yanlış parola, 127.0.1.1, okul güvenlik duvarı",
+    targetPaths: ["linux-lab/scripts/"],
+    suggestedBranch: "feat/ssh-troubleshooter"
+  },
+  {
+    id: "OS-18",
+    category: "os",
+    categoryLabel: "Open Source OS",
+    title: "Dynamic Lab IP Finder via ARP + Auto-SSH",
+    priority: "Medium",
+    effort: "Small",
+    summary:
+      "Cross-platform rewrite of the week-5 PowerShell idea: start/await a VM, find its IP from the ARP table, SSH in and collect system info in one hardened step.",
+    deliverables: [
+      "win-lab/scripts/find_and_ssh.(ps1|py): VM boot wait → ARP IP discovery → SSH → info collection",
+      "Robust error reporting (detailed messages, retry logic)"
+    ],
+    reference: "Teached 19.10 PowerShell: VM başlat, ARP'tan IP bul, SSH ile bağlan, bilgi çıkar",
+    targetPaths: ["win-lab/scripts/"],
+    suggestedBranch: "feat/arp-autossh"
+  },
+  {
+    id: "OS-19",
+    category: "os",
+    categoryLabel: "Open Source OS",
+    title: "SSH Port-Relocation Hardening Helper",
+    priority: "Medium",
+    effort: "Small",
+    summary:
+      "Safely moves sshd off 22 to a chosen port, updates sshd_config and the firewall together, and verifies the new port before closing the old — the \"move the door\" lesson.",
+    deliverables: [
+      "linux-lab/scripts/ssh_port_move.sh: sshd_config + ufw update with pre-close verification",
+      "Rollback if the new port is unreachable"
+    ],
+    reference: "Teached 12.10 port taşıma (22 yerine başka port)",
+    targetPaths: ["linux-lab/scripts/"],
+    suggestedBranch: "feat/ssh-port-relocation"
+  },
+  {
+    id: "OS-20",
+    category: "os",
+    categoryLabel: "Open Source OS",
+    title: "VS Code Remote-SSH Host Registration & Bootstrap",
+    priority: "Medium",
+    effort: "Small",
+    summary:
+      "Registers a lab host for VS Code Remote-SSH (Add New SSH Host), validates the connection and the remote server bootstrap, and checks the green-indicator state programmatically.",
+    deliverables: [
+      "scripts/setup/remote_ssh_register.py: writes/validates the SSH host entry and tests connect",
+      "Checklist verifying the remote extension host is ready"
+    ],
+    reference: "Teached 19.10/26.10 VS Code Remote-SSH, Add New SSH Host, yeşil gösterge",
+    targetPaths: ["scripts/setup/"],
+    suggestedBranch: "feat/vscode-remote-ssh-bootstrap"
+  },
+  {
+    id: "OS-21",
+    category: "os",
+    categoryLabel: "Open Source OS",
+    title: "Boot-Time Python Service Starter (systemd)",
+    priority: "High",
+    effort: "Small",
+    summary:
+      "Scaffolds the week-6 homework: an enabled-at-boot systemd service running a simple looping Python program, with enable/status/journal verification — the student-facing entry point to OS-01.",
+    deliverables: [
+      "linux-lab/templates/loop-service/: minimal .service + loop.py + install/enable script",
+      "Verification: systemctl is-enabled/is-active and journalctl shows loop output"
+    ],
+    reference: "Teached 26.10 ileri ödev: açılışta aktif service + döngülü Python",
+    targetPaths: ["linux-lab/templates/"],
+    suggestedBranch: "feat/boot-service-starter"
+  },
+  {
+    id: "OS-22",
+    category: "os",
+    categoryLabel: "Open Source OS",
+    title: "apt Repair Assistant: Clock/Timezone & Broken Sources",
+    priority: "High",
+    effort: "Small",
+    summary:
+      "Detects the week-6 failure cause — a wrong server clock/timezone breaking apt — plus held packages and broken sources, and proposes/applies fixes (timezone → Istanbul).",
+    deliverables: [
+      "linux-lab/scripts/apt_repair.py: clock/timezone/held/source diagnostics → proposed fixes",
+      "Approval-gated apply with before/after check"
+    ],
+    reference: "Teached 26.10 apt hataları sunucu saat/tarih yanlışı; zaman dilimi İstanbul",
+    targetPaths: ["linux-lab/scripts/"],
+    suggestedBranch: "feat/apt-repair-assistant"
+  },
+  {
+    id: "OS-23",
+    category: "os",
+    categoryLabel: "Open Source OS",
+    title: "dpkg Package Inventory & File Reverse-Lookup",
+    priority: "Medium",
+    effort: "Small",
+    summary:
+      "Wraps dpkg -l/-L/-S into a tool that answers \"what's installed\", \"what files does this package own\" and \"which package owns this file\", with clean JSON output.",
+    deliverables: [
+      "linux-lab/scripts/dpkg_inventory.py: -l/-L/-S wrappers → structured results",
+      "Reverse-lookup mode mapping a path to its owning package"
+    ],
+    reference: "Teached ders05 dpkg (-l/-L/-S/-i/-r)",
+    targetPaths: ["linux-lab/scripts/"],
+    suggestedBranch: "feat/dpkg-inventory"
+  },
+  {
+    id: "OS-24",
+    category: "os",
+    categoryLabel: "Open Source OS",
+    title: "Local .deb Installer with Dependency Resolution",
+    priority: "Medium",
+    effort: "Tiny–Small",
+    summary:
+      "Installs a local .deb via apt install ./x.deb, resolving dependencies and reporting what will be pulled in, with a dry-run first.",
+    deliverables: [
+      "linux-lab/scripts/deb_install.sh: apt install ./x.deb with a dependency preview",
+      "Post-install verification of the package"
+    ],
+    reference: "Teached ders05 apt install ./x.deb",
+    targetPaths: ["linux-lab/scripts/"],
+    suggestedBranch: "feat/local-deb-installer"
+  },
+  {
+    id: "OS-25",
+    category: "os",
+    categoryLabel: "Open Source OS",
+    title: "apt Sources Manager & Validator (/etc/apt/sources.list.d)",
+    priority: "Medium",
+    effort: "Small",
+    summary:
+      "Lists, adds and validates apt sources (modern .sources format), checking GPG keys and reachability before enabling a new repo.",
+    deliverables: [
+      "linux-lab/scripts/apt_sources.py: list/add/validate sources with key + reachability checks",
+      "Guard against duplicate or unsigned repos"
+    ],
+    reference: "Teached ders05 /etc/apt/sources.list.d/ubuntu.sources",
+    targetPaths: ["linux-lab/scripts/"],
+    suggestedBranch: "feat/apt-sources-manager"
+  },
+  {
+    id: "OS-26",
+    category: "os",
+    categoryLabel: "Open Source OS",
+    title: "File Permission & Ownership Auditor",
+    priority: "Medium",
+    effort: "Small",
+    summary:
+      "Scans a directory for world-writable files, over-permissive modes and ownership drift, reporting fixes — the week-3 \"read the door\" permissions lesson as an audit.",
+    deliverables: [
+      "linux-lab/scripts/perm_audit.py: world-writable / bad-mode / ownership-drift scan → findings",
+      "Suggested chmod/chown per finding"
+    ],
+    reference: "Teached ders03 ls -l, rwx, chmod, chown",
+    targetPaths: ["linux-lab/scripts/"],
+    suggestedBranch: "feat/permission-auditor"
+  },
+  {
+    id: "OS-27",
+    category: "os",
+    categoryLabel: "Open Source OS",
+    title: "Permission-Fix Advisor with 644/755/600 Presets",
+    priority: "Medium",
+    effort: "Tiny–Small",
+    summary:
+      "Applies the taught ready-made modes (644 files, 755 dirs/executables, 600 secrets) to a tree with a preview, teaching safe defaults.",
+    deliverables: [
+      "linux-lab/scripts/perm_fix.py: preset-based chmod with preview and approval",
+      "Explains why each preset fits files / dirs / secrets"
+    ],
+    reference: "Teached ders03 hazır 644/755/600, chmod aç/kapat",
+    targetPaths: ["linux-lab/scripts/"],
+    suggestedBranch: "feat/permission-fixer"
+  },
+  {
+    id: "OS-28",
+    category: "os",
+    categoryLabel: "Open Source OS",
+    title: "File Search & Text-Grep Teaching Wrapper (find / grep / wildcards)",
+    priority: "Medium",
+    effort: "Tiny–Small",
+    summary:
+      "A friendly wrapper over find and grep (with wildcard examples) that builds correct commands from a simple query and explains what it ran — reinforcing week-2 search skills.",
+    deliverables: [
+      "linux-lab/scripts/search_helper.py: query → correct find/grep command + results",
+      "Explain mode printing the generated command"
+    ],
+    reference: "Teached ders02 find/grep, joker karakterler",
+    targetPaths: ["linux-lab/scripts/"],
+    suggestedBranch: "feat/search-helper"
+  },
+  {
+    id: "OS-29",
+    category: "os",
+    categoryLabel: "Open Source OS",
+    title: "Server Log Viewer Helper (less / head / tail / wc)",
+    priority: "Medium",
+    effort: "Tiny–Small",
+    summary:
+      "Convenience viewer for server logs using head/tail/less/wc patterns, with a follow mode and quick counts — the week-2 log-reading toolkit.",
+    deliverables: [
+      "linux-lab/scripts/logview.py: head/tail/follow/count modes over a log path",
+      "Safe handling of large and rotating files"
+    ],
+    reference: "Teached ders02 less/head/tail/wc",
+    targetPaths: ["linux-lab/scripts/"],
+    suggestedBranch: "feat/log-viewer-helper"
+  },
+  {
+    id: "OS-30",
+    category: "os",
+    categoryLabel: "Open Source OS",
+    title: "Ubuntu Server Hardening Checker / Applier",
+    priority: "High",
+    effort: "Small–Medium",
+    summary:
+      "Checks SSH config, user accounts, pending updates and ufw status against a hardening baseline and applies fixes on approval — the week-6 \"hardened Ubuntu from scratch\" candidate.",
+    deliverables: [
+      "linux-lab/scripts/harden_check.py: SSH / users / updates / ufw baseline audit → report",
+      "Approval-gated apply with documented changes"
+    ],
+    reference: "Teached vize adayı: sıfırdan sertleştirilmiş Ubuntu Server",
+    targetPaths: ["linux-lab/scripts/"],
+    suggestedBranch: "feat/ubuntu-hardening-checker"
+  },
+  {
+    id: "OS-31",
+    category: "os",
+    categoryLabel: "Open Source OS",
+    title: "journald Structured Logging & Log-Rotation Setup",
+    priority: "Medium",
+    effort: "Small",
+    summary:
+      "Configures journald persistence and size limits plus a logrotate profile for lab services, so long-running daemons don't fill the disk — complements the service work.",
+    deliverables: [
+      "linux-lab/scripts/setup_journald.sh: persistent journald + size limits + logrotate profile",
+      "Verification of rotation and retention"
+    ],
+    reference: "Teached 26.10 servisler, loglar; 05.10 disk yönetimi",
+    targetPaths: ["linux-lab/scripts/"],
+    suggestedBranch: "feat/journald-logging-setup"
+  },
+  {
+    id: "OS-32",
+    category: "os",
+    categoryLabel: "Open Source OS",
+    title: "Service Inventory & Health Report (systemctl)",
+    priority: "Medium",
+    effort: "Small",
+    summary:
+      "Read-only inventory of systemd units with active/enabled state and recent failures, rendered as a report — the week-6 \"always-on / start-at-boot service\" concept.",
+    deliverables: [
+      "linux-lab/scripts/service_inventory.py: systemctl list-units + failed + enabled → JSON/report",
+      "Highlight of failed or flapping services"
+    ],
+    reference: "Teached 12.10/26.10 systemctl status, servis kavramı",
+    targetPaths: ["linux-lab/scripts/"],
+    suggestedBranch: "feat/service-inventory"
+  },
+  {
+    id: "OS-33",
+    category: "os",
+    categoryLabel: "Open Source OS",
+    title: "VirtualBox Snapshot / Restore Automation for Lab VMs",
+    priority: "Medium",
+    effort: "Tiny–Small",
+    summary:
+      "Wraps VBoxManage snapshot take/list/restore so students can checkpoint a working VM before risky steps and roll back instantly — the snapshot practice from week 2.",
+    deliverables: [
+      "win-lab/scripts/vm_snapshot.(ps1|py): take / list / restore named snapshots",
+      "Optional pre-change auto-snapshot hook"
+    ],
+    reference: "Teached ders02 güncelleme + snapshot",
+    targetPaths: ["win-lab/scripts/"],
+    suggestedBranch: "feat/vm-snapshot-automation"
+  },
+  {
+    id: "OS-34",
+    category: "os",
+    categoryLabel: "Open Source OS",
+    title: "Bridged vs NAT Network Adapter Configurator & Checker",
+    priority: "Medium",
+    effort: "Small",
+    summary:
+      "Checks and sets a VM's adapter mode and verifies the guest gets a reachable LAN IP (bridged) — the recurring requirement behind students' SSH failures.",
+    deliverables: [
+      "win-lab/scripts/net_adapter.(ps1|py): read/set adapter mode + verify reachable IP",
+      "Explains when bridged vs NAT is needed for lab SSH"
+    ],
+    reference: "Teached 12.10 bridged adaptör gerekliliği, aynı ağ/IP",
+    targetPaths: ["win-lab/scripts/"],
+    suggestedBranch: "feat/vm-net-adapter"
+  },
+  {
+    id: "OS-35",
+    category: "os",
+    categoryLabel: "Open Source OS",
+    title: "Browser-Extension Injection Detector (Static: sha256sum / unzip / jq / rg)",
+    priority: "Medium",
+    effort: "Small",
+    summary:
+      "The simpler, OS-course version (week 6): unzip an extension, hash it, parse the manifest with jq and grep sinks with ripgrep, producing a clue-level H1–H5 report — detector, evidence collector and risk rule kept distinct.",
+    deliverables: [
+      "linux-lab/scripts/ext_detect.sh: sha256sum / unzip / jq / rg pipeline → H1–H5 clue report",
+      "Clear separation of detector, evidence collector and risk rule"
+    ],
+    reference: "Teached MYO203 ders06 eklenti tespiti; kaynak iExtensionCrawler injection-steps",
+    targetPaths: ["linux-lab/scripts/"],
+    suggestedBranch: "feat/os-extension-detector"
+  },
+  {
+    id: "OS-36",
+    category: "os",
+    categoryLabel: "Open Source OS",
+    title: "Classroom Server Reachability Checker (ping + SSH sweep)",
+    priority: "Medium",
+    effort: "Tiny–Small",
+    summary:
+      "Sweeps the class subnet (e.g. 10.25.130.x), confirms each student's server is up and SSH-reachable, and lists who's offline — the check the instructor ran before Remote-SSH.",
+    deliverables: [
+      "linux-lab/scripts/class_reachability.py: subnet ping + SSH-port sweep → up/down table",
+      "Optional IP → student mapping from a roster file (kept local, never committed)"
+    ],
+    reference: "Teached 26.10 ping ile 10.25.130.x doğrulama, üç öğrencinin sunucusu",
+    targetPaths: ["linux-lab/scripts/"],
+    suggestedBranch: "feat/class-reachability"
+  },
+
+  // --- Firewall Solutions (BGT207) continued ---
+  {
+    id: "FW-07",
+    category: "firewall",
+    categoryLabel: "Firewall Solutions",
+    title: "UFW Application Profiles Manager",
+    priority: "Medium",
+    effort: "Small",
+    summary:
+      "Lists, creates and applies UFW application profiles (/etc/ufw/applications.d) so services are allowed by name, with validation — the application-profiles topic from week 3.",
+    deliverables: [
+      "scripts/firewall/ufw_app_profiles.py: list / create / apply profiles with port + protocol validation",
+      "Report mapping each enabled profile to its underlying rules"
+    ],
+    reference: "Teached 09.10 uygulama profilleri",
+    targetPaths: ["scripts/firewall/", "linux-lab/"],
+    suggestedBranch: "feat/ufw-app-profiles"
+  },
+  {
+    id: "FW-08",
+    category: "firewall",
+    categoryLabel: "Firewall Solutions",
+    title: "before.rules ICMP Policy & hashlimit Rate-Limit Generator",
+    priority: "Medium",
+    effort: "Small–Medium",
+    summary:
+      "Generates correct before.rules fragments for ICMP handling and connection rate-limiting (hashlimit), avoiding the archived guide's non-working commands flagged in the deck notes.",
+    deliverables: [
+      "scripts/firewall/before_rules_gen.py: ICMP + hashlimit fragments validated on a lab VM",
+      "Guard rejecting the known-invalid `ufw route ... limit in rate` / `ufw append` forms"
+    ],
+    reference: "Teached ders02 before.rules (ICMP, hız sınırı); slides-index düzeltmesi",
+    targetPaths: ["scripts/firewall/", "linux-lab/"],
+    suggestedBranch: "feat/before-rules-generator"
+  },
+  {
+    id: "FW-09",
+    category: "firewall",
+    categoryLabel: "Firewall Solutions",
+    title: "nmap-Based Firewall Rule Verification Harness",
+    priority: "High",
+    effort: "Small",
+    summary:
+      "Runs nmap from the client VM against the server VM to prove each rule's effect (open/filtered/closed) and diffs observed state against the intended policy — the external-test step.",
+    deliverables: [
+      "scripts/firewall/nmap_verify.py: scan srv from cli and compare to intended policy → pass/fail",
+      "Report of unexpected open / filtered ports"
+    ],
+    reference: "Teached ders02/09.10 nmap ile test, dışarıdan test",
+    targetPaths: ["scripts/firewall/", "linux-lab/"],
+    suggestedBranch: "feat/nmap-rule-verify"
+  },
+  {
+    id: "FW-10",
+    category: "firewall",
+    categoryLabel: "Firewall Solutions",
+    title: "Stateful vs Stateless Rule Explainer & Validator",
+    priority: "Medium",
+    effort: "Tiny–Small",
+    summary:
+      "Classifies a rule set's stateful/stateless behavior, explains established/related handling, and flags rules that assume state where none exists — the week-1 concept as a checker.",
+    deliverables: [
+      "scripts/firewall/state_check.py: classify rules + flag stateful assumptions",
+      "Teaching output explaining each classification"
+    ],
+    reference: "Teached 25.09 stateful vs stateless, kuralın anatomisi",
+    targetPaths: ["scripts/firewall/"],
+    suggestedBranch: "feat/stateful-explainer"
+  },
+  {
+    id: "FW-11",
+    category: "firewall",
+    categoryLabel: "Firewall Solutions",
+    title: "UFW Enable Safety Guard (SSH-Before-Enable)",
+    priority: "High",
+    effort: "Tiny–Small",
+    summary:
+      "Refuses to enable UFW unless an allow rule for the current SSH session's port/source exists, preventing the classic remote lockout taught as a hard rule.",
+    deliverables: [
+      "scripts/firewall/safe_enable.py: preflight asserting an SSH allow rule before `ufw enable`",
+      "Detects the active SSH port/source automatically"
+    ],
+    reference: "Teached ders03 UFW'yi açmadan önce SSH'ye izin ver",
+    targetPaths: ["scripts/firewall/"],
+    suggestedBranch: "feat/ufw-safe-enable"
+  },
+  {
+    id: "FW-12",
+    category: "firewall",
+    categoryLabel: "Firewall Solutions",
+    title: "UFW Log-Level Configurator & [UFW BLOCK] Parser",
+    priority: "Medium",
+    effort: "Small",
+    summary:
+      "Sets the taught log levels (off/low/medium/high/full) and parses [UFW BLOCK] lines into structured events for downstream alerting.",
+    deliverables: [
+      "scripts/firewall/ufw_logging.py: set level + tail/parse ufw.log into JSON events",
+      "Field extraction (src, dst, proto, port, action)"
+    ],
+    reference: "Teached ders02 log seviyeleri, [UFW BLOCK] okuma, tail -f /var/log/ufw.log",
+    targetPaths: ["scripts/firewall/"],
+    suggestedBranch: "feat/ufw-log-levels"
+  },
+  {
+    id: "FW-13",
+    category: "firewall",
+    categoryLabel: "Firewall Solutions",
+    title: "Service Port Exposure Limiter (MySQL 3306 → App Subnet Only)",
+    priority: "Medium",
+    effort: "Small",
+    summary:
+      "Generates allow-from rules binding a service port to a specific source subnet (e.g. MySQL 3306 only from the app tier) and verifies it's unreachable elsewhere — the week-3 scenario.",
+    deliverables: [
+      "scripts/firewall/port_limit.py: `allow from <subnet> to <port>` generator + reachability check",
+      "Refuses to expose management / DB ports to 0.0.0.0/0"
+    ],
+    reference: "Teached 09.10 MySQL + 3306 yalnız uygulamaya, allow from",
+    targetPaths: ["scripts/firewall/"],
+    suggestedBranch: "feat/service-port-limiter"
+  },
+  {
+    id: "FW-14",
+    category: "firewall",
+    categoryLabel: "Firewall Solutions",
+    title: "Serverless UFW Alert via Cloudflare Workers",
+    priority: "Medium",
+    effort: "Small",
+    summary:
+      "A serverless webhook (Cloudflare Workers) that receives block events and notifies without running a bot on the server — the serverless-bot approach shown in week 3.",
+    deliverables: [
+      "scripts/firewall/worker/: Cloudflare Worker receiving block events + forwarding alerts",
+      "Server-side poster sending only block events to the worker"
+    ],
+    reference: "Teached 09.10 sunucusuz Telegram botu (Cloudflare Workers)",
+    targetPaths: ["scripts/firewall/worker/"],
+    suggestedBranch: "feat/serverless-ufw-alert"
+  },
+  {
+    id: "FW-15",
+    category: "firewall",
+    categoryLabel: "Firewall Solutions",
+    title: "Rule-Order Simulator & Latency Estimator Under Load",
+    priority: "Medium",
+    effort: "Small–Medium",
+    summary:
+      "Simulates first-match evaluation over a rule set and estimates match cost under heavy / DDoS-like traffic, recommending a reordering that puts high-hit rules first.",
+    deliverables: [
+      "scripts/firewall/order_sim.py: first-match simulator + per-rule hit cost + reorder suggestion",
+      "Before/after estimated-latency report"
+    ],
+    reference: "Teached 09.10 ilk eşleşen kazanır, sıra performansı etkiler, DDoS altında",
+    targetPaths: ["scripts/firewall/"],
+    suggestedBranch: "feat/rule-order-simulator"
+  },
+  {
+    id: "FW-16",
+    category: "firewall",
+    categoryLabel: "Firewall Solutions",
+    title: "Duplicate & Shadowed Rule Detector (status numbered)",
+    priority: "High",
+    effort: "Small",
+    summary:
+      "Parses `ufw status numbered` and flags shadowed, duplicate, over-broad and wrongly-ordered rules, plus a missing SSH-before-enable — the rule-set auditor.",
+    deliverables: [
+      "scripts/firewall/rule_audit.py: shadow / duplicate / over-broad / order findings with line refs",
+      "Markdown report with a suggested corrected order"
+    ],
+    reference: "Teached 09.10 kural sırası, status numbered",
+    targetPaths: ["scripts/firewall/"],
+    suggestedBranch: "feat/ufw-shadow-detector"
+  },
+  {
+    id: "FW-17",
+    category: "firewall",
+    categoryLabel: "Firewall Solutions",
+    title: "UFW Log Analyzer: Top Blocked Sources, Ports & Scan Detection",
+    priority: "High",
+    effort: "Small",
+    summary:
+      "Summarizes /var/log/ufw.log into top blocked sources/ports, detects port-scan patterns and gives a rate summary.",
+    deliverables: [
+      "scripts/firewall/log_summary.py: aggregate blocked src/port + scan detection + rate summary",
+      "Time-bucketed JSON for the dashboard"
+    ],
+    reference: "Teached ders02/09.10 ufw.log",
+    targetPaths: ["scripts/firewall/", "dashboard/src/views/jobs-page.tsx"],
+    suggestedBranch: "feat/ufw-log-analyzer"
+  },
+  {
+    id: "FW-18",
+    category: "firewall",
+    categoryLabel: "Firewall Solutions",
+    title: "Reject-vs-Deny Scanner-Exposure Tester",
+    priority: "Medium",
+    effort: "Small",
+    summary:
+      "Sets up both deny and reject rules in the lab and compares how each appears to an nmap scan (silent drop vs ICMP unreachable), teaching why reject reveals the firewall.",
+    deliverables: [
+      "scripts/firewall/reject_vs_deny.py: apply both, scan, and tabulate scanner-visible differences",
+      "Teaching report on exposure trade-offs"
+    ],
+    reference: "Teached 09.10 deny sessiz, reject yanıt verir",
+    targetPaths: ["scripts/firewall/"],
+    suggestedBranch: "feat/reject-vs-deny-tester"
+  },
+  {
+    id: "FW-19",
+    category: "firewall",
+    categoryLabel: "Firewall Solutions",
+    title: "Notification-Storm Regression Harness (Loop Suppression)",
+    priority: "High",
+    effort: "Small",
+    summary:
+      "Reproduces the 09.10 incident in a lab and asserts the notifier suppresses outbound ALLOW and 53/udp DNS traffic and dedupes/rate-limits, so the storm can't recur — a test harness for FW-02.",
+    deliverables: [
+      "scripts/firewall/tests/test_storm_suppression.py: feeds synthetic ufw.log, asserts no storm",
+      "Fixtures covering outbound ALLOW and DNS-loop lines"
+    ],
+    reference: "Teached 09.10 bildirim fırtınası (giden ALLOW + 53/udp), block-only çözüm",
+    targetPaths: ["scripts/firewall/tests/"],
+    suggestedBranch: "feat/storm-regression-harness"
+  },
+  {
+    id: "FW-20",
+    category: "firewall",
+    categoryLabel: "Firewall Solutions",
+    title: "Subnet & Bandwidth Planner (Users × Services → CIDR + Estimate)",
+    priority: "High",
+    effort: "Medium",
+    summary:
+      "Takes per-branch user/device counts and a service mix (Zoom, VoIP, ERP, email, git, CI/CD, web, cloud) and outputs a CIDR plan and bandwidth estimate — the week-5 homework core.",
+    deliverables: [
+      "scripts/firewall/net_planner.py: counts + services → CIDR allocation + per-branch bandwidth estimate",
+      "Explains /24 vs /17 sizing for device density"
+    ],
+    reference: "Teached 23.10 /24 /17, kişi×cihaz, bant genişliği",
+    targetPaths: ["scripts/firewall/", "docs/network/"],
+    suggestedBranch: "feat/subnet-bandwidth-planner"
+  },
+  {
+    id: "FW-21",
+    category: "firewall",
+    categoryLabel: "Firewall Solutions",
+    title: "Multi-Branch Company Repo Scaffolder (HQ / Branch / Academic / DMZ)",
+    priority: "Medium",
+    effort: "Small",
+    summary:
+      "Generates the week-5 homework skeleton: per-branch folders (Ankara / İstanbul / Londra + 10 000-student academic branch) with placeholders for counts, bandwidth, product shortlist and rule sets.",
+    deliverables: [
+      "scripts/firewall/company_scaffold.py: branch folders + README templates per the assignment",
+      "Per-branch stubs for staff / student / R&D / software counts"
+    ],
+    reference: "Teached 23.10 çok şubeli firma senaryosu, her şube için klasör",
+    targetPaths: ["scripts/firewall/"],
+    suggestedBranch: "feat/company-repo-scaffold"
+  },
+  {
+    id: "FW-22",
+    category: "firewall",
+    categoryLabel: "Firewall Solutions",
+    title: "VLAN Segmentation Rule-Set Generator (Staff / Student / R&D / Software)",
+    priority: "Medium",
+    effort: "Medium",
+    summary:
+      "Produces per-VLAN rule sets giving each team its own policy and inter-VLAN restrictions, from a simple segment spec — the segmentation taught in week 5.",
+    deliverables: [
+      "scripts/firewall/vlan_rules.py: segment spec → per-VLAN UFW/nftables rules + inter-VLAN matrix",
+      "Default-deny between segments with explicit allows"
+    ],
+    reference: "Teached 23.10 VLAN ve bölütleme, ayrı kural seti",
+    targetPaths: ["scripts/firewall/"],
+    suggestedBranch: "feat/vlan-ruleset-generator"
+  },
+  {
+    id: "FW-23",
+    category: "firewall",
+    categoryLabel: "Firewall Solutions",
+    title: "DMZ Boundary Policy Generator & Validator",
+    priority: "Medium",
+    effort: "Small",
+    summary:
+      "Generates DMZ-to-internal and internet-to-DMZ rules and validates that internal services aren't reachable from the DMZ except through defined paths.",
+    deliverables: [
+      "scripts/firewall/dmz_policy.py: DMZ boundary rule generator + reachability validation",
+      "Flags any internal exposure leaking through the DMZ"
+    ],
+    reference: "Teached 25.09/23.10 DMZ ayrımı",
+    targetPaths: ["scripts/firewall/"],
+    suggestedBranch: "feat/dmz-policy-generator"
+  },
+  {
+    id: "FW-24",
+    category: "firewall",
+    categoryLabel: "Firewall Solutions",
+    title: "Base-Service Rule Templates (NTP 123, DHCP 67/68) with Lockout Prevention",
+    priority: "Medium",
+    effort: "Tiny–Small",
+    summary:
+      "Emits the essential infrastructure rules so a locked-down host still gets DHCP/NTP, codifying the \"deny everything and you also kill DHCP\" warning.",
+    deliverables: [
+      "scripts/firewall/base_services.py: NTP / DHCP / DNS templates with lockout-prevention checks",
+      "Warning when a default-deny policy would break address assignment"
+    ],
+    reference: "Teached 23.10 NTP 123, DHCP 67/68, DNS 53; DHCP kilitlenmesi",
+    targetPaths: ["scripts/firewall/"],
+    suggestedBranch: "feat/base-service-rules"
+  },
+  {
+    id: "FW-25",
+    category: "firewall",
+    categoryLabel: "Firewall Solutions",
+    title: "Private-IP (RFC 1918) Range Validator & Misconfig Flag",
+    priority: "Medium",
+    effort: "Tiny–Small",
+    summary:
+      "Validates that internal rules reference only private ranges (10/8, 172.16/12, 192.168/16) and flags accidental public-range allows — the 10./172./192. reminder.",
+    deliverables: [
+      "scripts/firewall/rfc1918_check.py: classify rule sources/dests + flag public ranges in internal rules",
+      "Report of any internal rule exposed to public space"
+    ],
+    reference: "Teached 09.10 özel IP blokları 10./172./192.",
+    targetPaths: ["scripts/firewall/"],
+    suggestedBranch: "feat/rfc1918-validator"
+  },
+  {
+    id: "FW-26",
+    category: "firewall",
+    categoryLabel: "Firewall Solutions",
+    title: "Firewall Product Comparison & Segment Selector",
+    priority: "Medium",
+    effort: "Medium",
+    summary:
+      "A curated dataset and selector for the week-5 deliverable: top-5 products per segment (FortiGate, pfSense, OPNsense, Sophos, local vendors) with bandwidth fit and real-license vs trial notes.",
+    deliverables: [
+      "scripts/firewall/product_select.py: segment + bandwidth → top-5 recommendation with rationale",
+      "Dataset with license model and price tier (real license, not trial)"
+    ],
+    reference: "Teached 23.10 her parça için en iyi 5 ürün, FortiGate/pfSense/OPNsense/Sophos",
+    targetPaths: ["scripts/firewall/", "docs/network/"],
+    suggestedBranch: "feat/firewall-product-selector"
+  },
+  {
+    id: "FW-27",
+    category: "firewall",
+    categoryLabel: "Firewall Solutions",
+    title: "pfSense / OPNsense Rule Export & Cross-Translation from UFW",
+    priority: "Medium",
+    effort: "Medium",
+    prerequisite: "pfSense/OPNsense appliance lab",
+    summary:
+      "Translates a UFW rule set into pfSense/OPNsense equivalents (and back), so the same policy can be validated across the appliances compared in class.",
+    deliverables: [
+      "scripts/firewall/appliance_translate.py: UFW ↔ pfSense/OPNsense rule mapping with caveats",
+      "Diff report of rules that don't translate cleanly"
+    ],
+    reference: "Teached 09.10/23.10 aynı mantık pfSense/FortiGate; ürün karşılaştırması",
+    targetPaths: ["scripts/firewall/"],
+    suggestedBranch: "feat/appliance-rule-translate"
+  },
+  {
+    id: "FW-28",
+    category: "firewall",
+    categoryLabel: "Firewall Solutions",
+    title: "Attack-Surface Analyzer: VPN vs Exposed-Port Posture",
+    priority: "Medium",
+    effort: "Small",
+    summary:
+      "Enumerates publicly-exposed ports/services on a lab host and scores the reduction achieved by moving remote access behind a role-based VPN — quantifying the week-5 VPN argument.",
+    deliverables: [
+      "scripts/firewall/attack_surface.py: exposed-service enumeration + VPN-behind scoring",
+      "Before/after exposure report"
+    ],
+    reference: "Teached 23.10 SSH yerine rol bazlı VPN, uzaktan erişim",
+    targetPaths: ["scripts/firewall/"],
+    suggestedBranch: "feat/attack-surface-analyzer"
+  },
+  {
+    id: "FW-29",
+    category: "firewall",
+    categoryLabel: "Firewall Solutions",
+    title: "Firewall Monitoring Plan Generator (Human + Systematic)",
+    priority: "Medium",
+    effort: "Small",
+    summary:
+      "Produces the week-5 monitoring deliverable: where alerts land, who watches them, the human on-call vs systematic/automated split, and application- vs security-monitoring separation.",
+    deliverables: [
+      "scripts/firewall/monitoring_plan.py: template → monitoring plan (routing, ownership, human/auto split)",
+      "Separates application monitoring from security monitoring"
+    ],
+    reference: "Teached 23.10 izleme: kim bakar, insani vs sistematik, uygulama vs güvenlik",
+    targetPaths: ["scripts/firewall/", "docs/network/"],
+    suggestedBranch: "feat/monitoring-plan-generator"
+  },
+  {
+    id: "FW-30",
+    category: "firewall",
+    categoryLabel: "Firewall Solutions",
+    title: "Branch Firewall Generator from Company Spec (Why-Per-Rule)",
+    priority: "Medium",
+    effort: "Large",
+    prerequisite: "Rule-set lecture (BGT207, planned — kural setleri sonra)",
+    summary:
+      "Turns a company spec (branches, VLANs, subnets, services) into a full UFW/nftables rule set with a justification for every rule, requiring approval before any apply.",
+    deliverables: [
+      "scripts/firewall/branch_fw_gen.py: spec → rule set with a per-rule rationale",
+      "needsApproval gate before applying any generated rule"
+    ],
+    reference: "Teached 23.10 kural setleri sonra oluşturulacak",
+    targetPaths: ["scripts/firewall/"],
+    suggestedBranch: "feat/branch-firewall-generator"
+  },
+  {
+    id: "FW-31",
+    category: "firewall",
+    categoryLabel: "Firewall Solutions",
+    title: "UFW → nftables Equivalent Generator",
+    priority: "Medium",
+    effort: "Small–Medium",
+    summary:
+      "Emits the nftables ruleset equivalent to a given UFW policy, so students see the lower-level representation and can run either backend in the lab.",
+    deliverables: [
+      "scripts/firewall/ufw_to_nft.py: UFW policy → nft ruleset with comments",
+      "Lab verification that both backends produce the same scan result"
+    ],
+    reference: "Teached 23.10/09.10 UFW/nftables, aynı mantık farklı ürün",
+    targetPaths: ["scripts/firewall/", "linux-lab/"],
+    suggestedBranch: "feat/ufw-to-nftables"
+  },
+  {
+    id: "FW-32",
+    category: "firewall",
+    categoryLabel: "Firewall Solutions",
+    title: "Vulnerable-PHP Lab + Virtual-Patch Verification (ModSecurity)",
+    priority: "Medium",
+    effort: "Medium",
+    prerequisite: "ModSecurity/WAF lecture (BGT207, planned)",
+    summary:
+      "A lab PHP target reproducing the week-5 application-layer RCE class, plus a check that a ModSecurity/CRS virtual patch blocks the exploit path while the real fix (upgrade) is pending.",
+    deliverables: [
+      "linux-lab/waf/php-target/: intentionally vulnerable PHP app (lab only)",
+      "virtual_patch_check.py asserting the CRS rule blocks the exploit path"
+    ],
+    reference: "Teached 23.10 PHP RCE, WAF/ModSecurity",
+    targetPaths: ["linux-lab/waf/", "linux-lab/docker-compose.yml"],
+    suggestedBranch: "feat/vuln-php-virtual-patch"
+  },
+  {
+    id: "FW-33",
+    category: "firewall",
+    categoryLabel: "Firewall Solutions",
+    title: "L3/L4 vs L7 Demonstration: Why Network Firewalls Miss App Attacks",
+    priority: "Medium",
+    effort: "Small–Medium",
+    prerequisite: "WAF lecture (BGT207, planned)",
+    summary:
+      "A side-by-side lab showing an application-layer attack passing an L3/L4 firewall but caught by an L7 WAF — making concrete the week-5 point that regex/CDN alone can't see a memory-limit attack.",
+    deliverables: [
+      "linux-lab/waf/l3l4_vs_l7/: compose demo routing the same attack through UFW-only vs WAF",
+      "Report contrasting what each layer sees and blocks"
+    ],
+    reference: "Teached 23.10 açık uygulama katmanında; normal güvenlik duvarı yetmez; CDN/regex sınırı",
+    targetPaths: ["linux-lab/waf/"],
+    suggestedBranch: "feat/l3l4-vs-l7-demo"
+  },
+  {
+    id: "FW-34",
+    category: "firewall",
+    categoryLabel: "Firewall Solutions",
+    title: "CVE / Advisory Watcher with Version-Affected Check",
+    priority: "Medium",
+    effort: "Small",
+    summary:
+      "Watches for new advisories affecting the stack a branch runs and checks the server's installed versions against affected ranges — the weekly-advisory tracking worth extra credit.",
+    deliverables: [
+      "scripts/firewall/cve_watch.py: advisory feed + installed-version affected check → alerts",
+      "Per-service exposure report (am I affected?)"
+    ],
+    reference: "Teached 23.10 haftanın kritik açıkları, güncel açık takibi ek puan",
+    targetPaths: ["scripts/firewall/"],
+    suggestedBranch: "feat/cve-watcher"
+  },
+  {
+    id: "FW-35",
+    category: "firewall",
+    categoryLabel: "Firewall Solutions",
+    title: "Patch vs Mitigation Decision Assistant",
+    priority: "Medium",
+    effort: "Tiny–Small",
+    summary:
+      "Given an advisory and the server's state, separates a temporary mitigation from the real fix (apt upgrade) and recommends an ordered action plan — the week-5 incident lesson.",
+    deliverables: [
+      "scripts/firewall/patch_decide.py: advisory + state → temporary vs permanent action plan",
+      "Checklist: assess impact, check version, mitigate, patch"
+    ],
+    reference: "Teached 23.10 geçici önlem vs kalıcı çözüm, asıl çözüm yama",
+    targetPaths: ["scripts/firewall/"],
+    suggestedBranch: "feat/patch-mitigation-assistant"
+  },
+  {
+    id: "FW-36",
+    category: "firewall",
+    categoryLabel: "Firewall Solutions",
+    title: "Trusted apt Source Adder & Verifier (When the Distro Lags)",
+    priority: "Medium",
+    effort: "Small",
+    summary:
+      "Safely adds a vetted third-party repo (e.g. for a newer PHP) with GPG key verification and apt pinning, for when the distro's packages lag behind — the discussion from the PHP incident.",
+    deliverables: [
+      "scripts/firewall/trusted_source.py: add repo + verify GPG key + apt pin with reachability check",
+      "Refuses unsigned sources; records why the source was added"
+    ],
+    reference: "Teached 23.10 güvenilir ek kaynak, en güncel sürüm PHP 8.5",
+    targetPaths: ["scripts/firewall/"],
+    suggestedBranch: "feat/trusted-apt-source"
+  },
+  {
+    id: "FW-37",
+    category: "firewall",
+    categoryLabel: "Firewall Solutions",
+    title: "KVKK / Cookie / Privacy-Text Compliance Checker",
+    priority: "Medium",
+    effort: "Small",
+    summary:
+      "Checks a branch's web presence (lab / allowlisted hosts) for required KVKK, cookie and privacy notices and flags missing or broken policy pages — the compliance gap raised in week 5.",
+    deliverables: [
+      "scripts/firewall/kvkk_check.py: fetch allowlisted pages + detect missing KVKK/cookie/privacy texts",
+      "Report of missing or stale policy pages"
+    ],
+    reference: "Teached 23.10 KVKK, çerez, gizlilik metni eksikleri",
+    targetPaths: ["scripts/firewall/"],
+    suggestedBranch: "feat/kvkk-compliance-checker"
+  },
+  {
+    id: "FW-38",
+    category: "firewall",
+    categoryLabel: "Firewall Solutions",
+    title: "\"Explain-Your-Rule\" Audit (Unexplained Rule = Vulnerability)",
+    priority: "Medium",
+    effort: "Small",
+    summary:
+      "Requires a one-line justification for every rule and flags any rule the author can't explain, encoding the instructor's principle that an unexplainable rule is itself a weakness.",
+    deliverables: [
+      "scripts/firewall/explain_audit.py: rule set + justifications file → flags unexplained/undocumented rules",
+      "Blocks sign-off until every rule has a rationale"
+    ],
+    reference: "Teached 23.10 açıklamasını yapamadığın kural zafiyettir",
+    targetPaths: ["scripts/firewall/"],
+    suggestedBranch: "feat/explain-your-rule-audit"
   }
 ];
 
@@ -373,7 +1985,9 @@ export default function ContributePage({ html }: { html: string }) {
         task.summary.toLowerCase().includes(q) ||
         task.reference.toLowerCase().includes(q) ||
         task.targetPaths.some((p) => p.toLowerCase().includes(q)) ||
-        task.deliverables.some((d) => d.toLowerCase().includes(q))
+        task.deliverables.some((d) => d.toLowerCase().includes(q)) ||
+        (task.prerequisite?.toLowerCase().includes(q) ?? false) ||
+        ("held".includes(q) && !!task.prerequisite)
       );
     });
   }, [selectedCategory, selectedPriority, searchQuery]);
@@ -386,6 +2000,8 @@ export default function ContributePage({ html }: { html: string }) {
       firewall: CURATED_TASKS.filter((t) => t.category === "firewall").length
     };
   }, []);
+
+  const heldCount = useMemo(() => CURATED_TASKS.filter((t) => t.prerequisite).length, []);
 
   const copyToClipboard = (text: string, id: string) => {
     void navigator.clipboard?.writeText(text).catch(() => {});
@@ -473,8 +2089,13 @@ export default function ContributePage({ html }: { html: string }) {
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     <span className="rounded-md border border-(--iux-border) bg-(--iux-muted)/50 px-2.5 py-1 text-xs font-medium text-(--iux-foreground)">
-                      {CURATED_TASKS.length} tasks ready
+                      {CURATED_TASKS.length} tasks
                     </span>
+                    {heldCount > 0 ? (
+                      <span className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-600 dark:text-amber-400">
+                        {heldCount} held
+                      </span>
+                    ) : null}
                   </div>
                 </div>
 
@@ -625,6 +2246,14 @@ export default function ContributePage({ html }: { html: string }) {
                             <span className="text-[11px] text-(--iux-muted-foreground)">
                               Effort: <strong>{task.effort}</strong>
                             </span>
+                            {task.prerequisite ? (
+                              <span
+                                className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+                                title={`Held — needs: ${task.prerequisite}`}
+                              >
+                                Held · needs {task.prerequisite}
+                              </span>
+                            ) : null}
                           </div>
 
                           <div className="flex items-center gap-1.5">
