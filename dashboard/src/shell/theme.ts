@@ -40,8 +40,8 @@ export function applyMode(mode: ThemeMode, persist = true) {
   document.documentElement.style.colorScheme = mode;
   if (persist) {
     try {
+      // localStorage only: os-lab's server never reads the theme, so no cookie is set
       localStorage.setItem("theme", mode);
-      document.cookie = `theme=${mode}; path=/; max-age=31536000; SameSite=Lax`;
     } catch {
       // Storage unavailable: the choice lasts for this page view
     }
@@ -55,7 +55,6 @@ export function clearMode() {
   if (typeof document === "undefined") return;
   try {
     localStorage.removeItem("theme");
-    document.cookie = "theme=; path=/; max-age=0; SameSite=Lax";
   } catch {}
   const next = window.matchMedia("(prefers-color-scheme: dark)").matches
     ? "dark"

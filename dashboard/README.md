@@ -17,6 +17,7 @@ backend: host detection, lab plans and jobs live in `console/oslab.py`.
 | `/labs/<lab>/` | One lab (`android`, `windows`, `linux`, `ios`, `macos`): dependencies with **Install dependencies**, typed actions, plan preview → confirm → run, live job output, container monitor, endpoints, profiles and masked configuration |
 | `/jobs/` | Every lab job with its output; cancel running jobs |
 | `/android/…` | Android Lab workbench: overview, code & providers, workflows & DAG, execution & logs, analytics, routes & sitemap |
+| `/legal/…` | Terms of Use, Acceptable Use, Privacy Notice and Third-Party Notices, compiled from `docs/legal/*.md` at build time |
 
 Every lab action is previewed first: the server returns the exact command, its
 effects, setup prerequisites and privileges, and a token that `/api/labs/start`

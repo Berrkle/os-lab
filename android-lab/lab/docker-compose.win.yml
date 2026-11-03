@@ -54,6 +54,9 @@ services:
     environment:
       EMULATOR_DEVICE: "${EMULATOR_DEVICE:-Samsung Galaxy S10}"
       WEB_VNC: "true"
+      # Docker-Android reports usage analytics (incl. city/country via ipinfo.io) to its
+      # maintainers unless disabled; os-lab opts out by default. See docs/legal/PRIVACY.md.
+      USER_BEHAVIOR_ANALYTICS: "${DOCKER_ANDROID_ANALYTICS:-false}"
     devices:
       - /dev/kvm
     volumes:

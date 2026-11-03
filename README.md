@@ -59,6 +59,17 @@ what each still needs, one page per lab to install dependencies and start,
 stop or inspect it (every action is previewed before it runs), a jobs log,
 and the Android Lab workbench.
 
+## Legal
+
+os-lab is licensed under the [Apache License 2.0](LICENSE). Before running the
+labs, read the [Terms of Use](docs/legal/TERMS.md) and the
+[Acceptable Use Policy](docs/legal/ACCEPTABLE_USE.md): only test what you own or
+are authorized in writing to test, and hold valid Windows and macOS licences.
+The [Privacy Notice](docs/legal/PRIVACY.md) explains what stays on your machine
+(os-lab sends no telemetry and disables Docker-Android's analytics by default),
+and the [Third-Party Notices](docs/legal/THIRD_PARTY_NOTICES.md) list component
+licences. The dashboard shows the same documents at `/legal/`.
+
 ## Management CLI
 
 [`./labctl`](labctl) is the single entry point for profiles, lifecycle, hardware
