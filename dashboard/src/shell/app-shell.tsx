@@ -14,7 +14,9 @@ import {
   CircleIcon,
   CpuIcon,
   DesktopTowerIcon,
+  GitPullRequestIcon,
   HeartbeatIcon,
+  ScalesIcon,
   LaptopIcon,
   ListChecksIcon,
   ListIcon,
@@ -49,6 +51,9 @@ export function sectionHref(id: string): string {
   if (id === "jobs") return "/jobs/";
   if (id === "repo") return REPO_URL;
   if (id === "health") return "/api/health";
+  if (id === "legal") return "/legal/";
+  if (id === "contribute") return "/contribute/";
+  if (id.startsWith("legal-")) return `/legal/${id.slice(6)}/`;
   if (id === "android-overview") return "/android/";
   if (id.startsWith("android-")) return `/android/${id.slice(8)}/`;
   if (id.startsWith("lab-")) return `/labs/${id.slice(4)}/`;
@@ -120,6 +125,18 @@ function buildGroups(labs: LabStatus[] | undefined, running: Set<string>, androi
       label: "Help",
       items: [
         { id: "health", label: "Health check", icon: <HeartbeatIcon size={16} /> },
+        {
+          id: "legal",
+          label: "Legal",
+          icon: <ScalesIcon size={16} />,
+          children: [
+            { id: "legal-terms", label: "Terms of Use" },
+            { id: "legal-acceptable-use", label: "Acceptable Use" },
+            { id: "legal-privacy", label: "Privacy Notice" },
+            { id: "legal-third-party", label: "Third-Party Notices" }
+          ]
+        },
+        { id: "contribute", label: "Contribute", icon: <GitPullRequestIcon size={16} /> },
         { id: "repo", label: "Repository", icon: <BookOpenIcon size={16} /> }
       ]
     }
@@ -142,6 +159,11 @@ function buildMeta(): Record<string, SpotlightMeta> {
     "lab-macos": { description: "Native Xcode Simulator and Appium on a Mac", aliases: ["mac", "appium", "xcuitest"] },
     "lab-linux": { description: "Linux VM with web console and SSH", aliases: ["linux", "ssh", "vm"] },
     health: { description: "GET /api/health", aliases: ["status", "api"] },
+    contribute: { description: "How to set up, test, rebuild and open a pull request", aliases: ["contribute", "contributing", "pull request", "pr", "development", "tests"] },
+    "legal-terms": { description: "Licence, authorized use, OS licences, no warranty", aliases: ["legal", "terms", "license", "warranty", "liability"] },
+    "legal-acceptable-use": { description: "Supported and unsupported use, responsible disclosure", aliases: ["legal", "aup", "policy", "disclosure"] },
+    "legal-privacy": { description: "Local-only console, browser storage, network connections, analytics", aliases: ["legal", "privacy", "gdpr", "kvkk", "telemetry", "cookies"] },
+    "legal-third-party": { description: "Licences of images, tools and bundled components", aliases: ["legal", "licenses", "notices", "open source"] },
     repo: { description: "os-lab on GitHub", aliases: ["github", "source", "docs"] }
   };
 }

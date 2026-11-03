@@ -274,7 +274,7 @@ lab/
 │   └── uninstall-service.sh
 ├── hooks/                   # Frida scripts
 ├── tests/                   # Python tests
-├── tools/platform-tools/    # portable adb.exe and friends (Windows path)
+├── tools/platform-tools/    # Google's adb/fastboot, downloaded on demand (make platform-tools); not in git
 ├── apks/  artifacts/  frida/
 ```
 

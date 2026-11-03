@@ -1,0 +1,18 @@
+---
+import Base from "../../layouts/Base.astro";
+import { LegalDocPage } from "../../views/legal-page";
+import { LEGAL_DOCS, rewriteLinks } from "../../lib/legal";
+
+// docs/legal/*.md is the single source: the repository and the dashboard show the same text
+const files = import.meta.glob<{ compiledContent: () => Promise<string> }>("../../../../docs/legal/*.md", { eager: true });
+
+export async function getStaticPaths() {
+  return LEGAL_DOCS.map((doc) => ({ params: { doc: doc.slug }, props: { doc } }));
+}
+
+const { doc } = Astro.props;
+const entry = Object.entries(files).find(([path]) => path.endsWith(`/${doc.file}`));
+if (!entry) throw new Error(`Missing docs/legal/${doc.file}`);
+const html = rewriteLinks(await entry[1].compiledContent());
+---
+<Base title={doc.title} description={doc.description}><LegalDocPage slug={doc.slug} html={html} client:only="react" /></Base>

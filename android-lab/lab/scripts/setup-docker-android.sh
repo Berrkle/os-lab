@@ -46,6 +46,7 @@ docker run -d \
   -p 5555:5555 \
   -e EMULATOR_DEVICE="Samsung Galaxy S10" \
   -e WEB_VNC=true \
+  -e USER_BEHAVIOR_ANALYTICS="${DOCKER_ANDROID_ANALYTICS:-false}" \
   --device /dev/kvm \
   -v android-data:/home/androidusr \
   --name android-container \

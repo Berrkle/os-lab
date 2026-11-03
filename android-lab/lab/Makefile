@@ -4,7 +4,7 @@ SHELL := /bin/bash
 FRIDA ?= $(if $(wildcard .venv/bin/frida),.venv/bin/frida,frida)
 LABCTL ?= ../../labctl
 
-.PHONY: help setup setup-python preflight pull up boot static-up static-down down status monitor profiles logs adb shell install wf1 wf2 hook report install-service uninstall-service clean
+.PHONY: help setup setup-python platform-tools preflight pull up boot static-up static-down down status monitor profiles logs adb shell install wf1 wf2 hook report install-service uninstall-service clean
 
 help: ## Show this help
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -17,6 +17,9 @@ setup-python: ## Create .venv and install requirements.txt
 	python3 -m venv .venv
 	.venv/bin/pip install --upgrade pip
 	.venv/bin/pip install -r requirements.txt
+
+platform-tools: ## Download Google's adb/fastboot into tools/platform-tools (not shipped in the repo)
+	python3 scripts/get_platform_tools.py
 
 preflight: ## Check OS / KVM / docker / ports / disk (cheat sheet §0)
 	bash scripts/preflight.sh

@@ -15,6 +15,8 @@ export default defineConfig({
     plugins: [tailwindcss()],
     // `npm run dev` talks to a running console (python3 android-lab/lab/web_ui.py)
     server: {
+      // The legal pages render ../docs/legal/*.md (the repository's own copy)
+      fs: { allow: [".."] },
       proxy: {
         "/api": { target: api, changeOrigin: false },
         "/artifacts": { target: api, changeOrigin: false }

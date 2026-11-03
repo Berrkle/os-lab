@@ -7,8 +7,8 @@ frida/*
 !frida/.gitkeep
 *.mitm
 .venv/
+# Downloaded on demand (scripts/get_platform_tools.py, lab.ps1 setup); never committed
 tools/*
-!tools/platform-tools/
 __pycache__/
 *.pyc
 scripts/*.apk
