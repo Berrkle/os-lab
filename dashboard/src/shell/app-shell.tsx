@@ -14,6 +14,7 @@ import {
   CircleIcon,
   CpuIcon,
   DesktopTowerIcon,
+  FireIcon,
   GitPullRequestIcon,
   HeartbeatIcon,
   ScalesIcon,
@@ -53,6 +54,7 @@ export function sectionHref(id: string): string {
   if (id === "health") return "/api/health";
   if (id === "legal") return "/legal/";
   if (id === "contribute") return "/contribute/";
+  if (id === "firewall") return "/firewall/";
   if (id.startsWith("legal-")) return `/legal/${id.slice(6)}/`;
   if (id === "android-overview") return "/android/";
   if (id.startsWith("android-")) return `/android/${id.slice(8)}/`;
@@ -118,7 +120,8 @@ function buildGroups(labs: LabStatus[] | undefined, running: Set<string>, androi
         labItem("ios", "iOS Lab"),
         labItem("windows", "Windows Lab"),
         labItem("macos", "macOS Lab"),
-        labItem("linux", "Linux Lab")
+        labItem("linux", "Linux Lab"),
+        { id: "firewall", label: "Firewall Lab", icon: <FireIcon size={16} /> }
       ]
     },
     {
@@ -158,6 +161,7 @@ function buildMeta(): Record<string, SpotlightMeta> {
     "lab-windows": { description: "Windows VM with web desktop and RDP", aliases: ["windows", "rdp", "vm"] },
     "lab-macos": { description: "Native Xcode Simulator and Appium on a Mac", aliases: ["mac", "appium", "xcuitest"] },
     "lab-linux": { description: "Linux VM with web console and SSH", aliases: ["linux", "ssh", "vm"] },
+    firewall: { description: "BGT207 dream-company firewall designs — branches, segmentation, products and rule sets", aliases: ["firewall", "bgt207", "ufw", "rules", "vlan", "dmz", "company"] },
     health: { description: "GET /api/health", aliases: ["status", "api"] },
     contribute: { description: "How to set up, test, rebuild, open a pull request and view roadmap TODOs", aliases: ["contribute", "contributing", "pull request", "pr", "development", "tests", "todos", "roadmap", "pentesting", "firewall", "tasks"] },
     "legal-terms": { description: "Licence, authorized use, OS licences, no warranty", aliases: ["legal", "terms", "license", "warranty", "liability"] },

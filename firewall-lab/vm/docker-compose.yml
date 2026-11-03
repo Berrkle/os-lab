@@ -1,0 +1,45 @@
+# firewall-lab VM: a disposable Ubuntu Server guest for practising UFW rule sets
+# (qemux/qemu). Boot it, SSH in, and apply a rule set rendered from a company.json.
+# Requires a Linux host with /dev/kvm — same prerequisites as ../../linux-lab.
+
+name: firewall-lab
+
+services:
+  fw:
+    image: qemux/qemu:${IMAGE_TAG:-latest}
+    container_name: firewall-lab
+
+    environment:
+      # Ubuntu Server, the OS we use in class for UFW. Any distro shortcut works.
+      BOOT: "${BOOT:-ubuntu}"
+      BOOT_MODE: "${BOOT_MODE:-uefi}"
+
+      CPU_CORES: "${CPU_CORES:-2}"
+      RAM_SIZE: "${RAM_SIZE:-2G}"
+      DISK_SIZE: "${DISK_SIZE:-16G}"
+      DISK_FMT: "${DISK_FMT:-qcow2}"
+
+      USERNAME: "${FW_USER:-ubuntu}"
+      PASSWORD: "${FW_PASSWORD:-ubuntu}"
+
+      WEB: "Y"
+      DEBUG: "${DEBUG:-N}"
+
+    devices:
+      - /dev/kvm
+      - /dev/net/tun
+
+    cap_add:
+      - NET_ADMIN
+
+    ports:
+      - "${WEB_PORT:-8007}:8006"
+      - "${SSH_PORT:-2223}:22"
+
+    volumes:
+      - ./storage:/storage
+      # Rendered rule sets land here and are reachable at /shared inside the guest.
+      - ./shared:/shared
+
+    restart: unless-stopped
+    stop_grace_period: 2m

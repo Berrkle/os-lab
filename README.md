@@ -101,6 +101,7 @@ overlay. `resize` is grow-only for VM disks. Systemd units are managed with
 | [`android-lab/lab/`](android-lab/lab/) | Android runnable core — compose, Makefile, `lab.ps1`, hooks, tests, tools |
 | [`ios-lab/`](ios-lab/) | **iOS lab** — macOS VM on Ubuntu, native macOS scripts, research, profiles |
 | [`linux-lab/`](linux-lab/) | **Linux lab** — compose stack, Makefile, scripts, profiles, research |
+| [`firewall-lab/`](firewall-lab/) | **Firewall lab** (BGT207) — a contribution lab: students PR their "dream company" network and firewall design; rendered at `/firewall/` |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) · [`SECURITY.md`](SECURITY.md) · [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) | Community & process |
 | [`lat.md/`](lat.md/) | Structured knowledge graph (architecture & behavior); validated by `lat check` |
 

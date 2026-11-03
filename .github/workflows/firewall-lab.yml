@@ -1,0 +1,57 @@
+name: Firewall Lab — validate & catalog
+
+# As students open PRs adding their dream-company firewalls, validate each
+# submission and (re)collect the structured catalog of every firewall and its
+# detailed properties. The catalog is published to the job summary on every run.
+
+on:
+  push:
+    branches: [ master, main, 'feat/**' ]
+    paths:
+      - 'firewall-lab/**'
+      - 'dashboard/src/firewall/**'
+      - '.github/workflows/firewall-lab.yml'
+  pull_request:
+    paths:
+      - 'firewall-lab/**'
+      - 'dashboard/src/firewall/**'
+      - '.github/workflows/firewall-lab.yml'
+
+jobs:
+  firewall-lab:
+    name: Validate companies & build catalog
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate every company against the schema
+        run: python3 firewall-lab/scripts/validate.py
+
+      - name: Collect the firewall catalog (structured list of every firewall + props)
+        run: python3 firewall-lab/scripts/catalog.py
+
+      - name: Publish the catalog to the job summary
+        if: always()
+        run: |
+          if [ -f firewall-lab/catalog.md ]; then
+            cat firewall-lab/catalog.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Check committed catalog is up to date
+        run: python3 firewall-lab/scripts/catalog.py --check
+
+      - name: Check dashboard seed is up to date
+        run: |
+          python3 firewall-lab/scripts/build-seed.py
+          if ! git diff --quiet -- dashboard/src/firewall/companies.generated.ts; then
+            echo "::error::dashboard/src/firewall/companies.generated.ts is stale."
+            echo "Run: python3 firewall-lab/scripts/build-seed.py && git add dashboard/src/firewall/companies.generated.ts"
+            git --no-pager diff -- dashboard/src/firewall/companies.generated.ts | head -60
+            exit 1
+          fi

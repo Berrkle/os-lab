@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "slug": "my-company-slug",
+  "name": "My Company",
+  "sector": "Education | Retail | Health | Fintech | Logistics | ...",
+  "author": { "name": "Your Name", "studentId": "2026xxxxx", "course": "BGT207", "github": "your-github" },
+  "summary": "One paragraph in plain words: what the company does, where its offices are, and the security posture. Replace every placeholder below — delete fields you do not use (studentId, github, cveWatch are optional).",
+  "branches": [
+    {
+      "id": "hq",
+      "name": "Headquarters",
+      "role": "headquarters",
+      "location": "City, Country",
+      "population": { "staff": 50, "students": 0, "rnd": 0, "software": 10 },
+      "network": {
+        "cidr": "10.10.0.0/17",
+        "dmz": true,
+        "vlans": [
+          { "id": 10, "name": "staff", "cidr": "10.10.0.0/20", "note": "Office endpoints." },
+          { "id": 40, "name": "servers", "cidr": "10.10.32.0/22", "note": "Internal services." },
+          { "id": 90, "name": "dmz", "cidr": "10.10.254.0/24", "note": "Public-facing only." },
+          { "id": 99, "name": "management", "cidr": "10.10.255.0/24", "note": "VPN-only admin." }
+        ]
+      },
+      "bandwidth": { "downMbps": 500, "upMbps": 500, "drivers": ["Zoom", "email", "ERP", "git", "cloud backup"] },
+      "firewalls": [
+        {
+          "segment": "perimeter",
+          "chosen": { "product": "Product X", "vendor": "Vendor", "throughputGbps": 10, "priceUsd": 1000, "reason": "Why THIS one, for THIS link and feature set." },
+          "alternatives": [
+            { "product": "Alt 1", "vendor": "Vendor", "throughputGbps": 5, "priceUsd": 800, "reason": "Why not." },
+            { "product": "Alt 2", "vendor": "Vendor", "throughputGbps": 7, "priceUsd": 950, "reason": "Why not." },
+            { "product": "Alt 3", "vendor": "Vendor", "throughputGbps": 9, "priceUsd": 700, "reason": "Why not." },
+            { "product": "Alt 4", "vendor": "Vendor", "throughputGbps": 3, "priceUsd": 1200, "reason": "Why not." }
+          ],
+          "rules": [
+            { "action": "allow", "direction": "in", "proto": "tcp", "port": 443, "from": "any", "to": "dmz-web", "note": "Public HTTPS to the DMZ proxy." },
+            { "action": "allow", "direction": "out", "proto": "udp", "port": 123, "to": "ntp-pool", "note": "NTP time sync." },
+            { "action": "allow", "direction": "in", "proto": "udp", "port": "67:68", "from": "staff", "to": "dhcp", "note": "DHCP — must stay open inside the LAN." },
+            { "action": "deny", "direction": "in", "proto": "any", "from": "any", "to": "management", "note": "Management reachable over VPN only." }
+          ]
+        }
+      ]
+    }
+  ],
+  "remoteAccess": { "type": "role-based-vpn", "note": "Why not public SSH? Role-based VPN into a bastion." },
+  "monitoring": {
+    "siem": "What collects and correlates events.",
+    "owner": "Who watches and who is responsible when an alert fires.",
+    "alertSink": "Where alerts land (SIEM / Telegram / email / pager).",
+    "appVsSecurity": "How you keep app-health alerts separate from security alerts."
+  },
+  "cveWatch": []
+}
