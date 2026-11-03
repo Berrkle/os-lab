@@ -1,0 +1,324 @@
+/**
+ * Client for the os-lab console API (android-lab/lab/web_ui.py + console/oslab.py).
+ *
+ * The lab contract mirrors qLar's shared/os-lab.ts (PR #174): pages send typed requests
+ * ({lab, action, …}), preview the returned plan, then start it with the plan's token.
+ * Every POST carries X-OSLab: 1, which the server requires so other sites cannot drive the lab.
+ */
+import { useEffect, useReducer } from "react";
+
+export type LabId = "android" | "windows" | "linux" | "ios" | "macos";
+export type LabState = "ready" | "needs-setup" | "unavailable";
+
+export interface HostTool {
+  id: string;
+  label: string;
+  found: boolean;
+  path: string | null;
+}
+export interface HostProvider {
+  id: string;
+  guest: string;
+  candidate: boolean;
+  requirements: string;
+}
+export interface HostInfo {
+  os: string;
+  osPretty: string;
+  arch: string;
+  hostname: string;
+  cpus: number | null;
+  memory: number | null;
+  disk: { total: number; free: number } | null;
+  kvm: { present: boolean; usable: boolean };
+  wsl: { guest: boolean; distributions: string[] };
+  runtime: string | null;
+  python: string;
+  root: string;
+  tools: HostTool[];
+  providers: HostProvider[];
+}
+export interface Requirement {
+  id: string;
+  label: string;
+  found: boolean;
+  required: boolean;
+  hint: string;
+}
+export interface LabAction {
+  id: string;
+  label: string;
+  description: string;
+  privileged: boolean;
+}
+export interface LabStatus {
+  id: LabId;
+  label: string;
+  summary: string;
+  state: LabState;
+  provider: string | null;
+  reasons: string[];
+  requirements: Requirement[];
+  notes: string[];
+  actions: LabAction[];
+  installed: boolean;
+}
+export interface LabRequest {
+  lab: LabId;
+  action: string;
+  profile?: string;
+  cpus?: string;
+  ram?: string;
+  disk?: string;
+  device?: string;
+  wslDistro?: string;
+}
+export interface SetupDetails {
+  dependencies: string[];
+  downloads: string[];
+  privileges: string;
+  guestDisk: string | null;
+  diskNote: string;
+  verifiedDownloads: boolean;
+}
+export interface LabPlan {
+  lab: LabId;
+  action: string;
+  provider: string;
+  workspace: string;
+  program: string | null;
+  args: string[];
+  effects: string[];
+  timeoutSec: number;
+  privileged: boolean;
+  runnable: boolean;
+  manualCommand: string | null;
+  setup: SetupDetails | null;
+  display: string;
+}
+export type JobState = "running" | "succeeded" | "failed" | "cancelled" | "timed-out";
+export interface LabJob {
+  id: string;
+  label: string;
+  lab: LabId;
+  action: string;
+  command: string;
+  state: JobState;
+  startedAt: number;
+  finishedAt: number | null;
+  exitCode: number | null;
+  error: string | null;
+  truncated: boolean;
+  lines: number;
+  logs?: string[];
+}
+export interface LabConfig {
+  lab: LabId;
+  path: string;
+  exists: boolean;
+  fields: { key: string; value: string; local: boolean }[];
+  profiles: string[];
+  backups: string[];
+  endpoints: { label: string; address: string }[];
+}
+export interface LabMonitor {
+  lab: LabId;
+  state: string;
+  note?: string;
+  runtime?: string;
+  containers: { name: string; state: string; status: string; ports: string; cpu: string; memory: string }[];
+}
+export interface AndroidLogs {
+  logs: string[];
+  running: boolean;
+}
+export interface Report {
+  name: string;
+  url: string;
+}
+export interface Hook {
+  name: string;
+  path: string;
+  code: string;
+}
+
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number
+  ) {
+    super(message);
+  }
+}
+
+async function call<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(path, { cache: "no-store", ...init });
+  const data = (await res.json().catch(() => ({}))) as T & { error?: string };
+  if (!res.ok) throw new ApiError(data.error || `${res.status} ${res.statusText}`, res.status);
+  return data;
+}
+const post = <T>(path: string, body: unknown = {}) =>
+  call<T>(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-OSLab": "1" },
+    body: JSON.stringify(body)
+  });
+
+export const api = {
+  health: () => call<{ status: string; version: string; console: boolean }>("/api/health"),
+  host: () => call<{ host: HostInfo; labs: LabStatus[] }>("/api/host"),
+  config: (lab: LabId) => call<LabConfig>(`/api/labs/${lab}/config`),
+  monitor: (lab: LabId) => call<LabMonitor>(`/api/labs/${lab}/monitor`),
+  plan: (request: LabRequest) => post<{ plan: LabPlan; token: string }>("/api/labs/plan", { request }),
+  start: (request: LabRequest, token: string) => post<LabJob>("/api/labs/start", { request, token }),
+  jobs: () => call<{ jobs: LabJob[] }>("/api/jobs"),
+  job: (id: string) => call<LabJob>(`/api/jobs/${encodeURIComponent(id)}`),
+  cancel: (id: string) => post<LabJob>(`/api/jobs/${encodeURIComponent(id)}/cancel`),
+  // Android Lab workbench
+  logs: () => call<AndroidLogs>("/api/logs"),
+  clearLogs: () => post("/api/logs/clear"),
+  stop: () => post("/api/stop"),
+  run: (action: string, apk: string) => post<{ status: string; title: string }>("/api/run", { action, apk }),
+  devices: () => call<{ devices: string }>("/api/devices"),
+  reports: () => call<{ reports: Report[] }>("/api/reports"),
+  apks: () => call<{ apks: { name: string; path: string; size: number }[] }>("/api/apks"),
+  hooks: () => call<{ hooks: Hook[] }>("/api/hooks"),
+  upload: async (file: File) => {
+    const form = new FormData();
+    form.append("apk", file);
+    return call<{ status: string; filename: string; path: string; size: number }>("/api/upload", {
+      method: "POST",
+      headers: { "X-OSLab": "1" },
+      body: form
+    });
+  }
+};
+
+export const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
+
+/**
+ * A polled value shared by every component that uses it: the shell's sidebar and the page read the
+ * same host report and job list, fetched once per interval while anything is subscribed.
+ */
+export function createStore<T>(load: () => Promise<T>, intervalMs: number) {
+  let data: T | undefined;
+  let error: string | null = null;
+  let loading = false;
+  let timer: ReturnType<typeof setInterval> | undefined;
+  const subscribers = new Set<() => void>();
+  const notify = () => subscribers.forEach((fn) => fn());
+
+  async function refresh() {
+    if (loading) return;
+    loading = true;
+    try {
+      data = await load();
+      error = null;
+    } catch (e) {
+      error = message(e);
+    } finally {
+      loading = false;
+      notify();
+    }
+  }
+  function subscribe(fn: () => void) {
+    subscribers.add(fn);
+    if (subscribers.size === 1) {
+      void refresh();
+      timer = setInterval(() => {
+        if (!document.hidden) void refresh();
+      }, intervalMs);
+    }
+    return () => {
+      subscribers.delete(fn);
+      if (!subscribers.size) clearInterval(timer);
+    };
+  }
+  function use() {
+    const [, rerender] = useReducer((n: number) => n + 1, 0);
+    useEffect(() => subscribe(rerender), []);
+    return { data, error, refresh };
+  }
+  return { use, refresh, get: () => data };
+}
+
+export const hostStore = createStore(api.host, 15000);
+export const jobsStore = createStore(async () => (await api.jobs()).jobs, 2500);
+export const healthStore = createStore(api.health, 5000);
+export const androidLogsStore = createStore(api.logs, 1000);
+
+/** Poll one endpoint while mounted (for page-specific data such as one lab's monitor). */
+export function usePoll<T>(load: () => Promise<T>, intervalMs: number, deps: unknown[] = []) {
+  const [state, set] = useReducer(
+    (s: { data?: T; error: string | null; n: number }, a: Partial<{ data: T; error: string | null }>) => ({
+      ...s,
+      ...a,
+      n: s.n + 1
+    }),
+    { error: null, n: 0 }
+  );
+  const [tick, reload] = useReducer((n: number) => n + 1, 0);
+  useEffect(() => {
+    let live = true;
+    const run = () =>
+      load().then(
+        (data) => live && set({ data, error: null }),
+        (e) => live && set({ error: message(e) })
+      );
+    void run();
+    const timer = intervalMs > 0 ? setInterval(() => !document.hidden && void run(), intervalMs) : undefined;
+    return () => {
+      live = false;
+      clearInterval(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [...deps, tick, intervalMs]);
+  return { data: state.data, error: state.error, reload };
+}
+
+/** The Android target APK, remembered per browser. */
+const APK_KEY = "oslab.apk";
+export const DEFAULT_APK = "scripts/vulnerable-test.apk";
+export function getApk(): string {
+  try {
+    return localStorage.getItem(APK_KEY) || DEFAULT_APK;
+  } catch {
+    return DEFAULT_APK;
+  }
+}
+export function setApk(value: string) {
+  try {
+    localStorage.setItem(APK_KEY, value || DEFAULT_APK);
+  } catch {
+    // Storage unavailable: the choice lasts for this page view
+  }
+  window.dispatchEvent(new Event("oslab:apk"));
+}
+export function useApk(): [string, (value: string) => void] {
+  const [, rerender] = useReducer((n: number) => n + 1, 0);
+  useEffect(() => {
+    window.addEventListener("oslab:apk", rerender);
+    return () => window.removeEventListener("oslab:apk", rerender);
+  }, []);
+  return [getApk(), setApk];
+}
+
+export function formatBytes(n: number | null | undefined): string {
+  if (n == null) return "—";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  let i = 0;
+  let v = n;
+  while (v >= 1024 && i < units.length - 1) {
+    v /= 1024;
+    i++;
+  }
+  return `${v >= 10 || i === 0 ? Math.round(v) : v.toFixed(1)} ${units[i]}`;
+}
+export function ago(seconds: number | null | undefined): string {
+  if (!seconds) return "";
+  const s = Math.max(0, Math.round(Date.now() / 1000 - seconds));
+  if (s < 60) return `${s}s ago`;
+  if (s < 3600) return `${Math.round(s / 60)}m ago`;
+  if (s < 86400) return `${Math.round(s / 3600)}h ago`;
+  return `${Math.round(s / 86400)}d ago`;
+}

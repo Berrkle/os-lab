@@ -37,20 +37,23 @@ console in [[android-lab/lab/web_ui.py]].
 
 ## Web console
 
-The browser UI follows the qLar app-shell design (qLar PR #174) and needs no
-build step or network access.
+[[android-lab/lab/web_ui.py]] is the standard-library server behind the
+browser console for every lab, not just Android.
 
-[[android-lab/lab/web_ui.py]] is a standard-library HTTP server that serves the
-page from [[android-lab/lab/web/index.html]], [[android-lab/lab/web/app.css]]
-and [[android-lab/lab/web/app.js]], plus a JSON API: health, logs (with a
-`running` flag), clear logs, run, stop, devices, reports, upload and the
-`artifacts/` file server, which refuses paths outside that folder.
+It serves the [[dashboard]] and a JSON API: the Android workbench (health,
+logs with a `running` flag, clear logs, run, stop, devices, reports, staged
+APKs, Frida hooks, upload and the `artifacts/` file server, which refuses paths
+outside that folder) and the lab endpoints from [[console/oslab.py]] (host,
+plan, start, jobs, cancel, config, monitor).
 
-The layout is a grouped sidebar that collapses to an icon rail, a drawer on
-phones, Spotlight search on Ctrl/⌘K, a sticky top bar with a back crumb and a
-light/dark toggle. Hash routes cover the six Android Lab pages (overview,
-providers, workflows, console, analytics, sitemap) and the iOS, Windows, macOS
-and Linux lab pages.
+## Classic console
+
+A self-contained fallback page with no build step, served at `/classic/` and
+at `/` when no dashboard build exists.
+
+It lives in [[android-lab/lab/web/index.html]], [[android-lab/lab/web/app.css]]
+and [[android-lab/lab/web/app.js]] and follows the same qLar shell design for
+the Android workbench pages.
 
 ## Analysis components
 

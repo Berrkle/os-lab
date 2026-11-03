@@ -51,6 +51,14 @@ irm https://raw.githubusercontent.com/keyvanarasteh/os-lab/master/scripts/setup/
 Add `--report-only` (`-ReportOnly` on Windows) to inspect the host without
 changing anything.
 
+## Web console
+
+`./labctl ui` (or the installer) opens the [dashboard](dashboard/) at
+`http://127.0.0.1:5050`: what this computer is, which labs it can run and
+what each still needs, one page per lab to install dependencies and start,
+stop or inspect it (every action is previewed before it runs), a jobs log,
+and the Android Lab workbench.
+
 ## Management CLI
 
 [`./labctl`](labctl) is the single entry point for profiles, lifecycle, hardware

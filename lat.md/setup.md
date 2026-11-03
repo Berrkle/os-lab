@@ -16,14 +16,15 @@ in [[scripts/setup/README.md]].
 
 ## Stages
 
-Every installer runs the same six stages and is idempotent, so re-running is
+Every installer runs the same seven stages and is idempotent, so re-running is
 the update path.
 
 Detect host and provider (native-linux / wsl2 / native-macos / native-windows);
 report host tools with path and version; install core prerequisites (git,
 python, venv) via the host package manager; fetch or update the checkout
 without switching a developer's branch; provision a `.venv` from
-[[android-lab/lab/requirements.txt]]; then launch the web console.
+[[android-lab/lab/requirements.txt]]; prepare the [[dashboard]]; then launch the
+web console.
 
 ## Device report
 
@@ -44,3 +45,7 @@ The installer runs [[android-lab/lab/orchestrator.py]] `ui --port 5050`, which
 serves [[android-lab/lab/web_ui.py]] on `127.0.0.1` and opens the browser. In
 `--minimal` mode the console runs on the Python standard library with no extra
 dependencies.
+
+Before launching, the installers rebuild the [[dashboard]] into the untracked
+`dashboard/build` when Node.js 22+ is present; otherwise, or with `--minimal`
+or `OSLAB_DASHBOARD_BUILD=0`, the committed `dashboard/dist` is used.

@@ -1,0 +1,574 @@
+/**
+ * /labs/<lab>/ — one lab on this computer: dependencies, actions, previewed plans, live jobs,
+ * container monitor and configuration. Ported from qLar's settings/os-lab-jobs.tsx and
+ * os-lab/lab-page.tsx (PR #174): every action is previewed (exact command, effects, setup
+ * prerequisites, privileges) before it runs, and runs as a background job with retained output.
+ */
+import { useEffect, useMemo, useState } from "react";
+import {
+  ArrowClockwiseIcon,
+  CheckCircleIcon,
+  GearSixIcon,
+  PlayIcon,
+  PulseIcon,
+  ShieldWarningIcon,
+  StopIcon,
+  WarningCircleIcon,
+  WrenchIcon,
+  XCircleIcon
+} from "@phosphor-icons/react";
+import { AppShell, LAB_ICON } from "../shell/app-shell";
+import { TopBar } from "../shell/top-bar";
+import { ProgressConsoleReport, ShellSnippet } from "../apk-lab/components";
+import type { ExecutionVersionStage } from "../apk-lab/components";
+import { Badge, Empty, EndpointList, Field, PageHead, Section, Skeleton, Status } from "../components/ui";
+import { stateBadge } from "./host-page";
+import {
+  ago,
+  api,
+  hostStore,
+  jobsStore,
+  message,
+  usePoll,
+  type LabId,
+  type LabJob,
+  type LabPlan,
+  type LabRequest,
+  type LabStatus
+} from "../lib/api";
+
+/** Reference commands for hosts where a lab is unavailable (from qLar's os-lab/lab-page.tsx). */
+const REFERENCE: Record<LabId, { check: string; setup: string; where: string }> = {
+  android: { check: "./labctl android doctor", setup: "./labctl android start --wait", where: "android-lab/lab" },
+  windows: { check: "./labctl win status", setup: "./labctl win profile use development\n./labctl win start --wait", where: "win-lab" },
+  linux: { check: "./labctl linux status", setup: "./labctl linux profile use development\n./labctl linux start --wait", where: "linux-lab" },
+  ios: { check: "./labctl ios status", setup: "./labctl ios profile use development\n./labctl ios start --wait", where: "ios-lab" },
+  macos: { check: "make -C ios-lab mac-doctor", setup: "make -C ios-lab mac-setup mac-sim mac-appium", where: "ios-lab/mac" }
+};
+
+const ACTION_GROUPS: { title: string; ids: string[] }[] = [
+  { title: "Lifecycle", ids: ["start", "stop", "restart", "appium-start", "appium-stop"] },
+  { title: "Inspect", ids: ["status", "doctor", "urls", "logs", "monitor"] },
+  { title: "Maintenance", ids: ["backup", "service-install", "service-uninstall"] }
+];
+
+const STAGE: Record<LabJob["state"], ExecutionVersionStage["status"]> = {
+  running: "Running",
+  succeeded: "Deployed",
+  failed: "Failed",
+  cancelled: "Failed",
+  "timed-out": "Failed"
+};
+
+function Requirements({ lab }: { lab: LabStatus }) {
+  if (!lab.requirements.length) return <Empty>No host prerequisites are tracked for this lab.</Empty>;
+  return (
+    <ul className="divide-y divide-(--iux-border)">
+      {lab.requirements.map((r) => (
+        <li key={r.id} className="flex flex-wrap items-center gap-2.5 py-2.5 text-sm">
+          {r.found ? (
+            <CheckCircleIcon size={16} weight="fill" className="shrink-0 text-(--iux-success)" />
+          ) : r.required ? (
+            <XCircleIcon size={16} weight="fill" className="shrink-0 text-(--iux-danger)" />
+          ) : (
+            <WarningCircleIcon size={16} className="shrink-0 text-(--iux-muted-foreground)" />
+          )}
+          <span className="min-w-0 flex-1">{r.label}</span>
+          {!r.found && r.hint ? <span className="text-xs text-(--iux-muted-foreground)">{r.hint}</span> : null}
+          <Badge tone={r.found ? "success" : r.required ? "danger" : undefined}>
+            {r.found ? "found" : r.required ? "missing" : "optional"}
+          </Badge>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function PlanPanel({
+  title,
+  plan,
+  busy,
+  error,
+  onRun,
+  onCancel
+}: {
+  title: string;
+  plan: LabPlan | null;
+  busy: boolean;
+  error: string | null;
+  onRun: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <section id="plan" className="iux-card gap-4 border-[#f36c21]/50 py-5">
+      <div className="flex flex-wrap items-start gap-3 px-5">
+        <div className="min-w-0 flex-1">
+          <h2 className="flex items-center gap-2 text-sm font-semibold">
+            <ShieldWarningIcon size={16} className="text-[#f36c21]" />
+            {plan ? `${title}?` : "Preparing preview…"}
+          </h2>
+          <p className="mt-1.5 text-sm text-(--iux-muted-foreground)">
+            Nothing runs until you confirm. Jobs keep running when this page is closed; output is kept on this computer.
+          </p>
+        </div>
+        {plan ? (
+          <div className="flex gap-2">
+            {plan.privileged ? <Badge tone="warning">Administrator</Badge> : null}
+            <Badge>{plan.provider}</Badge>
+          </div>
+        ) : null}
+      </div>
+      <div className="flex flex-col gap-4 px-5">
+        {error ? <Status value={{ ok: false, text: error }} /> : null}
+        {plan ? (
+          <>
+            <pre className="overflow-x-auto rounded-lg border border-(--iux-border) bg-(--iux-muted) px-4 py-3 font-mono text-xs">{plan.display || "(run manually)"}</pre>
+            <ul className="list-disc space-y-1 pl-5 text-sm">
+              {plan.effects.map((e) => (
+                <li key={e}>{e}</li>
+              ))}
+              <li>Timeout: {Math.round(plan.timeoutSec / 60) || 1} min</li>
+            </ul>
+            {plan.setup ? (
+              <div className="rounded-xl border border-dashed border-(--iux-border) p-4 text-sm">
+                <h3 className="mb-2 font-semibold">Dependencies this installs or checks</h3>
+                <ul className="list-disc space-y-1 pl-5">
+                  {plan.setup.dependencies.map((d) => (
+                    <li key={d}>{d}</li>
+                  ))}
+                </ul>
+                <div className="mt-3 space-y-1.5 text-xs text-(--iux-muted-foreground)">
+                  {plan.setup.downloads.map((d) => (
+                    <p key={d}>{d}</p>
+                  ))}
+                  <p>
+                    <strong className="text-(--iux-foreground)">Disk:</strong> {plan.setup.guestDisk ? `${plan.setup.guestDisk} guest capacity. ` : ""}
+                    {plan.setup.diskNote}
+                  </p>
+                  <p>
+                    <strong className="text-(--iux-foreground)">Privileges:</strong> {plan.setup.privileges}
+                  </p>
+                  {!plan.setup.verifiedDownloads ? <p>Download versions and checksums are not verified by this preview.</p> : null}
+                </div>
+              </div>
+            ) : null}
+            {!plan.runnable && plan.manualCommand ? (
+              <div className="space-y-2">
+                <p className="text-sm">No graphical authorization prompt is available to this console. Run this in a terminal, then press Re-detect:</p>
+                <ShellSnippet tabs={[{ id: "manual", label: "terminal", command: plan.manualCommand }]} showTabs={false} prefix="$" />
+              </div>
+            ) : null}
+          </>
+        ) : !error ? (
+          <Skeleton rows={2} />
+        ) : null}
+        <div className="flex flex-wrap gap-2">
+          {plan?.runnable ? (
+            <button type="button" className="iux-btn bg-[#f36c21] text-white hover:bg-[#fa7b32]" disabled={busy} onClick={onRun}>
+              <PlayIcon size={14} weight="fill" /> {busy ? "Starting…" : "Run"}
+            </button>
+          ) : null}
+          <button type="button" className="iux-btn" data-variant="outline" onClick={onCancel}>
+            {plan?.runnable ? "Cancel" : "Close"}
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function JobPanel({ jobs, selected, onSelect }: { jobs: LabJob[]; selected: string | null; onSelect: (id: string) => void }) {
+  const id = selected ?? jobs[0]?.id ?? null;
+  const current = jobs.find((j) => j.id === id);
+  const detail = usePoll(() => (id ? api.job(id) : Promise.resolve(null)), current?.state === "running" ? 1500 : 0, [id, current?.state]);
+  const [cancelling, setCancelling] = useState(false);
+  if (!jobs.length) return <Empty>No jobs for this lab yet. Preview an action above to start one.</Empty>;
+  const logs = detail.data?.logs ?? [];
+  return (
+    <ProgressConsoleReport
+      title={current?.label ?? "Job"}
+      description={current ? `${current.command} · started ${ago(current.startedAt)}${current.exitCode != null ? ` · exit ${current.exitCode}` : ""}${current.error ? ` · ${current.error}` : ""}` : ""}
+      stages={jobs.slice(0, 6).map((j) => ({
+        id: j.id,
+        version: j.action,
+        updatedAt: ago(j.startedAt),
+        status: STAGE[j.state],
+        active: j.id === id
+      }))}
+      logs={logs.length ? logs : [current?.state === "running" ? "Waiting for output…" : "No output."]}
+      streaming={current?.state === "running"}
+      footer={
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          {jobs.slice(0, 6).map((j) => (
+            <button
+              key={j.id}
+              type="button"
+              onClick={() => onSelect(j.id)}
+              className={`rounded-md px-2.5 py-1 font-mono text-xs ${j.id === id ? "bg-[#f36c21]/20 text-[#f36c21]" : "text-zinc-400 hover:text-white"}`}
+            >
+              {j.action}
+            </button>
+          ))}
+          {current?.state === "running" ? (
+            <button
+              type="button"
+              disabled={cancelling}
+              onClick={async () => {
+                setCancelling(true);
+                try {
+                  await api.cancel(current.id);
+                  await jobsStore.refresh();
+                } finally {
+                  setCancelling(false);
+                }
+              }}
+              className="flex items-center gap-1.5 rounded-lg border border-red-500/50 bg-red-500/10 px-3 py-1 text-xs font-semibold text-red-400 hover:bg-red-500/20"
+            >
+              <StopIcon size={12} weight="fill" /> Cancel job
+            </button>
+          ) : null}
+        </div>
+      }
+    />
+  );
+}
+
+function Monitor({ lab }: { lab: LabId }) {
+  const { data, error, reload } = usePoll(() => api.monitor(lab), 10000, [lab]);
+  return (
+    <Section
+      icon={<PulseIcon size={16} />}
+      title="Live monitor"
+      description={data?.runtime ? `Containers via ${data.runtime}, refreshed every 10 s.` : "Container state and resource use."}
+      action={
+        <button type="button" className="iux-btn" data-variant="outline" onClick={reload}>
+          <ArrowClockwiseIcon size={14} /> Refresh
+        </button>
+      }
+    >
+      {error ? (
+        <Status value={{ ok: false, text: error }} />
+      ) : !data ? (
+        <Skeleton rows={2} />
+      ) : data.containers.length === 0 ? (
+        <Empty>{data.note ?? "Nothing to monitor."}</Empty>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[36rem] text-left text-sm">
+            <thead className="text-xs text-(--iux-muted-foreground)">
+              <tr className="border-b border-(--iux-border)">
+                <th className="py-2 pr-4 font-medium">Container</th>
+                <th className="py-2 pr-4 font-medium">State</th>
+                <th className="py-2 pr-4 font-medium">CPU</th>
+                <th className="py-2 pr-4 font-medium">Memory</th>
+                <th className="py-2 font-medium">Access</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.containers.map((c) => (
+                <tr key={c.name} className="border-b border-(--iux-border) last:border-0">
+                  <td className="py-2 pr-4 font-mono text-xs">{c.name}</td>
+                  <td className="py-2 pr-4">
+                    <Badge tone={c.state === "running" ? "success" : c.state === "absent" ? undefined : "warning"}>{c.state}</Badge>
+                    <span className="ml-2 text-xs text-(--iux-muted-foreground)">{c.status}</span>
+                  </td>
+                  <td className="py-2 pr-4 tabular-nums">{c.cpu}</td>
+                  <td className="py-2 pr-4 tabular-nums">{c.memory}</td>
+                  <td className="py-2 font-mono text-xs">{c.ports || "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Section>
+  );
+}
+
+function Configuration({ lab, onProfile }: { lab: LabId; onProfile: (profile: string) => void }) {
+  const { data, error } = usePoll(() => api.config(lab), 0, [lab]);
+  if (error) return <Section title="Configuration"><Status value={{ ok: false, text: error }} /></Section>;
+  if (!data) return <Section title="Configuration"><Skeleton rows={2} /></Section>;
+  return (
+    <>
+      {data.endpoints.length ? (
+        <Section icon={<PlayIcon size={16} />} title="Endpoints" description="Addresses from the lab's configuration; they answer once the lab is running.">
+          <EndpointList items={data.endpoints} />
+        </Section>
+      ) : null}
+      <Section
+        icon={<GearSixIcon size={16} />}
+        title="Configuration"
+        description={
+          <>
+            <code>{data.path}</code> {data.exists ? "" : "(not created yet — defaults from the example file)"}. Secrets are masked.
+          </>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          {data.profiles.length ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-medium">Profiles</span>
+              {data.profiles.map((p) => (
+                <button key={p} type="button" className="iux-btn" data-variant="outline" onClick={() => onProfile(p)} title={`Preview applying ${p}`}>
+                  {p}
+                </button>
+              ))}
+            </div>
+          ) : null}
+          <details>
+            <summary className="cursor-pointer text-sm">{data.fields.length} settings</summary>
+            <ul className="mt-3 max-h-80 overflow-y-auto text-xs">
+              {data.fields.map((f) => (
+                <li key={f.key} className="flex gap-3 border-b border-(--iux-border) py-1.5">
+                  <span className="w-48 shrink-0 truncate font-mono">{f.key}</span>
+                  <span className="min-w-0 flex-1 truncate font-mono text-(--iux-muted-foreground)">{f.value || "—"}</span>
+                  {f.local ? <Badge>.env</Badge> : null}
+                </li>
+              ))}
+            </ul>
+          </details>
+        </div>
+      </Section>
+    </>
+  );
+}
+
+export default function LabPage({ lab: labId }: { lab: LabId }) {
+  const { data: hostData, error: hostError, refresh: refreshHost } = hostStore.use();
+  const { data: allJobs } = jobsStore.use();
+  const lab = hostData?.labs.find((l) => l.id === labId);
+  const host = hostData?.host;
+  const jobs = useMemo(() => (allJobs ?? []).filter((j) => j.lab === labId), [allJobs, labId]);
+  const [request, setRequest] = useState<LabRequest | null>(null);
+  const [plan, setPlan] = useState<{ plan: LabPlan; token: string } | null>(null);
+  const [planError, setPlanError] = useState<string | null>(null);
+  const [starting, setStarting] = useState(false);
+  const [selectedJob, setSelectedJob] = useState<string | null>(null);
+  const [distro, setDistro] = useState("");
+  const [resize, setResize] = useState({ cpus: "", ram: "", disk: "", device: "" });
+
+  const preview = async (action: string, extra: Partial<LabRequest> = {}) => {
+    const req: LabRequest = { lab: labId, action, ...extra };
+    if (lab?.provider === "wsl2") req.wslDistro = distro || host?.wsl.distributions[0];
+    setRequest(req);
+    setPlan(null);
+    setPlanError(null);
+    requestAnimationFrame(() => document.getElementById("plan")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    try {
+      setPlan(await api.plan(req));
+    } catch (e) {
+      setPlanError(message(e));
+    }
+  };
+  const run = async () => {
+    if (!request || !plan) return;
+    setStarting(true);
+    try {
+      const job = await api.start(request, plan.token);
+      setSelectedJob(job.id);
+      setRequest(null);
+      setPlan(null);
+      await jobsStore.refresh();
+      requestAnimationFrame(() => document.getElementById("jobs")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    } catch (e) {
+      setPlanError(message(e));
+    } finally {
+      setStarting(false);
+    }
+  };
+
+  // Deep links from the host page and Spotlight: #action=setup previews that action
+  useEffect(() => {
+    if (!lab) return;
+    const m = /action=([a-z-]+)/.exec(window.location.hash);
+    if (m && lab.actions.some((a) => a.id === m[1])) {
+      history.replaceState(null, "", window.location.pathname);
+      void preview(m[1]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lab?.id, lab?.actions.length]);
+
+  // Re-detect the host when a job on this lab finishes (setup may have fixed a requirement)
+  const runningCount = jobs.filter((j) => j.state === "running").length;
+  useEffect(() => {
+    if (runningCount === 0) void refreshHost();
+  }, [runningCount, refreshHost]);
+
+  const label = lab?.label ?? labId;
+  const actions = new Map((lab?.actions ?? []).map((a) => [a.id, a]));
+  const ref = REFERENCE[labId];
+
+  return (
+    <AppShell activeId={`lab-${labId}`}>
+      <div className="iux min-h-screen">
+        <TopBar title={labId === "android" ? "Android Lab · Runtime & Setup" : label} back={{ href: labId === "android" ? "/android/" : "/", label: labId === "android" ? "Android Lab" : "This computer" }} icon={LAB_ICON[labId](20)} />
+        <main className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6">
+          {!lab ? (
+            hostError ? <Empty>Could not reach the lab engine: {hostError}</Empty> : <Skeleton rows={5} />
+          ) : (
+            <>
+              <PageHead
+                icon={LAB_ICON[labId](22)}
+                title={label}
+                description={lab.summary}
+                actions={
+                  <>
+                    {stateBadge(lab.state)}
+                    {lab.provider ? <Badge>{lab.provider}</Badge> : null}
+                  </>
+                }
+              />
+
+              {(lab.reasons.length > 0 || lab.notes.length > 0) && (
+                <div className="space-y-1.5 rounded-xl border border-dashed border-(--iux-border) p-4 text-sm">
+                  {lab.reasons.map((r) => (
+                    <p key={r} className="flex gap-2">
+                      <WarningCircleIcon size={16} className="mt-0.5 shrink-0 text-(--iux-warning)" /> {r}
+                    </p>
+                  ))}
+                  {lab.notes.map((n) => (
+                    <p key={n} className="flex gap-2 text-(--iux-muted-foreground)">
+                      <CheckCircleIcon size={16} className="mt-0.5 shrink-0" /> {n}
+                    </p>
+                  ))}
+                </div>
+              )}
+
+              {request ? (
+                <PlanPanel
+                  title={`${actions.get(request.action)?.label ?? request.action} · ${label}`}
+                  plan={plan?.plan ?? null}
+                  busy={starting}
+                  error={planError}
+                  onRun={run}
+                  onCancel={() => {
+                    setRequest(null);
+                    setPlan(null);
+                    setPlanError(null);
+                  }}
+                />
+              ) : null}
+
+              {lab.state === "unavailable" ? (
+                <Section title="Run it elsewhere" description={`On a supported host, these commands run from the os-lab checkout (${ref.where}).`}>
+                  <div className="flex flex-col gap-3">
+                    <ShellSnippet tabs={[{ id: "check", label: "check", command: ref.check }, { id: "start", label: "start", command: ref.setup }]} />
+                  </div>
+                </Section>
+              ) : (
+                <>
+                  <div className="grid gap-6 lg:grid-cols-2">
+                    <Section
+                      icon={<WrenchIcon size={16} />}
+                      title="Dependencies"
+                      description="What this lab needs on this computer."
+                      action={
+                        actions.has("setup") ? (
+                          <button
+                            type="button"
+                            className={lab.state === "needs-setup" ? "iux-btn bg-[#f36c21] text-white hover:bg-[#fa7b32]" : "iux-btn"}
+                            data-variant={lab.state === "needs-setup" ? undefined : "outline"}
+                            onClick={() => void preview("setup")}
+                          >
+                            Install dependencies
+                          </button>
+                        ) : null
+                      }
+                    >
+                      <Requirements lab={lab} />
+                    </Section>
+
+                    <Section icon={<PlayIcon size={16} />} title="Actions" description="Each action is previewed before it runs.">
+                      <div className="flex flex-col gap-4">
+                        {lab.provider === "wsl2" ? (
+                          <Field label="WSL2 distribution">
+                            <select className="iux-input" value={distro} onChange={(e) => setDistro(e.target.value)}>
+                              {(host?.wsl.distributions ?? []).map((d) => (
+                                <option key={d}>{d}</option>
+                              ))}
+                            </select>
+                          </Field>
+                        ) : null}
+                        {ACTION_GROUPS.map((group) => {
+                          const items = group.ids.map((id) => actions.get(id)).filter(Boolean);
+                          if (!items.length) return null;
+                          return (
+                            <div key={group.title}>
+                              <p className="mb-2 text-xs font-medium text-(--iux-muted-foreground)">{group.title}</p>
+                              <div className="flex flex-wrap gap-2">
+                                {items.map((a) => (
+                                  <button
+                                    key={a!.id}
+                                    type="button"
+                                    className={a!.id === "start" ? "iux-btn bg-[#f36c21] text-white hover:bg-[#fa7b32]" : "iux-btn"}
+                                    data-variant={a!.id === "start" ? undefined : "outline"}
+                                    title={a!.description}
+                                    onClick={() => void preview(a!.id)}
+                                  >
+                                    {a!.label}
+                                    {a!.privileged ? <ShieldWarningIcon size={13} className="text-(--iux-warning)" /> : null}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {actions.has("resize") ? (
+                          <form
+                            className="flex flex-wrap items-end gap-2"
+                            onSubmit={(e) => {
+                              e.preventDefault();
+                              const extra = Object.fromEntries(Object.entries(resize).filter(([, v]) => v)) as Partial<LabRequest>;
+                              void preview("resize", extra);
+                            }}
+                          >
+                            <div className="w-20">
+                              <Field label="CPUs">
+                                <input className="iux-input" inputMode="numeric" value={resize.cpus} onChange={(e) => setResize({ ...resize, cpus: e.target.value })} placeholder="4" />
+                              </Field>
+                            </div>
+                            <div className="w-24">
+                              <Field label="RAM">
+                                <input className="iux-input" value={resize.ram} onChange={(e) => setResize({ ...resize, ram: e.target.value })} placeholder="8G" />
+                              </Field>
+                            </div>
+                            {labId === "windows" ? (
+                              <div className="w-24">
+                                <Field label="Disk">
+                                  <input className="iux-input" value={resize.disk} onChange={(e) => setResize({ ...resize, disk: e.target.value })} placeholder="128G" />
+                                </Field>
+                              </div>
+                            ) : null}
+                            {labId === "android" ? (
+                              <div className="w-48">
+                                <Field label="Device">
+                                  <input className="iux-input" value={resize.device} onChange={(e) => setResize({ ...resize, device: e.target.value })} placeholder="Samsung Galaxy S10" />
+                                </Field>
+                              </div>
+                            ) : null}
+                            <button type="submit" className="iux-btn" data-variant="outline">
+                              Preview resize
+                            </button>
+                          </form>
+                        ) : null}
+                      </div>
+                    </Section>
+                  </div>
+
+                  <section id="jobs" className="space-y-3">
+                    <h2 className="text-sm font-semibold tracking-wider text-(--iux-muted-foreground) uppercase">Jobs</h2>
+                    <JobPanel jobs={jobs} selected={selectedJob} onSelect={setSelectedJob} />
+                  </section>
+
+                  <Monitor lab={labId} />
+                  <Configuration lab={labId} onProfile={(p) => void preview("profile", { profile: p })} />
+                </>
+              )}
+            </>
+          )}
+        </main>
+      </div>
+    </AppShell>
+  );
+}

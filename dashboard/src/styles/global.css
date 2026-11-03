@@ -1,0 +1,22 @@
+@import "tailwindcss" source(none);
+@import "./iux.css";
+@import "./apk-lab.css";
+
+/* Scan only src/ (the ported qLar components and the pages), never dist/ or build/,
+   so the committed and local builds are byte-identical */
+@source "../";
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+body {
+  overflow: hidden;
+}

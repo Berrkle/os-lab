@@ -15,6 +15,7 @@
 #   2. android sample analysis pipeline     [smoke, non-fatal]
 #   3. shell script syntax check (bash -n)  [required]
 #   4. lat.md knowledge-graph check         [if `lat` is installed]
+#   5. dashboard typecheck + build freshness [if dashboard/node_modules exists]
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -108,7 +109,7 @@ else
   while IFS= read -r -d '' s; do
     sh_count=$((sh_count+1))
     bash -n "$s" 2>/dev/null || { printf '  %s[fail]%s %s\n' "$RED" "$RESET" "${s#"$ROOT"/}"; sh_fail=$((sh_fail+1)); }
-  done < <(find "$ROOT" -type d -name .git -prune -o -type f -name '*.sh' -print0)
+  done < <(find "$ROOT" \( -type d \( -name .git -o -name node_modules \) \) -prune -o -type f -name '*.sh' -print0)
   if [ "$sh_fail" -eq 0 ]; then ok "all $sh_count shell scripts parse"; else bad "$sh_fail of $sh_count shell scripts failed bash -n"; fi
 
   # --- Stage 4: lat graph check ------------------------------------------
@@ -117,6 +118,29 @@ else
     if lat check >/dev/null 2>&1; then ok "lat check"; else bad "lat check (run: lat check)"; fi
   else
     skip "lat not installed (npm i -g lat.md) — skipping graph check"
+  fi
+
+  # --- Stage 5: dashboard ------------------------------------------------
+  # Typecheck, then rebuild into a temp folder and compare with the committed
+  # dashboard/dist, so hosts without Node never get a stale prebuilt dashboard.
+  hdr "Stage 5: dashboard (typecheck + committed build is current)"
+  DASH="$ROOT/dashboard"
+  if [ -d "$DASH/node_modules" ] && command -v node >/dev/null 2>&1; then
+    if ( cd "$DASH" && ./node_modules/.bin/tsc --noEmit ); then ok "dashboard typecheck"; else bad "dashboard typecheck (cd dashboard && npm run check)"; fi
+    # Same filesystem as the project: Astro moves build files with rename(2)
+    TMP_OUT="$(mktemp -d "$DASH/.check-build.XXXXXX")"
+    if ( cd "$DASH" && ./node_modules/.bin/astro build --outDir "$TMP_OUT" >/dev/null 2>&1 ); then
+      if diff -rq "$TMP_OUT" "$DASH/dist" >/dev/null 2>&1; then
+        ok "dashboard/dist matches the sources"
+      else
+        bad "dashboard/dist is stale — run: (cd dashboard && npm run build) and commit dist/"
+      fi
+    else
+      bad "dashboard build failed (cd dashboard && npm run build)"
+    fi
+    rm -rf "$TMP_OUT"
+  else
+    skip "dashboard dependencies not installed (cd dashboard && npm ci) — skipping"
   fi
 fi
 

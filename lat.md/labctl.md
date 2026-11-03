@@ -24,6 +24,8 @@ resize and service management.
 Profiles are applied by writing a preset from the lab's `profiles/` into its
 `.env`, or overlaid one-shot with `--profile`. `doctor` runs the lab's
 `scripts/preflight.sh`; `service install|uninstall` manages the systemd unit.
+`./labctl ui [--port N]` opens the [[dashboard]] (it runs
+[[android-lab/lab/web_ui.py]], preferring the checkout's `.venv`).
 
 ## Per-lab behavior
 

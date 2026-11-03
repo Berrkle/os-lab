@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """
-Interactive Mobile Security Lab Web Console & Terminal (android-lab)
-Implements the 6 UI phases from knowledge/segmentation.md:
+os-lab web console: host overview, every lab's lifecycle, and the android-lab workbench.
+
+The console detects this computer (OS, arch, KVM, WSL, tools), shows which labs it can
+run, installs their dependencies and drives them with typed, previewed actions through
+console/oslab.py (a port of the qLar PR #174 OS Lab runtime). The Android Lab workbench
+implements the 6 UI phases from knowledge/segmentation.md: the 6 UI phases from knowledge/segmentation.md:
 Phase 1: Lab Entry & Health Overview
 Phase 2: Code & Target Providers (APK upload / ADB Bridge)
 Phase 3: Workflows (WF1 Static, WF2 Dynamic, Fuzzing, Secrets, Patching)
@@ -22,8 +26,15 @@ import shutil
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import urllib.parse
+from http.server import ThreadingHTTPServer
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+REPO_ROOT = os.path.realpath(os.path.join(SCRIPT_DIR, "..", ".."))
+sys.path.insert(0, os.path.join(REPO_ROOT, "console"))
+try:
+    import oslab  # noqa: E402  (console/oslab.py)
+except ImportError:  # a lone android-lab copy without the console module
+    oslab = None
 ARTIFACTS_DIR = os.path.join(SCRIPT_DIR, "artifacts")
 SCRIPTS_DIR = os.path.join(SCRIPT_DIR, "scripts")
 
@@ -62,6 +73,30 @@ def execute_background_command(cmd_args: list[str], title: str):
 
 
 WEB_DIR = os.path.join(SCRIPT_DIR, "web")
+# The Astro dashboard: dashboard/dist is the committed build, dashboard/build a local one made by
+# the installers when Node is present. The newer of the two is served; with neither, "/" serves
+# the self-contained console in web/, which is always reachable at /classic/.
+DASHBOARD_BUILDS = [os.path.realpath(os.path.join(SCRIPT_DIR, "..", "..", "dashboard", name))
+                    for name in ("build", "dist")]
+CONTENT_TYPES = {
+    ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8",
+    ".css": "text/css; charset=utf-8", ".svg": "image/svg+xml", ".json": "application/json",
+    ".png": "image/png", ".ico": "image/x-icon", ".woff2": "font/woff2", ".txt": "text/plain; charset=utf-8",
+    ".webmanifest": "application/manifest+json",
+}
+
+
+def dashboard_dir():
+    """The newest dashboard build (by its index.html), or None."""
+    best, best_time = None, -1.0
+    for folder in DASHBOARD_BUILDS:
+        try:
+            mtime = os.path.getmtime(os.path.join(folder, "index.html"))
+        except OSError:
+            continue
+        if mtime > best_time:
+            best, best_time = folder, mtime
+    return best
 # The console's static files; only these are served, so nothing else under web/ leaks
 STATIC_FILES = {
     "/static/app.css": ("app.css", "text/css; charset=utf-8"),
@@ -74,8 +109,165 @@ def read_web_file(name: str) -> bytes:
         return f.read()
 
 
+ALLOWED_HOSTS = {"127.0.0.1", "localhost", "::1"}
+HOST_CACHE = {"at": 0.0, "value": None}
+HOST_LOCK = threading.Lock()
+JOBS = oslab.JobService(REPO_ROOT) if oslab else None
+SIGNER = oslab.PlanSigner() if oslab else None
+
+
+def cached_host():
+    """Host detection runs a few subprocesses; reuse it for a few seconds."""
+    import time
+    with HOST_LOCK:
+        if HOST_CACHE["value"] is None or time.time() - HOST_CACHE["at"] > 5:
+            HOST_CACHE["value"] = oslab.host_info(REPO_ROOT)
+            HOST_CACHE["at"] = time.time()
+        return HOST_CACHE["value"]
+
+
 class LabHttpHandler(BaseHTTPRequestHandler):
+    def log_message(self, fmt, *args):
+        # Polling is frequent; keep the terminal for errors
+        if not self.path.startswith(("/api/logs", "/api/jobs", "/api/health", "/api/host", "/api/labs/")):
+            super().log_message(fmt, *args)
+
+    def _host_ok(self) -> bool:
+        """Refuse DNS-rebinding requests: the Host header must name this machine."""
+        try:
+            host = urllib.parse.urlsplit("//" + (self.headers.get("Host") or "")).hostname or ""
+        except ValueError:
+            host = ""
+        if host in ALLOWED_HOSTS:
+            return True
+        self._json(403, {"error": "Forbidden host"})
+        return False
+
+    def _read_json(self):
+        length = int(self.headers.get("Content-Length", 0) or 0)
+        if length > 1_000_000:
+            raise ValueError("Request too large")
+        body = self.rfile.read(length) if length else b"{}"
+        data = json.loads(body.decode("utf-8") or "{}")
+        if not isinstance(data, dict):
+            raise ValueError("Expected a JSON object")
+        return data
+
     def do_GET(self):
+        if not self._host_ok():
+            return
+        path = urllib.parse.urlparse(self.path).path
+        if path.startswith(("/api/host", "/api/labs", "/api/jobs")):
+            if not oslab:
+                self._json(501, {"error": "The console module (console/oslab.py) is not installed"})
+                return
+            try:
+                self._lab_get(path)
+            except oslab.PlanError as e:
+                self._json(400, {"error": str(e)})
+            return
+        if path in ("/classic", "/classic/"):
+            self._send_bytes(200, read_web_file("index.html"), "text/html; charset=utf-8")
+            return
+        root = dashboard_dir()
+        if root and not path.startswith(("/api/", "/artifacts/", "/static/", "/healthz")):
+            self._serve_dashboard(root, path)
+            return
+        self._android_get()
+
+    def _send_bytes(self, status: int, body: bytes, content_type: str, cache: str = "no-cache"):
+        self.send_response(status)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Cache-Control", cache)
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _serve_dashboard(self, root: str, path: str):
+        """Serve a built dashboard page or asset; directory routes map to their index.html."""
+        rel = urllib.parse.unquote(path).lstrip("/")
+        for candidate in (rel, os.path.join(rel, "index.html"), rel + ".html"):
+            target = os.path.realpath(os.path.join(root, candidate))
+            if os.path.commonpath([root, target]) != root or not os.path.isfile(target):
+                continue
+            with open(target, "rb") as f:
+                body = f.read()
+            ext = os.path.splitext(target)[1].lower()
+            # Hashed build assets never change; pages must revalidate after a rebuild
+            cache = "public, max-age=31536000, immutable" if rel.startswith("_astro/") else "no-cache"
+            self._send_bytes(200, body, CONTENT_TYPES.get(ext, "application/octet-stream"), cache)
+            return
+        not_found = os.path.join(root, "404.html")
+        body = open(not_found, "rb").read() if os.path.isfile(not_found) else b"Not found"
+        self._send_bytes(404, body, "text/html; charset=utf-8")
+
+    def _lab_get(self, path: str):
+        parts = [p for p in path.split("/") if p]
+        if path == "/api/host":
+            host = cached_host()
+            self._json(200, {"host": host, "labs": oslab.lab_catalog(REPO_ROOT, host)["labs"]})
+        elif len(parts) == 4 and parts[:2] == ["api", "labs"] and parts[2] in oslab.LABS and parts[3] == "config":
+            self._json(200, oslab.lab_config(REPO_ROOT, parts[2]))
+        elif len(parts) == 4 and parts[:2] == ["api", "labs"] and parts[2] in oslab.LABS and parts[3] == "monitor":
+            self._json(200, oslab.monitor(REPO_ROOT, parts[2], cached_host()))
+        elif path == "/api/jobs":
+            self._json(200, {"jobs": JOBS.list()})
+        elif len(parts) == 3 and parts[:2] == ["api", "jobs"]:
+            job = JOBS.get(parts[2])
+            if job:
+                self._json(200, job.to_dict(logs=True))
+            else:
+                self._json(404, {"error": "Job not found"})
+        else:
+            self._json(404, {"error": "Not found"})
+
+    def do_POST(self):
+        if not self._host_ok():
+            return
+        # Browsers cannot add a custom header cross-site without a CORS preflight, which this
+        # server never approves, so other web pages cannot drive the lab.
+        if self.headers.get("X-OSLab") != "1":
+            self._json(403, {"error": "Missing X-OSLab header"})
+            return
+        path = urllib.parse.urlparse(self.path).path
+        if path.startswith(("/api/labs", "/api/jobs")):
+            if not oslab:
+                self._json(501, {"error": "The console module (console/oslab.py) is not installed"})
+                return
+            try:
+                self._lab_post(path)
+            except (oslab.PlanError, ValueError) as e:
+                self._json(400, {"error": str(e)})
+            return
+        self._android_post()
+
+    def _lab_post(self, path: str):
+        parts = [p for p in path.split("/") if p]
+        if path == "/api/labs/plan":
+            request = self._read_json().get("request") or {}
+            plan = oslab.plan(REPO_ROOT, request, cached_host())
+            self._json(200, {"plan": plan, "token": SIGNER.sign(request)})
+        elif path == "/api/labs/start":
+            data = self._read_json()
+            request = data.get("request") or {}
+            if not SIGNER.verify(request, data.get("token")):
+                self._json(409, {"error": "Preview this action before running it"})
+                return
+            plan = oslab.plan(REPO_ROOT, request, cached_host())
+            job = JOBS.start(plan)
+            self._json(200, job.to_dict())
+        elif len(parts) == 4 and parts[:2] == ["api", "jobs"] and parts[3] == "cancel":
+            self._read_json()
+            try:
+                job = JOBS.cancel(parts[2])
+            except KeyError:
+                self._json(404, {"error": "Job not found"})
+                return
+            self._json(200, job.to_dict())
+        else:
+            self._json(404, {"error": "Not found"})
+
+    def _android_get(self):
         url_parts = urllib.parse.urlparse(self.path)
         path = url_parts.path
 
@@ -98,7 +290,8 @@ class LabHttpHandler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.end_headers()
-            self.wfile.write(json.dumps({"status": "ok", "app": "android-lab", "version": "1.0.0"}).encode("utf-8"))
+            self.wfile.write(json.dumps({"status": "ok", "app": "android-lab", "version": "1.0.0",
+                                         "console": bool(oslab)}).encode("utf-8"))
 
         elif path == "/api/logs":
             self.send_response(200)
@@ -115,6 +308,28 @@ class LabHttpHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Type", "application/json")
             self.end_headers()
             self.wfile.write(json.dumps({"devices": adb_out}).encode("utf-8"))
+
+        elif path == "/api/apks":
+            found = []
+            for folder in ("apks", "scripts"):
+                base = os.path.join(SCRIPT_DIR, folder)
+                if os.path.isdir(base):
+                    for name in sorted(os.listdir(base)):
+                        full = os.path.join(base, name)
+                        if name.endswith(".apk") and os.path.isfile(full):
+                            found.append({"name": name, "path": f"{folder}/{name}", "size": os.path.getsize(full)})
+            self._json(200, {"apks": found})
+
+        elif path == "/api/hooks":
+            hooks = []
+            hooks_dir = os.path.join(SCRIPT_DIR, "hooks")
+            if os.path.isdir(hooks_dir):
+                for name in sorted(os.listdir(hooks_dir)):
+                    full = os.path.join(hooks_dir, name)
+                    if name.endswith(".js") and os.path.isfile(full):
+                        with open(full, encoding="utf-8", errors="replace") as f:
+                            hooks.append({"name": name, "path": f"hooks/{name}", "code": f.read(65536)})
+            self._json(200, {"hooks": hooks})
 
         elif path == "/api/reports":
             reports = []
@@ -160,7 +375,7 @@ class LabHttpHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(json.dumps(payload).encode("utf-8"))
 
-    def do_POST(self):
+    def _android_post(self):
         if self.path == "/api/logs/clear":
             self.rfile.read(int(self.headers.get("Content-Length", 0)))
             CONSOLE_LOGS.clear()
@@ -280,8 +495,9 @@ class LabHttpHandler(BaseHTTPRequestHandler):
 def main():
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 5050
     server_address = ("127.0.0.1", port)
-    httpd = HTTPServer(server_address, LabHttpHandler)
-    print(f"=== 🛡️ android-lab Interactive Web Console Running ===")
+    httpd = ThreadingHTTPServer(server_address, LabHttpHandler)
+    httpd.daemon_threads = True
+    print(f"=== 🛡️ os-lab web console running ===")
     print(f"URL: http://127.0.0.1:{port}")
     print("Press Ctrl+C to stop.")
     try:

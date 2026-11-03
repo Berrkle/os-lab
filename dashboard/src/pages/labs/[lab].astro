@@ -1,0 +1,17 @@
+---
+import Base from "../../layouts/Base.astro";
+import LabPage from "../../views/lab-page";
+
+export function getStaticPaths() {
+  return [
+    { params: { lab: "android" }, props: { title: "Android Lab · Runtime & setup" } },
+    { params: { lab: "windows" }, props: { title: "Windows Lab" } },
+    { params: { lab: "linux" }, props: { title: "Linux Lab" } },
+    { params: { lab: "ios" }, props: { title: "iOS Lab" } },
+    { params: { lab: "macos" }, props: { title: "macOS Lab" } }
+  ];
+}
+const { lab } = Astro.params as { lab: "android" | "windows" | "linux" | "ios" | "macos" };
+const { title } = Astro.props;
+---
+<Base title={title}><LabPage lab={lab} client:only="react" /></Base>

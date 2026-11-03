@@ -208,6 +208,28 @@ function Provision-Venv {
   } else { Warn "requirements.txt not found at $req; skipping" }
 }
 
+# Dashboard (Astro): rebuild locally when Node 22+ is present, else use the committed
+# build in dashboard\dist. Local builds go to the untracked dashboard\build so they never
+# dirty the checkout; the console serves whichever build is newer.
+function Build-Dashboard {
+  $dir = Join-Path $script:RepoRoot "dashboard"
+  if (-not (Test-Path (Join-Path $dir "package.json"))) { return }
+  $prebuilt = if (Test-Path (Join-Path $dir "dist\index.html")) { "prebuilt dashboard (dashboard\dist)" } else { "classic console (no dashboard build found)" }
+  if ($Minimal -or $env:OSLAB_DASHBOARD_BUILD -eq "0") { Ok "dashboard: using the $prebuilt"; return }
+  $major = 0
+  if (Have "node") { try { $major = [int](& node -p "process.versions.node.split('.')[0]") } catch { $major = 0 } }
+  if (-not (Have "npm") -or $major -lt 22) { Ok "dashboard: Node.js 22+ not found, using the $prebuilt"; return }
+  Step "building the dashboard with Node $(& node --version) (set OSLAB_DASHBOARD_BUILD=0 to skip)"
+  Push-Location $dir
+  try {
+    & npm ci --no-audit --no-fund *> $null
+    if ($LASTEXITCODE -ne 0) { & npm install --no-audit --no-fund *> $null }
+    if ($LASTEXITCODE -eq 0) { & npm run --silent build:local *> $null }
+    if ($LASTEXITCODE -eq 0) { Ok "dashboard built -> dashboard\build" }
+    else { Warn "dashboard build failed; using the $prebuilt" }
+  } finally { Pop-Location }
+}
+
 function Launch-Ui {
   $orch = Join-Path $script:RepoRoot "android-lab\lab\orchestrator.py"
   $py   = Join-Path $script:RepoRoot ".venv\Scripts\python.exe"
@@ -225,6 +247,7 @@ if ($ReportOnly) { Info "report-only: no changes made"; exit 0 }
 if (-not $NoInstall) { Info "Checking prerequisites"; Ensure-Prereqs }
 Info "Fetching os-lab"; Locate-OrClone
 Info "Provisioning Python environment"; Provision-Venv
+Info "Preparing the dashboard"; Build-Dashboard
 if (-not $NoRun) {
   Launch-Ui
 } else {

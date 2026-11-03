@@ -1,0 +1,34 @@
+---
+import "../styles/global.css";
+interface Props {
+  title: string;
+  description?: string;
+}
+const { title, description = "os-lab: host overview and every lab in one console." } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#ffffff" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>{title} · os-lab</title>
+    <script is:inline>
+      // Apply the saved or system theme before first paint (same key as qLar's shell/theme.ts)
+      (function () {
+        var mode;
+        try { mode = localStorage.getItem("theme"); } catch (e) {}
+        if (mode !== "dark" && mode !== "light") {
+          mode = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+        document.documentElement.setAttribute("data-mode", mode);
+        document.documentElement.style.colorScheme = mode;
+      })();
+    </script>
+  </head>
+  <body class="iux">
+    <slot />
+  </body>
+</html>

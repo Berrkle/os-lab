@@ -1,0 +1,6 @@
+node_modules/
+.astro/
+# Local builds made by the installers (the committed build is dist/)
+build/
+# Freshness-check builds made by scripts/run-tests.sh
+.check-build.*/
