@@ -1,0 +1,61 @@
+# ios-lab on macOS
+
+Native path: Xcode + iOS Simulator + Appium XCUITest. This is the supported
+Apple stack and the only practical path on Apple Silicon.
+
+## Setup
+
+```bash
+cd ..
+make mac-doctor
+make mac-setup
+make mac-setup INSTALL=1   # Homebrew + Node + Appium + XCUITest
+```
+
+`mac-setup` never installs Xcode itself. Install Xcode from the App Store or
+Apple Developer downloads, open it once, accept the licence, and install a
+simulator runtime from **Xcode > Settings > Components**.
+
+Configuration lives in `config.env` (copied from `config.env.example`):
+
+```bash
+SIM_DEVICE="iPhone 16 Pro"
+IOS_RUNTIME=latest
+APPIUM_HOST=127.0.0.1
+APPIUM_PORT=4723
+APPIUM_LOG=artifacts/appium.log
+BOOT_TIMEOUT=300
+```
+
+Use a preset:
+
+```bash
+make mac-profiles
+make mac-profile PROFILE=iphone
+make mac-profile PROFILE=ipad
+make mac-profile PROFILE=legacy
+```
+
+## Lifecycle
+
+```bash
+make mac-sim
+make mac-status
+make mac-appium
+make mac-appium-stop
+make mac-stop
+```
+
+The simulator scripts use `xcrun simctl`. `run-simulator.sh` falls back to the
+first available iPhone when the configured device is not installed.
+
+## Notes
+
+- Xcode and the Simulator are large; keep 30 GB+ free.
+- Appium XCUITest builds WebDriverAgent on first use; the first session is
+  slower and may need Xcode signed in.
+- A physical iPhone needs a development team and provisioning profile.
+- Simulators are not a security boundary; use a dedicated user or disposable
+  VM for untrusted apps.
+- For CI, use a real macOS runner with Xcode rather than the Linux container
+  path.

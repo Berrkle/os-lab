@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+# Prepare the native macOS lab.
+#
+#   setup-mac.sh            check prerequisites and print the next steps
+#   setup-mac.sh --install  install Node, Appium and the XCUITest driver via Homebrew
+set -euo pipefail
+
+. "$(dirname "$0")/lib.sh"
+require_macos
+
+INSTALL=0
+for arg in "$@"; do
+  case "$arg" in
+    --install) INSTALL=1 ;;
+    -h|--help) sed -n '2,8p' "$0"; exit 0 ;;
+    *) die "unknown option: $arg" ;;
+  esac
+done
+
+mkdir -p "$LAB_DIR/artifacts"
+[ -f "$CONFIG" ] || cp "$MAC_DIR/config.env.example" "$CONFIG"
+
+say "checking Xcode"
+if ! command -v xcodebuild >/dev/null 2>&1 || ! xcodebuild -version >/dev/null 2>&1; then
+  warn "Xcode is missing or not initialized"
+  if command -v xcode-select >/dev/null 2>&1; then
+    xcode-select --install || true
+  fi
+  echo "Install Xcode from the App Store or developer.apple.com, open it once, accept the licence, then re-run: make mac-setup"
+  exit 1
+fi
+ok_version="$(xcodebuild -version | tr '\n' ' ')"
+say "Xcode: $ok_version"
+
+say "checking simulators"
+if ! xcrun simctl list runtimes 2>/dev/null | grep -q '^iOS '; then
+  warn "no iOS runtime installed; open Xcode > Settings > Components and install one"
+else
+  xcrun simctl list runtimes 2>/dev/null | grep '^iOS ' | sed 's/^/    /'
+fi
+
+if [ "$INSTALL" -eq 1 ]; then
+  say "installing Node/Appium tooling"
+  if ! command -v brew >/dev/null 2>&1; then
+    die "Homebrew not found; install it from https://brew.sh then re-run: make mac-setup"
+  fi
+  if ! command -v node >/dev/null 2>&1; then
+    brew install node
+  else
+    say "node already present: $(node --version)"
+  fi
+  if ! command -v appium >/dev/null 2>&1; then
+    npm install -g appium
+  else
+    say "appium already present: $(appium --version 2>/dev/null || echo present)"
+  fi
+  appium driver install xcuitest || true
+else
+  say "no packages installed"
+  echo "Next: make mac-setup INSTALL=1  (or install Node + Appium manually)"
+fi
+
+say "configuration"
+echo "    device: $SIM_DEVICE"
+echo "    runtime: $IOS_RUNTIME"
+echo "    appium: http://${APPIUM_HOST}:${APPIUM_PORT}"
+echo
+echo "Next: make mac-doctor && make mac-sim"

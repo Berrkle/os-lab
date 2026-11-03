@@ -1,0 +1,40 @@
+name: ios-lab
+
+services:
+  macos:
+    image: dockurr/macos:${IMAGE_TAG:-latest}
+    container_name: ios-lab
+    environment:
+      VERSION: "${MACOS_VERSION:-15}"
+      MODEL: "${MAC_MODEL:-iMacPro1,1}"
+      CPU_CORES: "${CPU_CORES:-4}"
+      RAM_SIZE: "${RAM_SIZE:-8G}"
+      DISK_SIZE: "${DISK_SIZE:-128G}"
+      DISK_FMT: "${DISK_FMT:-raw}"
+      ALLOCATE: "${ALLOCATE:-N}"
+      DISPLAY: "web"
+      WEB: "Y"
+      GPU: "${GPU:-N}"
+      PROTECT: "${WEB_PROTECT:-N}"
+      SHUTDOWN: "Y"
+      TIMEOUT: "${SHUTDOWN_TIMEOUT:-115}"
+      DEBUG: "${DEBUG:-N}"
+
+    devices:
+      - /dev/kvm
+      - /dev/net/tun
+
+    cap_add:
+      - NET_ADMIN
+
+    ports:
+      - "${WEB_PORT:-8006}:8006"
+      - "${VNC_PORT:-5900}:5900/tcp"
+      - "${VNC_PORT:-5900}:5900/udp"
+
+    volumes:
+      - ./storage:/storage
+      - ./shared:/shared
+
+    restart: unless-stopped
+    stop_grace_period: 2m

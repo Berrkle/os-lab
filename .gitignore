@@ -1,1 +1,14 @@
 .DS_Store
+ios-lab/.env
+ios-lab/.lab-profile
+ios-lab/storage/*
+!ios-lab/storage/.gitkeep
+ios-lab/shared/*
+!ios-lab/shared/.gitkeep
+ios-lab/backups/*
+!ios-lab/backups/.gitkeep
+ios-lab/artifacts/
+ios-lab/mac/config.env
+ios-lab/mac/.sim-device
+ios-lab/mac/.appium.pid
+*.log
