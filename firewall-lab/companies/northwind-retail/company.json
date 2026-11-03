@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "slug": "northwind-retail",
+  "name": "Northwind Retail",
+  "sector": "Retail",
+  "author": { "name": "Seed Example", "course": "BGT207", "github": "keyvanarasteh" },
+  "summary": "A smaller, single-headquarters retailer with an in-store payment network and an e-commerce DMZ. It shows the minimum a valid submission needs: one branch, real segmentation (card data kept apart for PCI), a priced product comparison, and a rule set you can explain line by line.",
+  "branches": [
+    {
+      "id": "hq",
+      "name": "Merkez + Mağaza Ağı",
+      "role": "headquarters",
+      "location": "İzmir, TR",
+      "population": { "staff": 50, "software": 8 },
+      "network": {
+        "cidr": "10.50.0.0/18",
+        "dmz": true,
+        "vlans": [
+          { "id": 10, "name": "staff", "cidr": "10.50.0.0/22", "note": "Office and back-office." },
+          { "id": 60, "name": "pos", "cidr": "10.50.8.0/23", "note": "Point-of-sale terminals; cardholder-data segment, kept apart for PCI-DSS." },
+          { "id": 70, "name": "iot", "cidr": "10.50.16.0/23", "note": "Cameras, sensors, digital signage — untrusted, egress-limited." },
+          { "id": 90, "name": "dmz", "cidr": "10.50.254.0/24", "note": "E-commerce storefront + payment gateway proxy." },
+          { "id": 99, "name": "management", "cidr": "10.50.255.0/24" }
+        ]
+      },
+      "bandwidth": { "downMbps": 300, "upMbps": 300, "drivers": ["POS transactions", "e-commerce", "email", "cloud backup", "camera upload"] },
+      "firewalls": [
+        {
+          "segment": "perimeter",
+          "chosen": { "product": "pfSense Plus (Netgate 4200)", "vendor": "Netgate", "throughputGbps": 9.9, "priceUsd": 799, "reason": "Comfortable over the 300 Mbps link, open and auditable for PCI evidence, low cost for a lean retailer." },
+          "alternatives": [
+            { "product": "FortiGate 40F", "vendor": "Fortinet", "throughputGbps": 5, "priceUsd": 500, "reason": "Great UTM; licence recurring, overkill for this size." },
+            { "product": "OPNsense (DEC740)", "vendor": "Deciso", "throughputGbps": 7, "priceUsd": 950, "reason": "Equally open; pricier appliance." },
+            { "product": "Ubiquiti UDM-Pro", "vendor": "Ubiquiti", "throughputGbps": 3.5, "priceUsd": 380, "reason": "Cheapest, nice UI; policy depth too shallow for PCI segmentation." },
+            { "product": "Sophos XGS 107", "vendor": "Sophos", "throughputGbps": 7, "priceUsd": 750, "reason": "Good reporting; another licence to carry." }
+          ],
+          "rules": [
+            { "action": "allow", "direction": "in", "proto": "tcp", "port": 443, "from": "any", "to": "dmz-shop", "note": "Public HTTPS to the storefront in the DMZ." },
+            { "action": "limit", "direction": "in", "proto": "tcp", "port": 443, "from": "any", "to": "dmz-shop", "note": "Rate-limit to absorb bursts and simple floods." },
+            { "action": "allow", "direction": "out", "proto": "tcp", "port": 443, "from": "pos", "to": "payment-gateway", "note": "POS talks only to the acquirer's gateway — one destination, nothing else." },
+            { "action": "deny", "direction": "forward", "proto": "any", "from": "pos", "to": "staff", "note": "Cardholder segment is isolated from the office network (PCI-DSS segmentation)." },
+            { "action": "deny", "direction": "forward", "proto": "any", "from": "iot", "to": "pos", "note": "IoT can never reach the payment segment." },
+            { "action": "allow", "direction": "out", "proto": "udp", "port": 123, "to": "ntp-pool", "note": "NTP — PCI logs need accurate timestamps." },
+            { "action": "allow", "direction": "in", "proto": "udp", "port": "67:68", "from": "staff", "to": "dhcp", "note": "DHCP inside the office VLAN." },
+            { "action": "deny", "direction": "in", "proto": "any", "from": "any", "to": "management", "note": "VPN-only management." }
+          ]
+        }
+      ]
+    }
+  ],
+  "remoteAccess": {
+    "type": "role-based-vpn",
+    "note": "Store managers get a VPN profile scoped to the back-office app only; the POS vendor gets a separate, time-boxed profile for maintenance windows. No standing public remote access."
+  },
+  "monitoring": {
+    "siem": "Cloud SIEM (managed) + ufw-logger Telegram notifier",
+    "owner": "Outsourced MSSP watches 24/7; the IT lead is the named owner for escalations.",
+    "alertSink": "MSSP portal; Telegram for POS-segment blocks (highest priority).",
+    "appVsSecurity": "Store-uptime alerts go to the ops group; anything touching the POS/cardholder segment is a security event and pages the on-call."
+  },
+  "cveWatch": []
+}

@@ -1,0 +1,80 @@
+# firewall-lab: design your dream company's firewalls
+
+A contribution lab for **BGT207 Güvenlik Duvarı Çözümleri**. Unlike the VM labs
+([`linux-lab`](../linux-lab/), [`win-lab`](../win-lab/), …), nothing boots here.
+This lab is a **growing book of network designs**: each student imagines a
+company, works out its network and firewalls, and submits it as a pull request.
+The dashboard renders every submission at **/firewall/**.
+
+> The brief, from class: *imagine a company — offices in Ankara, İstanbul and
+> London plus an academic campus of ~10,000 students. Give each branch its head
+> counts, its bandwidth, its segmentation, the best five firewall products for
+> each part (with price), a rule set you can explain line by line, a remote-access
+> plan, and a monitoring plan that names who is responsible.*
+
+## What's here
+
+```
+firewall-lab/
+  README.md                 ← you are here
+  schema/
+    company.schema.json      the manifest contract (JSON Schema draft-07)
+    README.md                field-by-field reference
+  templates/company/         copy this to start your submission
+  companies/                 ← every student's company lives here (PR target)
+    acme-academy/            seed: multi-branch + 10k-student campus
+    northwind-retail/        seed: small retailer, PCI segmentation
+  knowledge/                 the concepts, grounded in what we covered
+    segmentation.md  rule-ordering.md  product-selection.md  monitoring.md
+  scripts/
+    validate.py              check a company against the schema (stdlib only)
+    build-seed.py            compile companies → dashboard seed
+```
+
+## Contribute your company (the exercise)
+
+1. **Copy the template** into a new folder named with your company slug:
+   ```sh
+   cp -r firewall-lab/templates/company firewall-lab/companies/<your-slug>
+   ```
+   The folder name and the `slug` field must match (lowercase-kebab-case).
+2. **Fill in `company.json`.** Every placeholder gets a real value. Read the
+   [schema reference](schema/README.md) and the [knowledge](knowledge/) notes.
+3. **Write `README.md`** next to it — the narrative the firewall JSON can't hold:
+   your bandwidth reasoning, the product comparison in prose, the "why we did
+   *not* choose" notes, your monitoring plan. This is the part the course grows
+   "like a book."
+4. **Validate and rebuild the dashboard seed:**
+   ```sh
+   python3 firewall-lab/scripts/validate.py <your-slug>
+   python3 firewall-lab/scripts/build-seed.py
+   ```
+5. **Open a PR.** See [`companies/README.md`](companies/README.md) for the
+   checklist and what reviewers look for.
+
+## The rules of a good submission
+
+Straight from the lecture notes:
+
+- **Explain every rule.** A rule you cannot justify in one sentence is a
+  vulnerability — the schema makes the `note` field mandatory for this reason.
+- **Keep base services open:** DHCP (67/68), DNS (53), NTP (123). "Deny
+  everything" takes the network down with it.
+- **Segment by role** (staff / students / R&D / software / servers / management)
+  and expose the public only through a **DMZ**.
+- **Size subnets by devices, not people** — the campus needs far more than
+  10,000 addresses.
+- **No public SSH.** Admin access is a **role-based VPN** into a bastion.
+- **Compare products with evidence** — throughput *with UTM on*, and price.
+- **Name who owns monitoring.** An alert nobody owns is an alert nobody answers.
+- Tracking a **current CVE** and your response (mitigation vs. patch) is bonus —
+  and remember a normal firewall can't stop an application-layer bug.
+
+## Relationship to the rest of os-lab
+
+The rule sets here are written against [UFW](https://help.ubuntu.com/community/UFW)
+semantics — the same `allow` / `deny` / `reject` / `limit` actions and
+first-match ordering we practised. You can prototype any rule set in
+[`linux-lab`](../linux-lab/) on an Ubuntu guest before committing it, and wire
+block alerts to Telegram with [`ufw-logger`](https://github.com/keyvanarasteh/ufw-logger).
+This lab is a candidate midterm capability in the os-lab → qLar pipeline.

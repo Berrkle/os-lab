@@ -1,0 +1,189 @@
+{
+  "schemaVersion": 1,
+  "slug": "acme-academy",
+  "name": "ACME Academy",
+  "sector": "Education",
+  "author": { "name": "Seed Example", "course": "BGT207", "github": "keyvanarasteh" },
+  "summary": "A multi-branch education group: corporate offices in Ankara, İstanbul and London plus a campus of ~10,000 students. The design segments staff, students, R&D and software onto separate VLANs, exposes public services only through a DMZ, and reaches branches over a role-based VPN. This is a worked seed — copy its shape, not its numbers.",
+  "branches": [
+    {
+      "id": "istanbul-hq",
+      "name": "İstanbul (Genel Merkez)",
+      "role": "headquarters",
+      "location": "İstanbul, TR",
+      "population": { "staff": 180, "rnd": 30, "software": 50 },
+      "network": {
+        "cidr": "10.10.0.0/17",
+        "dmz": true,
+        "vlans": [
+          { "id": 10, "name": "staff", "cidr": "10.10.0.0/20", "note": "Office endpoints, printers, VoIP." },
+          { "id": 20, "name": "rnd", "cidr": "10.10.16.0/21", "note": "R&D lab; no direct internet, egress via proxy." },
+          { "id": 30, "name": "software", "cidr": "10.10.24.0/21", "note": "Developer workstations, git, CI runners." },
+          { "id": 40, "name": "servers", "cidr": "10.10.32.0/22", "note": "Internal ERP, mail relay, file." },
+          { "id": 90, "name": "dmz", "cidr": "10.10.254.0/24", "note": "Public web + reverse proxy only." },
+          { "id": 99, "name": "management", "cidr": "10.10.255.0/24", "note": "Firewall, switch and iDRAC management; VPN only." }
+        ]
+      },
+      "bandwidth": { "downMbps": 1000, "upMbps": 1000, "drivers": ["Zoom", "IP telephony", "ERP", "email", "git", "CI/CD", "web", "cloud backup"] },
+      "firewalls": [
+        {
+          "segment": "perimeter",
+          "chosen": { "product": "FortiGate 100F", "vendor": "Fortinet", "throughputGbps": 10, "priceUsd": 3500, "reason": "Headroom over the 1 Gbps link with IPS on, SD-WAN for branch VPN, mature logging to the SIEM." },
+          "alternatives": [
+            { "product": "pfSense Plus (Netgate 6100)", "vendor": "Netgate", "throughputGbps": 18.6, "priceUsd": 1395, "reason": "Cheaper and fast, but IPS/UTM and support are weaker for a regulated org." },
+            { "product": "OPNsense (DEC2750)", "vendor": "Deciso", "throughputGbps": 12, "priceUsd": 2100, "reason": "Open and auditable; smaller ecosystem for staff already trained on FortiOS." },
+            { "product": "Sophos XGS 2300", "vendor": "Sophos", "throughputGbps": 11, "priceUsd": 3200, "reason": "Strong UTM and reporting; licensing cost grows with add-ons." },
+            { "product": "Palo Alto PA-440", "vendor": "Palo Alto", "throughputGbps": 3, "priceUsd": 3900, "reason": "Best app-ID, but throughput with threat prevention is tight at the edge for this link." }
+          ],
+          "rules": [
+            { "action": "allow", "direction": "in", "proto": "tcp", "port": 443, "from": "any", "to": "dmz-web", "note": "Public HTTPS to the DMZ reverse proxy — the only inbound web path." },
+            { "action": "allow", "direction": "in", "proto": "tcp", "port": 80, "from": "any", "to": "dmz-web", "note": "HTTP, redirected to 443 at the proxy." },
+            { "action": "limit", "direction": "in", "proto": "tcp", "port": 443, "from": "any", "to": "dmz-web", "note": "Rate-limit new TLS connections to blunt floods (ufw limit / FortiGate DoS policy)." },
+            { "action": "allow", "direction": "out", "proto": "udp", "port": 123, "to": "ntp-pool", "note": "NTP — time sync; without it certs and logs drift." },
+            { "action": "allow", "direction": "out", "proto": "udp", "port": 53, "to": "dns-forwarder", "note": "DNS egress to the internal resolver only." },
+            { "action": "deny", "direction": "in", "proto": "any", "from": "any", "to": "management", "note": "No inbound reaches the management VLAN — reachable over VPN only." },
+            { "action": "reject", "direction": "in", "proto": "tcp", "port": 22, "from": "any", "to": "any", "note": "Explicitly reject public SSH so scanners get a fast close; real admin is VPN + bastion." }
+          ]
+        },
+        {
+          "segment": "students",
+          "chosen": { "product": "FortiGate 60F", "vendor": "Fortinet", "throughputGbps": 10, "priceUsd": 700, "reason": "Internal segmentation gateway between student VLANs and the rest; cheap, same OS as the edge." },
+          "alternatives": [
+            { "product": "pfSense CE (appliance)", "vendor": "Netgate", "throughputGbps": 5, "priceUsd": 600, "reason": "Fine internally; no central management with the edge." },
+            { "product": "OPNsense (DEC740)", "vendor": "Deciso", "throughputGbps": 7, "priceUsd": 950, "reason": "Capable; another product for staff to learn." },
+            { "product": "MikroTik CCR2004", "vendor": "MikroTik", "throughputGbps": 10, "priceUsd": 650, "reason": "Great price/throughput; firewalling is lower-level and easy to misconfigure." },
+            { "product": "Ubiquiti UDM-SE", "vendor": "Ubiquiti", "throughputGbps": 3.5, "priceUsd": 500, "reason": "Simple UI; weaker policy depth for isolation at scale." }
+          ],
+          "rules": [
+            { "action": "deny", "direction": "forward", "proto": "any", "from": "students", "to": "staff", "note": "Students cannot reach the staff VLAN at all." },
+            { "action": "deny", "direction": "forward", "proto": "any", "from": "students", "to": "servers", "note": "No direct path to internal servers." },
+            { "action": "allow", "direction": "forward", "proto": "tcp", "port": 443, "from": "students", "to": "dmz-web", "note": "Students reach the LMS through the public DMZ, same as off-campus." },
+            { "action": "allow", "direction": "out", "proto": "any", "from": "students", "to": "internet", "note": "General internet egress for students, through the content filter." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ankara-office",
+      "name": "Ankara Ofisi",
+      "role": "branch",
+      "location": "Ankara, TR",
+      "population": { "staff": 60, "software": 15 },
+      "network": {
+        "cidr": "10.20.0.0/20",
+        "dmz": false,
+        "vlans": [
+          { "id": 10, "name": "staff", "cidr": "10.20.0.0/22" },
+          { "id": 30, "name": "software", "cidr": "10.20.4.0/23" },
+          { "id": 99, "name": "management", "cidr": "10.20.15.0/24", "note": "VPN only." }
+        ]
+      },
+      "bandwidth": { "downMbps": 500, "upMbps": 500, "drivers": ["Zoom", "IP telephony", "ERP", "email", "git"] },
+      "firewalls": [
+        {
+          "segment": "perimeter",
+          "chosen": { "product": "FortiGate 60F", "vendor": "Fortinet", "throughputGbps": 10, "priceUsd": 700, "reason": "Branch-sized, SD-WAN tunnel back to HQ, one management plane across all sites." },
+          "alternatives": [
+            { "product": "pfSense Plus (Netgate 4200)", "vendor": "Netgate", "throughputGbps": 9.9, "priceUsd": 799, "reason": "Capable branch box; separate management from the Forti fleet." },
+            { "product": "OPNsense (DEC740)", "vendor": "Deciso", "throughputGbps": 7, "priceUsd": 950, "reason": "Open option; more hands-on upkeep." },
+            { "product": "Sophos XGS 116", "vendor": "Sophos", "throughputGbps": 7.5, "priceUsd": 950, "reason": "Good UTM; licensing recurring." },
+            { "product": "MikroTik hEX S", "vendor": "MikroTik", "throughputGbps": 1, "priceUsd": 90, "reason": "Very cheap but underpowered for UTM at 500 Mbps." }
+          ],
+          "rules": [
+            { "action": "allow", "direction": "out", "proto": "udp", "port": 123, "to": "ntp-pool", "note": "NTP time sync." },
+            { "action": "allow", "direction": "in", "proto": "udp", "port": "67:68", "from": "staff", "to": "dhcp", "note": "DHCP — close everything and clients get no IP; this must stay open inside the branch." },
+            { "action": "allow", "direction": "forward", "proto": "udp", "to": "hq-vpn", "note": "Site-to-site VPN tunnel to İstanbul HQ for ERP and git." },
+            { "action": "deny", "direction": "in", "proto": "any", "from": "any", "to": "management", "note": "Management reachable over VPN only." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "london-office",
+      "name": "London Office",
+      "role": "branch",
+      "location": "London, UK",
+      "population": { "staff": 40, "rnd": 10 },
+      "network": {
+        "cidr": "10.30.0.0/20",
+        "dmz": false,
+        "vlans": [
+          { "id": 10, "name": "staff", "cidr": "10.30.0.0/22" },
+          { "id": 20, "name": "rnd", "cidr": "10.30.4.0/23", "note": "Egress via proxy; GDPR data stays in-region." },
+          { "id": 99, "name": "management", "cidr": "10.30.15.0/24" }
+        ]
+      },
+      "bandwidth": { "downMbps": 500, "upMbps": 500, "drivers": ["Zoom", "email", "git", "cloud backup"] },
+      "firewalls": [
+        {
+          "segment": "perimeter",
+          "chosen": { "product": "FortiGate 60F", "vendor": "Fortinet", "throughputGbps": 10, "priceUsd": 700, "reason": "Same branch standard; data-residency rules enforced in policy, logs kept in-region." },
+          "alternatives": [
+            { "product": "pfSense Plus (Netgate 4200)", "vendor": "Netgate", "throughputGbps": 9.9, "priceUsd": 799, "reason": "Capable; separate fleet." },
+            { "product": "OPNsense (DEC740)", "vendor": "Deciso", "throughputGbps": 7, "priceUsd": 950, "reason": "Open; more upkeep." },
+            { "product": "WatchGuard T45", "vendor": "WatchGuard", "throughputGbps": 3.3, "priceUsd": 820, "reason": "Decent UTM; lower throughput ceiling." },
+            { "product": "Sophos XGS 116", "vendor": "Sophos", "throughputGbps": 7.5, "priceUsd": 950, "reason": "Good reporting; recurring licence." }
+          ],
+          "rules": [
+            { "action": "allow", "direction": "out", "proto": "udp", "port": 123, "to": "ntp-pool", "note": "NTP." },
+            { "action": "allow", "direction": "forward", "proto": "udp", "to": "hq-vpn", "note": "Encrypted tunnel to HQ; R&D data stays in-region per GDPR." },
+            { "action": "deny", "direction": "out", "proto": "any", "from": "rnd", "to": "internet", "note": "R&D has no direct internet; egress only through the filtering proxy." },
+            { "action": "deny", "direction": "in", "proto": "any", "from": "any", "to": "management", "note": "VPN-only management." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "campus",
+      "name": "Kampüs (10.000 öğrenci)",
+      "role": "campus",
+      "location": "İstanbul, TR",
+      "population": { "staff": 400, "students": 10000 },
+      "network": {
+        "cidr": "10.40.0.0/16",
+        "dmz": true,
+        "vlans": [
+          { "id": 10, "name": "staff", "cidr": "10.40.0.0/20", "note": "Faculty and admin." },
+          { "id": 50, "name": "students-wifi", "cidr": "10.40.64.0/18", "note": "~16k addresses: students carry 2–3 devices each, so the /24-per-person rule of thumb does not apply — size by devices." },
+          { "id": 51, "name": "students-lab", "cidr": "10.40.128.0/19", "note": "Computer labs." },
+          { "id": 90, "name": "dmz", "cidr": "10.40.254.0/24", "note": "LMS, portal, public web." },
+          { "id": 99, "name": "management", "cidr": "10.40.255.0/24" }
+        ]
+      },
+      "bandwidth": { "downMbps": 10000, "upMbps": 10000, "drivers": ["Zoom", "LMS video", "cloud", "software updates", "web", "research datasets"] },
+      "firewalls": [
+        {
+          "segment": "perimeter",
+          "chosen": { "product": "FortiGate 600F", "vendor": "Fortinet", "throughputGbps": 36, "priceUsd": 12000, "reason": "10 Gbps campus link with IPS on at exam peaks; NGFW throughput has real headroom unlike a 440 at this load." },
+          "alternatives": [
+            { "product": "Palo Alto PA-3220", "vendor": "Palo Alto", "throughputGbps": 5.5, "priceUsd": 20000, "reason": "Best policy engine; threat-prevention throughput is short of a 10 Gbps peak." },
+            { "product": "pfSense Plus (Netgate 8200)", "vendor": "Netgate", "throughputGbps": 18.5, "priceUsd": 2199, "reason": "Great raw price/throughput; UTM and support thinner for a campus SOC." },
+            { "product": "Sophos XGS 4300", "vendor": "Sophos", "throughputGbps": 23, "priceUsd": 11000, "reason": "Strong UTM and reporting; licence add-ons raise TCO." },
+            { "product": "Check Point Quantum 6200", "vendor": "Check Point", "throughputGbps": 28, "priceUsd": 18000, "reason": "Excellent management at scale; highest cost here." }
+          ],
+          "rules": [
+            { "action": "allow", "direction": "in", "proto": "tcp", "port": 443, "from": "any", "to": "dmz-lms", "note": "Public HTTPS to the LMS in the DMZ." },
+            { "action": "limit", "direction": "in", "proto": "tcp", "port": 443, "from": "any", "to": "dmz-lms", "note": "Rate-limit at the edge; exam-day traffic looks like a flood otherwise." },
+            { "action": "allow", "direction": "out", "proto": "udp", "port": 123, "to": "ntp-pool", "note": "NTP." },
+            { "action": "allow", "direction": "in", "proto": "udp", "port": "67:68", "from": "students-wifi", "to": "dhcp", "note": "DHCP for student Wi-Fi — the one service you must never firewall off internally." },
+            { "action": "deny", "direction": "forward", "proto": "any", "from": "students-wifi", "to": "staff", "note": "Student Wi-Fi is isolated from faculty/admin." },
+            { "action": "deny", "direction": "forward", "proto": "any", "from": "students-wifi", "to": "management", "note": "No student device reaches network management." }
+          ]
+        }
+      ]
+    }
+  ],
+  "remoteAccess": {
+    "type": "role-based-vpn",
+    "note": "No public SSH anywhere. Admins reach the management VLANs through a role-based VPN into a bastion; staff get a separate profile with only the apps their role needs. Each branch terminates its own tunnel to HQ."
+  },
+  "monitoring": {
+    "siem": "Wazuh + the ufw-logger Telegram notifier for quick block alerts",
+    "owner": "Campus SOC (2 analysts) owns security alerts; branch IT owns uptime. An alert nobody owns is an alert nobody answers.",
+    "alertSink": "SIEM dashboard for triage; Telegram channel for high-severity blocks only (the logger is profiled to drop outbound ALLOW and DNS noise so it never floods).",
+    "appVsSecurity": "Application health (ERP, LMS up/down) goes to the ops channel; security events (blocks, auth failures, IPS hits) go to the SOC. Mixing them buries the ones that matter."
+  },
+  "cveWatch": [
+    { "id": "CVE-2024-4577", "product": "PHP-CGI (Windows)", "status": "not-affected", "note": "Portal runs PHP-FPM on Linux; verified version and confirmed the CGI path is not used. Firewall is the wrong layer for an app-layer RCE — mitigation is WAF + patch." }
+  ]
+}

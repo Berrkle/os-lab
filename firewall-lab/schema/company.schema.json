@@ -1,0 +1,197 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/keyvanarasteh/os-lab/firewall-lab/schema/company.schema.json",
+  "title": "firewall-lab company manifest",
+  "description": "A student's 'dream company' network and firewall design for BGT207. One company.json per company folder under firewall-lab/companies/<slug>/.",
+  "type": "object",
+  "required": ["schemaVersion", "slug", "name", "sector", "author", "summary", "branches", "monitoring"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "Folder name; lowercase kebab-case, must equal the directory under companies/."
+    },
+    "name": { "type": "string", "minLength": 2 },
+    "sector": { "type": "string", "minLength": 2, "description": "e.g. Education, Retail, Health, Fintech, Logistics." },
+    "author": {
+      "type": "object",
+      "required": ["name", "course"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "studentId": { "type": "string" },
+        "course": { "type": "string", "enum": ["BGT207"] },
+        "github": { "type": "string" }
+      }
+    },
+    "summary": { "type": "string", "minLength": 10, "description": "One paragraph: what the company does and the security posture in plain words." },
+    "branches": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/branch" }
+    },
+    "remoteAccess": { "$ref": "#/definitions/remoteAccess" },
+    "monitoring": { "$ref": "#/definitions/monitoring" },
+    "cveWatch": {
+      "type": "array",
+      "description": "Bonus: live CVEs you track and how you responded (temporary mitigation vs. permanent patch).",
+      "items": { "$ref": "#/definitions/cve" }
+    }
+  },
+  "definitions": {
+    "branch": {
+      "type": "object",
+      "required": ["id", "name", "role", "location", "population", "network", "bandwidth", "firewalls"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+        "name": { "type": "string" },
+        "role": { "type": "string", "enum": ["headquarters", "branch", "campus", "datacenter", "remote"] },
+        "location": { "type": "string" },
+        "population": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Head counts drive address space and bandwidth. Students in a campus branch can be in the thousands.",
+          "properties": {
+            "staff": { "type": "integer", "minimum": 0 },
+            "students": { "type": "integer", "minimum": 0 },
+            "rnd": { "type": "integer", "minimum": 0 },
+            "software": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "network": {
+          "type": "object",
+          "required": ["cidr", "vlans"],
+          "additionalProperties": false,
+          "properties": {
+            "cidr": { "type": "string", "description": "Branch supernet, e.g. 10.10.0.0/17. Size it for devices-per-person, not people." },
+            "vlans": {
+              "type": "array",
+              "minItems": 1,
+              "description": "Segmentation: staff, students, R&D, software, servers, guest, management — each its own VLAN and rule set.",
+              "items": {
+                "type": "object",
+                "required": ["id", "name", "cidr"],
+                "additionalProperties": false,
+                "properties": {
+                  "id": { "type": "integer", "minimum": 1, "maximum": 4094 },
+                  "name": { "type": "string" },
+                  "cidr": { "type": "string" },
+                  "note": { "type": "string" }
+                }
+              }
+            },
+            "dmz": { "type": "boolean", "description": "Does this branch expose a DMZ for public-facing services?" }
+          }
+        },
+        "bandwidth": {
+          "type": "object",
+          "required": ["downMbps", "upMbps", "drivers"],
+          "additionalProperties": false,
+          "properties": {
+            "downMbps": { "type": "integer", "minimum": 1 },
+            "upMbps": { "type": "integer", "minimum": 1 },
+            "drivers": {
+              "type": "array",
+              "minItems": 1,
+              "description": "What consumes the link: Zoom, IP telephony, ERP, email, git, CI/CD, web, cloud backup.",
+              "items": { "type": "string" }
+            }
+          }
+        },
+        "firewalls": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/firewall" }
+        }
+      }
+    },
+    "firewall": {
+      "type": "object",
+      "required": ["segment", "chosen", "alternatives", "rules"],
+      "additionalProperties": false,
+      "properties": {
+        "segment": {
+          "type": "string",
+          "description": "Where this firewall sits: perimeter, staff, students, rnd, software, servers, dmz, management, guest."
+        },
+        "chosen": { "$ref": "#/definitions/product" },
+        "alternatives": {
+          "type": "array",
+          "minItems": 4,
+          "description": "The other candidates you compared (the brief asks for a top-5, so 4 here + the chosen one). Price and throughput make the comparison real.",
+          "items": { "$ref": "#/definitions/product" }
+        },
+        "rules": {
+          "type": "array",
+          "minItems": 1,
+          "description": "The rule set. Order matters: first match wins. Explain every rule you cannot explain is a vulnerability.",
+          "items": { "$ref": "#/definitions/rule" }
+        }
+      }
+    },
+    "product": {
+      "type": "object",
+      "required": ["product", "vendor"],
+      "additionalProperties": false,
+      "properties": {
+        "product": { "type": "string" },
+        "vendor": { "type": "string" },
+        "throughputGbps": { "type": "number", "minimum": 0 },
+        "priceUsd": { "type": "number", "minimum": 0 },
+        "reason": { "type": "string", "description": "Why chosen, or (for alternatives) why not chosen." }
+      }
+    },
+    "rule": {
+      "type": "object",
+      "required": ["action", "note"],
+      "additionalProperties": false,
+      "properties": {
+        "action": { "type": "string", "enum": ["allow", "deny", "reject", "limit"] },
+        "direction": { "type": "string", "enum": ["in", "out", "forward"], "default": "in" },
+        "proto": { "type": "string", "enum": ["tcp", "udp", "icmp", "any"], "default": "any" },
+        "port": {
+          "oneOf": [
+            { "type": "integer", "minimum": 0, "maximum": 65535 },
+            { "type": "string", "description": "Range or service, e.g. 67:68 or 'ntp'." }
+          ]
+        },
+        "from": { "type": "string", "description": "Source CIDR, VLAN name, or 'any'." },
+        "to": { "type": "string", "description": "Destination segment/host." },
+        "note": { "type": "string", "minLength": 1, "description": "Plain-language reason. Required — an unexplained rule fails review." }
+      }
+    },
+    "remoteAccess": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": { "type": "string", "enum": ["role-based-vpn", "site-to-site-vpn", "ztna", "bastion", "none"] },
+        "note": { "type": "string", "description": "Why not plain SSH from the internet? Role-based access per the brief." }
+      }
+    },
+    "monitoring": {
+      "type": "object",
+      "required": ["owner", "alertSink"],
+      "additionalProperties": false,
+      "properties": {
+        "siem": { "type": "string" },
+        "owner": { "type": "string", "description": "Who watches, and who is responsible when an alert fires." },
+        "alertSink": { "type": "string", "description": "Where alerts land: Telegram, email, PagerDuty, SIEM dashboard." },
+        "appVsSecurity": { "type": "string", "description": "How application monitoring is kept separate from security monitoring." }
+      }
+    },
+    "cve": {
+      "type": "object",
+      "required": ["id", "product", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "product": { "type": "string" },
+        "status": { "type": "string", "enum": ["investigating", "mitigated", "patched", "not-affected"] },
+        "note": { "type": "string" }
+      }
+    }
+  }
+}
