@@ -29,6 +29,28 @@ include a native or KVM-free path where relevant.
 > Test only Android/iOS apps you own or have explicit permission to assess, and
 > isolate any guest that runs untrusted software. See [SECURITY.md](SECURITY.md).
 
+## One-command setup
+
+Take a fresh machine to a running web console in a single command — detect the
+host, report device status, install prerequisites, fetch/update the checkout,
+provision a Python virtualenv, and launch the UI. See
+[`scripts/setup/`](scripts/setup/) for details and options.
+
+```bash
+# Linux
+curl -fsSL https://raw.githubusercontent.com/keyvanarasteh/os-lab/master/scripts/setup/install.sh | bash
+# macOS
+curl -fsSL https://raw.githubusercontent.com/keyvanarasteh/os-lab/master/scripts/setup/install-macos.sh | bash
+```
+
+```powershell
+# Windows (PowerShell)
+irm https://raw.githubusercontent.com/keyvanarasteh/os-lab/master/scripts/setup/install.ps1 | iex
+```
+
+Add `--report-only` (`-ReportOnly` on Windows) to inspect the host without
+changing anything.
+
 ## Management CLI
 
 [`./labctl`](labctl) is the single entry point for profiles, lifecycle, hardware

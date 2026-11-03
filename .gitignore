@@ -40,3 +40,7 @@ __pycache__/
 .pytest_cache/
 lat.md/.cache/
 .venv-test/
+
+# Private, off-the-record local notes (never committed)
+*.local.md
+.private/

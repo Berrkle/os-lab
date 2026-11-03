@@ -10,4 +10,5 @@ what each lab does and why, and links to the implementation.
 - [[ios-lab]] — iOS Simulator (macOS VM or native macOS)
 - [[linux-lab]] — Linux VM on `qemux/qemu`
 - [[labctl]] — the cross-lab management CLI
+- [[setup]] — one-command installers for Linux, macOS and Windows
 - [[tooling]] — CI, tests and community process
