@@ -1,0 +1,45 @@
+# linux-lab: a Linux virtual machine in a Docker container (qemux/qemu)
+# Documentation: ./README.md, ./knowledge/setup.md
+# Requires a Linux host with /dev/kvm. See ./knowledge/setup.md.
+
+name: linux-lab
+
+services:
+  linux:
+    image: qemux/qemu:${IMAGE_TAG:-latest}
+    container_name: linux-lab
+
+    environment:
+      # Distro shortcut (ubuntu, debian, alpine, fedora, arch, kali, ...) or an
+      # ISO URL. A local ./boot.iso bound into the container overrides BOOT.
+      BOOT: "${BOOT:-ubuntu}"
+      BOOT_MODE: "${BOOT_MODE:-uefi}"
+
+      CPU_CORES: "${CPU_CORES:-2}"
+      RAM_SIZE: "${RAM_SIZE:-4G}"
+      DISK_SIZE: "${DISK_SIZE:-32G}"
+      DISK_FMT: "${DISK_FMT:-qcow2}"
+
+      USERNAME: "${LINUX_USER:-root}"
+      PASSWORD: "${LINUX_PASSWORD:-root}"
+
+      WEB: "Y"
+      DEBUG: "${DEBUG:-N}"
+
+    devices:
+      - /dev/kvm
+      - /dev/net/tun
+
+    cap_add:
+      - NET_ADMIN
+
+    ports:
+      - "${WEB_PORT:-8006}:8006"
+      - "${SSH_PORT:-2222}:22"
+
+    volumes:
+      - ./storage:/storage
+      - ./shared:/shared
+
+    restart: unless-stopped
+    stop_grace_period: 2m

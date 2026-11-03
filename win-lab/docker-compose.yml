@@ -1,0 +1,54 @@
+# win-lab: Windows in a Docker container (dockur/windows)
+# Documentation: README.md, knowledge/setup.md
+# Requires a Linux host with /dev/kvm. See knowledge/setup.md.
+
+name: win-lab
+
+services:
+  windows:
+    image: dockurr/windows:${IMAGE_TAG:-latest}
+    container_name: win-lab
+
+    environment:
+      VERSION: "${VERSION:-11}"
+      LANGUAGE: "${LANGUAGE:-English}"
+      REGION: "${REGION:-}"
+      KEYBOARD: "${KEYBOARD:-}"
+      USERNAME: "${WINDOWS_USER:-Docker}"
+      PASSWORD: "${WINDOWS_PASSWORD:-admin}"
+
+      CPU_CORES: "${CPU_CORES:-2}"
+      RAM_SIZE: "${RAM_SIZE:-4G}"
+      DISK_SIZE: "${DISK_SIZE:-64G}"
+      DISK_FMT: "${DISK_FMT:-raw}"
+      ALLOCATE: "${ALLOCATE:-N}"
+
+      WEB: "Y"
+      PROTECT: "${WEB_PROTECT:-N}"
+      SAMBA: "${SAMBA:-Y}"
+      SHORTCUT: "${SHORTCUT:-Y}"
+
+      REMOVE: "${REMOVE_ISO:-Y}"
+      SHUTDOWN: "${SHUTDOWN:-Y}"
+      TIMEOUT: "${SHUTDOWN_TIMEOUT:-105}"
+      DEBUG: "${DEBUG:-N}"
+
+    devices:
+      - /dev/kvm
+      - /dev/net/tun
+
+    cap_add:
+      - NET_ADMIN
+
+    ports:
+      - "${WEB_PORT:-8006}:8006"
+      - "${RDP_PORT:-3389}:3389/tcp"
+      - "${RDP_PORT:-3389}:3389/udp"
+
+    volumes:
+      - ./storage:/storage
+      - ./shared:/shared
+      - ./oem:/oem
+
+    restart: unless-stopped
+    stop_grace_period: 2m

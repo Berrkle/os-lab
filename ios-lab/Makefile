@@ -11,14 +11,8 @@ FILE ?=
 CONFIRM ?=
 PROFILE ?=
 INSTALL ?=
-CPUS ?=
-RAM ?=
-DISK ?=
-APPLY ?=
-DRY ?=
-MONITOR_ARGS ?=
 
-.PHONY: help preflight setup prepare up up-gpu boot wait status monitor profiles logs shell web vnc restart update down backup restore install-service uninstall-service reset clean env profile resize mac-doctor mac-setup mac-profiles mac-profile mac-sim mac-stop mac-appium mac-appium-stop mac-status
+.PHONY: help preflight setup prepare up up-gpu boot wait status monitor profiles logs shell web vnc restart update down backup restore install-service uninstall-service reset clean env mac-doctor mac-setup mac-profiles mac-profile mac-sim mac-stop mac-appium mac-appium-stop mac-status
 
 help: ## Show this help
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -54,22 +48,10 @@ status: ## Container state, web viewer, ports and storage
 	  du -sh storage 2>/dev/null || true; fi
 
 monitor: ## Live dashboard: state, endpoints, CPU/RAM, storage
-	bash scripts/monitor.sh $(MONITOR_ARGS)
+	../labctl ios monitor
 
 profiles: ## List management profiles (lightweight/development/performance)
-	bash scripts/profile.sh list
-
-profile: ## Apply a profile: make profile PROFILE=development
-	@test -n "$(PROFILE)" || { echo "usage: make profile PROFILE=lightweight|development|performance"; exit 1; }
-	bash scripts/profile.sh use "$(PROFILE)"
-
-resize: ## Change hardware: make resize CPUS=8 RAM=12G DISK=192G [APPLY=1]
-	bash scripts/resize.sh \
-	  $(if $(CPUS),--cpus "$(CPUS)") \
-	  $(if $(RAM),--ram "$(RAM)") \
-	  $(if $(DISK),--disk "$(DISK)") \
-	  $(if $(filter 1 yes Y,$(APPLY)),--apply) \
-	  $(if $(filter 1 yes Y,$(DRY)),--dry-run)
+	../labctl ios profiles
 
 logs: ## Follow container logs
 	$(COMPOSE) logs -f macos

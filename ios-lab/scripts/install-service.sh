@@ -26,11 +26,7 @@ if [ -x "$LABCTL" ]; then
   START_CMD="${LABCTL} ios start"
   STOP_CMD="${LABCTL} ios stop"
 else
-  COMPOSE_ARGS=""
-  if [ -f "$LAB_DIR/.env" ] && grep -q '^GPU=Y' "$LAB_DIR/.env"; then
-    COMPOSE_ARGS="-f docker-compose.yml -f docker-compose.gpu.yml"
-  fi
-  START_CMD="${RUNTIME} compose ${COMPOSE_ARGS} up -d macos"
+  START_CMD="${RUNTIME} compose up -d macos"
   STOP_CMD="${RUNTIME} compose down"
 fi
 

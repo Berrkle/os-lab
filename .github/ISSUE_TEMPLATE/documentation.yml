@@ -1,0 +1,23 @@
+name: 📝 Documentation
+description: Report an error, gap, or improvement in the docs or knowledge base
+title: "[Docs]: "
+labels: ["documentation", "triage"]
+body:
+  - type: input
+    id: location
+    attributes:
+      label: Document / path
+      placeholder: "e.g. lab/README.md, knowledge/setup.md, docker-android-cheat-sheet.md"
+    validations:
+      required: true
+  - type: textarea
+    id: issue
+    attributes:
+      label: What's wrong or missing?
+      description: Describe the inaccuracy, gap, or suggested improvement.
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested wording (optional)

@@ -1,0 +1,41 @@
+<!--
+Thanks for contributing to os-lab! Please fill out the sections below.
+Keep PRs focused — one logical change per PR is easier to review and merge.
+-->
+
+## Summary
+
+<!-- What does this PR change, and why? -->
+
+## Type of change
+
+- [ ] 🐛 Bug fix (non-breaking change that fixes an issue)
+- [ ] ✨ New feature (non-breaking change that adds capability)
+- [ ] 💥 Breaking change (fix or feature that changes existing behavior)
+- [ ] 📝 Documentation / knowledge base
+- [ ] 🧰 Tooling / CI / refactor (no functional change)
+
+## Component
+
+- [ ] Android lab (`lab/`)
+- [ ] iOS lab (`ios-lab/`)
+- [ ] Windows runbook (`lab.ps1`)
+- [ ] Scripts / orchestrator / agentic engine
+- [ ] Frida hooks
+- [ ] Docs / knowledge
+
+## How was this tested?
+
+<!-- Commands run, OS/arch, and results. e.g. `python -m pytest lab/tests -v` -->
+
+## Checklist
+
+- [ ] My changes concern only apps/targets that are owned or authorized for testing.
+- [ ] I ran the relevant test suite and it passes (`python -m pytest lab/tests -v`).
+- [ ] I updated documentation and, where relevant, `lat.md/` to reflect behavior changes.
+- [ ] I ran `lat check` and it passes (if `lat.md/` was touched).
+- [ ] My commits follow [Conventional Commits](https://www.conventionalcommits.org/).
+
+## Related issues
+
+<!-- e.g. Closes #123 -->
