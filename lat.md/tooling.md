@@ -10,7 +10,9 @@ GitHub Actions is disabled for this repo; tests run locally via one script.
 [[scripts/run-tests.sh]] is the CI replacement. It prepares a Python
 environment (a `.venv-test` unless `--no-venv`), runs the pytest suite in
 [[android-lab/lab/tests]], runs a sample-analysis smoke test, checks every
-shell script with `bash -n`, and runs `lat check` when `lat` is installed.
+shell script with `bash -n`, runs `lat check` when `lat` is installed, and,
+when `dashboard/node_modules` exists, typechecks the [[dashboard]] and fails if
+the committed `dashboard/dist` differs from a fresh build.
 `--quick` runs only the unit tests. The dormant workflow file
 [[.github/workflows/mobile-sec-scan.yml]] is kept for reference but is disabled.
 
@@ -19,7 +21,8 @@ shell script with `bash -n`, and runs `lat check` when `lat` is installed.
 The android lab carries the only automated test suite today.
 
 It lives in [[android-lab/lab/tests]] (analyzer, reporter, MobSF client, secret
-scanner, patcher, flow parser, agentic engine, web UI). Shell scripts across the
+scanner, patcher, flow parser, agentic engine, web UI, and the host engine in
+[[console/oslab.py]]). Shell scripts across the
 VM labs are kept `bash -n` clean and use `set -euo pipefail`.
 
 ## Community and contribution

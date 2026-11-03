@@ -1,0 +1,111 @@
+/* Android Lab & Reusable Guidelines Design Tokens & Utility Classes */
+
+.apk-dot-grid {
+  background-image: radial-gradient(
+    color-mix(in oklab, var(--iux-foreground) 10%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 24px 24px;
+}
+
+.apk-dot-grid-dense {
+  background-image: radial-gradient(
+    color-mix(in oklab, var(--iux-foreground) 12%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 16px 16px;
+}
+
+/* Corner crosshairs (+) for sitemap & bento grids */
+.apk-crosshair-box {
+  position: relative;
+}
+
+.apk-crosshair-box::before,
+.apk-crosshair-box::after {
+  content: "+";
+  position: absolute;
+  font-family: ui-monospace, monospace;
+  font-size: 14px;
+  line-height: 1;
+  color: color-mix(in oklab, var(--iux-foreground) 25%, transparent);
+  pointer-events: none;
+  user-select: none;
+  z-index: 10;
+}
+
+.apk-crosshair-box::before {
+  top: -7px;
+  left: -6px;
+}
+
+.apk-crosshair-box::after {
+  bottom: -7px;
+  right: -6px;
+}
+
+/* Dashed borders matching Cloudflare / iUX engineering aesthetics */
+.apk-dashed-border {
+  border: 1px dashed color-mix(in oklab, var(--iux-foreground) 18%, transparent);
+}
+
+.apk-dashed-outline {
+  outline: 1px dashed
+    color-mix(in oklab, var(--iux-foreground) 20%, transparent);
+  outline-offset: 4px;
+}
+
+/* Orange accent brand tokens matching the guideline screenshots */
+:root {
+  --apk-brand-orange: #f36c21;
+  --apk-brand-orange-hover: #fa7b32;
+  --apk-brand-orange-bg: rgba(243, 108, 33, 0.12);
+  --apk-brand-orange-border: rgba(243, 108, 33, 0.35);
+  --apk-brand-cyan: #00d084;
+  --apk-brand-blue: #2563eb;
+}
+
+/* Animated orbital rotation */
+@keyframes apk-orbit-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes apk-pulse-subtle {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(0.98);
+  }
+}
+
+.apk-animate-pulse-subtle {
+  animation: apk-pulse-subtle 3s ease-in-out infinite;
+}
+
+/* Monospace command terminal styling */
+.apk-code-scroll::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+
+.apk-code-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.apk-code-scroll::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--iux-foreground) 15%, transparent);
+  border-radius: 3px;
+}
+
+.apk-code-scroll::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklab, var(--iux-foreground) 30%, transparent);
+}

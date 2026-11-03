@@ -239,6 +239,36 @@ provision_venv() {
   fi
 }
 
+# --------------------------------------------------------------------------- #
+# Dashboard (Astro): rebuild locally when Node 22+ is present, else use the
+# committed build in dashboard/dist. Local builds go to the untracked
+# dashboard/build so they never dirty the checkout; the console serves the newer.
+# --------------------------------------------------------------------------- #
+build_dashboard() {
+  local dir="$REPO_ROOT/dashboard"
+  [ -f "$dir/package.json" ] || return 0
+  local prebuilt="prebuilt dashboard (dashboard/dist)"
+  [ -f "$dir/dist/index.html" ] || prebuilt="classic console (no dashboard build found)"
+  if [ "$MINIMAL" -eq 1 ] || [ "${OSLAB_DASHBOARD_BUILD:-1}" = "0" ]; then
+    ok "dashboard: using the $prebuilt"
+    return 0
+  fi
+  local major=0
+  have node && major="$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)"
+  if ! have npm || [ "${major:-0}" -lt 22 ]; then
+    ok "dashboard: Node.js 22+ not found, using the $prebuilt"
+    return 0
+  fi
+  step "building the dashboard with Node $(node --version) (set OSLAB_DASHBOARD_BUILD=0 to skip)"
+  if ( cd "$dir" \
+       && { npm ci --no-audit --no-fund >/dev/null 2>&1 || npm install --no-audit --no-fund >/dev/null 2>&1; } \
+       && npm run --silent build:local >/dev/null 2>&1 ); then
+    ok "dashboard built → dashboard/build"
+  else
+    warn "dashboard build failed; using the $prebuilt"
+  fi
+}
+
 launch_ui() {
   local orch="$REPO_ROOT/android-lab/lab/orchestrator.py"
   local url="http://127.0.0.1:$OSLAB_PORT"
@@ -255,6 +285,7 @@ if [ "$REPORT_ONLY" -eq 1 ]; then info "report-only: no changes made"; exit 0; f
 [ "$DO_INSTALL" -eq 1 ] && { info "Checking prerequisites"; ensure_prereqs; }
 info "Fetching os-lab"; locate_or_clone
 info "Provisioning Python environment"; provision_venv
+info "Preparing the dashboard"; build_dashboard
 if [ "$DO_RUN" -eq 1 ]; then
   launch_ui
 else

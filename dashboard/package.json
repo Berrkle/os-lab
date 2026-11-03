@@ -1,0 +1,27 @@
+{
+  "name": "os-lab-dashboard",
+  "private": true,
+  "type": "module",
+  "description": "os-lab dashboard: host overview and every lab, built from the qLar app shell (PR #174). Static output served by android-lab/lab/web_ui.py.",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "build:local": "astro build --outDir build",
+    "preview": "astro preview",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@astrojs/react": "^7.1.1",
+    "@phosphor-icons/react": "^2.1.10",
+    "@tailwindcss/vite": "^4.3.1",
+    "astro": "7.4.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "tailwindcss": "^4.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^6.0.3"
+  }
+}

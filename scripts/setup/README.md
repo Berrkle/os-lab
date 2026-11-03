@@ -37,8 +37,12 @@ network — it detects the surrounding checkout and uses it in place:
 5. **Virtualenv** — create `.venv` in the checkout and install
    `android-lab/lab/requirements.txt`. `--minimal` skips the heavy tool deps;
    the web console itself runs on the Python standard library.
-6. **Launch** — start the web console and open the browser at
-   `http://127.0.0.1:5050`.
+6. **Dashboard** — with Node.js 22+ present, rebuild the dashboard into the
+   untracked `dashboard/build`; otherwise use the committed `dashboard/dist`
+   (see [`dashboard/`](../../dashboard/README.md)).
+7. **Launch** — start the web console and open the browser at
+   `http://127.0.0.1:5050`. It opens on *This computer*: which labs this host
+   can run and what each one still needs.
 
 ## Options
 
@@ -56,7 +60,7 @@ Shell (`install.sh`, `install-macos.sh`) / PowerShell (`install.ps1`):
 | `--update` | `-Update` | pull latest even if the checkout exists |
 
 Environment overrides (all hosts): `OSLAB_REPO`, `OSLAB_DIR`, `OSLAB_BRANCH`,
-`OSLAB_PORT`.
+`OSLAB_PORT`, and `OSLAB_DASHBOARD_BUILD=0` to skip the dashboard rebuild.
 
 ## Notes
 

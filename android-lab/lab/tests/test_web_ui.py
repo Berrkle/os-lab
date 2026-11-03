@@ -2,6 +2,7 @@ import os
 import json
 import threading
 import time
+import urllib.error
 import urllib.request
 import pytest
 from http.server import HTTPServer
@@ -32,6 +33,11 @@ def test_web_ui_dashboard_page(web_server):
     req = urllib.request.urlopen(url)
     assert req.status == 200
     body = req.read().decode("utf-8")
+    assert "os-lab" in body
+
+
+def test_web_ui_classic_console(web_server):
+    body = urllib.request.urlopen(f"{web_server}/classic/").read().decode("utf-8")
     assert "android-lab" in body
     assert "Mobile Security Console" in body
 
@@ -62,7 +68,7 @@ def test_web_ui_upload_endpoint(web_server):
     req = urllib.request.Request(
         f"{web_server}/api/upload",
         data=body,
-        headers={"Content-Type": f"multipart/form-data; boundary={boundary}"}
+        headers={"Content-Type": f"multipart/form-data; boundary={boundary}", "X-OSLab": "1"}
     )
     with urllib.request.urlopen(req) as resp:
         assert resp.status == 200
@@ -72,3 +78,55 @@ def test_web_ui_upload_endpoint(web_server):
         assert data["size"] == len(file_bytes)
         assert data["path"].endswith("uploaded-sample.apk")
 
+
+
+def _post(url, payload, headers=None):
+    req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"),
+                                 headers={"Content-Type": "application/json", **(headers or {})})
+    try:
+        with urllib.request.urlopen(req) as resp:
+            return resp.status, json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        return e.code, json.loads(e.read().decode("utf-8") or "{}")
+
+
+def test_post_requires_oslab_header(web_server):
+    status, data = _post(f"{web_server}/api/run", {"action": "preflight"})
+    assert status == 403
+    assert "X-OSLab" in data["error"]
+
+
+def test_foreign_host_header_is_refused(web_server):
+    req = urllib.request.Request(f"{web_server}/api/health", headers={"Host": "evil.example"})
+    with pytest.raises(urllib.error.HTTPError) as err:
+        urllib.request.urlopen(req)
+    assert err.value.code == 403
+
+
+def test_artifacts_cannot_escape_folder(web_server):
+    import http.client
+    conn = http.client.HTTPConnection("127.0.0.1", 5059)
+    conn.request("GET", "/artifacts/../web_ui.py")
+    assert conn.getresponse().status == 404
+
+
+def test_host_reports_every_lab(web_server):
+    data = json.loads(urllib.request.urlopen(f"{web_server}/api/host").read().decode("utf-8"))
+    assert data["host"]["os"]
+    assert [lab["id"] for lab in data["labs"]] == ["android", "windows", "linux", "ios", "macos"]
+    for lab in data["labs"]:
+        assert lab["state"] in ("ready", "needs-setup", "unavailable")
+
+
+def test_lab_start_requires_a_previewed_plan(web_server):
+    status, data = _post(f"{web_server}/api/labs/start",
+                         {"request": {"lab": "android", "action": "status"}, "token": "forged"},
+                         {"X-OSLab": "1"})
+    assert status == 409
+
+
+def test_lab_plan_rejects_injection(web_server):
+    status, data = _post(f"{web_server}/api/labs/plan",
+                         {"request": {"lab": "android", "action": "start", "profile": "../../etc"}},
+                         {"X-OSLab": "1"})
+    assert status == 400

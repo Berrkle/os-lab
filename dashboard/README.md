@@ -1,0 +1,53 @@
+# os-lab dashboard
+
+The browser console for os-lab: this computer, every lab and the Android Lab
+workbench. It is an Astro 7 + React 19 + Tailwind 4 app built from the qLar app
+shell (qLar PR #174): the sidebar, Spotlight, theme, iUX tokens and the Android
+Lab components are ported from `agents-app/src/shell` and
+`agents-app/src/apk-lab`.
+
+The output is static. `android-lab/lab/web_ui.py` serves it and is the only
+backend: host detection, lab plans and jobs live in `console/oslab.py`.
+
+## Pages
+
+| Route | What it shows |
+|-------|---------------|
+| `/` | This computer: OS, CPU, memory, disk, KVM, container runtime, host tools, and which labs can run here (ready / needs setup / unavailable, with reasons) |
+| `/labs/<lab>/` | One lab (`android`, `windows`, `linux`, `ios`, `macos`): dependencies with **Install dependencies**, typed actions, plan preview → confirm → run, live job output, container monitor, endpoints, profiles and masked configuration |
+| `/jobs/` | Every lab job with its output; cancel running jobs |
+| `/android/…` | Android Lab workbench: overview, code & providers, workflows & DAG, execution & logs, analytics, routes & sitemap |
+
+Every lab action is previewed first: the server returns the exact command, its
+effects, setup prerequisites and privileges, and a token that `/api/labs/start`
+requires. Pages never send command strings.
+
+## Builds
+
+Two builds can exist; the console serves whichever `index.html` is newer, and
+falls back to the classic console (`android-lab/lab/web/`, always at
+`/classic/`) when neither exists.
+
+- `dist/` — **committed**, so hosts without Node.js still get the dashboard.
+  Rebuild and commit it whenever you change `src/`: `npm run build`.
+- `build/` — **local, untracked**. The installers make it with
+  `npm run build:local` when Node.js 22+ is present (skip with
+  `OSLAB_DASHBOARD_BUILD=0` or `--minimal`), so a local build never dirties the
+  checkout.
+
+Tailwind scans only `src/`, so both builds are byte-identical for the same
+sources. `scripts/run-tests.sh` rebuilds into a temp folder and fails when the
+committed `dist/` is stale.
+
+## Develop
+
+```bash
+cd dashboard
+npm ci
+python3 ../android-lab/lab/web_ui.py 5050 &   # the API
+npm run dev                                   # proxies /api to :5050 (OSLAB_API to change)
+npm run check                                 # TypeScript
+npm run build                                 # refresh dist/ before committing
+```
+
+Run the console with `./labctl ui` (or `--port N`).
