@@ -24,36 +24,36 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install pytest requests
-          if [ -f lab/requirements.txt ]; then pip install -r lab/requirements.txt; fi
+          if [ -f android-lab/lab/requirements.txt ]; then pip install -r android-lab/lab/requirements.txt; fi
 
       - name: Run Automated Test Suite
         run: |
-          python -m pytest lab/tests -v
+          python -m pytest android-lab/lab/tests -v
 
       - name: Verify Environment Pre-Flight
         run: |
-          cd lab
+          cd android-lab/lab
           python orchestrator.py preflight
 
       - name: Build / Prepare Target APK
         run: |
-          cd lab
+          cd android-lab/lab
           python scripts/create_sample_apk.py
 
       - name: Run Deep App Security Analyzer
         run: |
-          cd lab
+          cd android-lab/lab
           python scripts/app_analyzer.py scripts/vulnerable-test.apk artifacts/security-scan
 
       - name: Generate Multi-Format HTML5, MD & JSON Reports
         run: |
-          cd lab
+          cd android-lab/lab
           python scripts/app_reporter.py artifacts/security-scan/app-analysis.json -o artifacts/security-scan
 
       - name: Publish Security Audit to GitHub Job Summary
         run: |
-          if [ -f lab/artifacts/security-scan/security-report.md ]; then
-            cat lab/artifacts/security-scan/security-report.md >> $GITHUB_STEP_SUMMARY
+          if [ -f android-lab/lab/artifacts/security-scan/security-report.md ]; then
+            cat android-lab/lab/artifacts/security-scan/security-report.md >> $GITHUB_STEP_SUMMARY
           fi
 
       - name: Upload Security Report Artifacts
@@ -61,6 +61,6 @@ jobs:
         with:
           name: mobile-security-audit-report
           path: |
-            lab/artifacts/security-scan/security-report.html
-            lab/artifacts/security-scan/security-report.md
-            lab/artifacts/security-scan/security-report.json
+            android-lab/lab/artifacts/security-scan/security-report.html
+            android-lab/lab/artifacts/security-scan/security-report.md
+            android-lab/lab/artifacts/security-scan/security-report.json
