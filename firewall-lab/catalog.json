@@ -1,0 +1,331 @@
+{
+  "generatedBy": "firewall-lab/scripts/catalog.py",
+  "summary": {
+    "companies": 2,
+    "branches": 5,
+    "firewalls": 6,
+    "rules": 33,
+    "priceUsd": {
+      "min": 700,
+      "max": 12000,
+      "total": 18399
+    },
+    "chosenByVendor": {
+      "Fortinet": 5,
+      "Netgate": 1
+    },
+    "chosenByProduct": {
+      "Fortinet FortiGate 60F": 3,
+      "Fortinet FortiGate 100F": 1,
+      "Fortinet FortiGate 600F": 1,
+      "Netgate pfSense Plus (Netgate 4200)": 1
+    },
+    "vendorsConsidered": {
+      "Fortinet": 6,
+      "Netgate": 6,
+      "Deciso": 5,
+      "Sophos": 5,
+      "Palo Alto": 2,
+      "MikroTik": 2,
+      "Ubiquiti": 2,
+      "WatchGuard": 1,
+      "Check Point": 1
+    }
+  },
+  "firewalls": [
+    {
+      "company": "ACME Academy",
+      "companySlug": "acme-academy",
+      "sector": "Education",
+      "author": "Seed Example",
+      "branch": "İstanbul (Genel Merkez)",
+      "branchId": "istanbul-hq",
+      "branchRole": "headquarters",
+      "location": "İstanbul, TR",
+      "segment": "perimeter",
+      "product": "FortiGate 100F",
+      "vendor": "Fortinet",
+      "throughputGbps": 10,
+      "priceUsd": 3500,
+      "ruleCount": 7,
+      "actions": {
+        "allow": 4,
+        "deny": 1,
+        "reject": 1,
+        "limit": 1
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "pfSense Plus (Netgate 6100)",
+          "vendor": "Netgate",
+          "throughputGbps": 18.6,
+          "priceUsd": 1395
+        },
+        {
+          "product": "OPNsense (DEC2750)",
+          "vendor": "Deciso",
+          "throughputGbps": 12,
+          "priceUsd": 2100
+        },
+        {
+          "product": "Sophos XGS 2300",
+          "vendor": "Sophos",
+          "throughputGbps": 11,
+          "priceUsd": 3200
+        },
+        {
+          "product": "Palo Alto PA-440",
+          "vendor": "Palo Alto",
+          "throughputGbps": 3,
+          "priceUsd": 3900
+        }
+      ]
+    },
+    {
+      "company": "ACME Academy",
+      "companySlug": "acme-academy",
+      "sector": "Education",
+      "author": "Seed Example",
+      "branch": "İstanbul (Genel Merkez)",
+      "branchId": "istanbul-hq",
+      "branchRole": "headquarters",
+      "location": "İstanbul, TR",
+      "segment": "students",
+      "product": "FortiGate 60F",
+      "vendor": "Fortinet",
+      "throughputGbps": 10,
+      "priceUsd": 700,
+      "ruleCount": 4,
+      "actions": {
+        "allow": 2,
+        "deny": 2,
+        "reject": 0,
+        "limit": 0
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "pfSense CE (appliance)",
+          "vendor": "Netgate",
+          "throughputGbps": 5,
+          "priceUsd": 600
+        },
+        {
+          "product": "OPNsense (DEC740)",
+          "vendor": "Deciso",
+          "throughputGbps": 7,
+          "priceUsd": 950
+        },
+        {
+          "product": "MikroTik CCR2004",
+          "vendor": "MikroTik",
+          "throughputGbps": 10,
+          "priceUsd": 650
+        },
+        {
+          "product": "Ubiquiti UDM-SE",
+          "vendor": "Ubiquiti",
+          "throughputGbps": 3.5,
+          "priceUsd": 500
+        }
+      ]
+    },
+    {
+      "company": "ACME Academy",
+      "companySlug": "acme-academy",
+      "sector": "Education",
+      "author": "Seed Example",
+      "branch": "Ankara Ofisi",
+      "branchId": "ankara-office",
+      "branchRole": "branch",
+      "location": "Ankara, TR",
+      "segment": "perimeter",
+      "product": "FortiGate 60F",
+      "vendor": "Fortinet",
+      "throughputGbps": 10,
+      "priceUsd": 700,
+      "ruleCount": 4,
+      "actions": {
+        "allow": 3,
+        "deny": 1,
+        "reject": 0,
+        "limit": 0
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "pfSense Plus (Netgate 4200)",
+          "vendor": "Netgate",
+          "throughputGbps": 9.9,
+          "priceUsd": 799
+        },
+        {
+          "product": "OPNsense (DEC740)",
+          "vendor": "Deciso",
+          "throughputGbps": 7,
+          "priceUsd": 950
+        },
+        {
+          "product": "Sophos XGS 116",
+          "vendor": "Sophos",
+          "throughputGbps": 7.5,
+          "priceUsd": 950
+        },
+        {
+          "product": "MikroTik hEX S",
+          "vendor": "MikroTik",
+          "throughputGbps": 1,
+          "priceUsd": 90
+        }
+      ]
+    },
+    {
+      "company": "ACME Academy",
+      "companySlug": "acme-academy",
+      "sector": "Education",
+      "author": "Seed Example",
+      "branch": "London Office",
+      "branchId": "london-office",
+      "branchRole": "branch",
+      "location": "London, UK",
+      "segment": "perimeter",
+      "product": "FortiGate 60F",
+      "vendor": "Fortinet",
+      "throughputGbps": 10,
+      "priceUsd": 700,
+      "ruleCount": 4,
+      "actions": {
+        "allow": 2,
+        "deny": 2,
+        "reject": 0,
+        "limit": 0
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "pfSense Plus (Netgate 4200)",
+          "vendor": "Netgate",
+          "throughputGbps": 9.9,
+          "priceUsd": 799
+        },
+        {
+          "product": "OPNsense (DEC740)",
+          "vendor": "Deciso",
+          "throughputGbps": 7,
+          "priceUsd": 950
+        },
+        {
+          "product": "WatchGuard T45",
+          "vendor": "WatchGuard",
+          "throughputGbps": 3.3,
+          "priceUsd": 820
+        },
+        {
+          "product": "Sophos XGS 116",
+          "vendor": "Sophos",
+          "throughputGbps": 7.5,
+          "priceUsd": 950
+        }
+      ]
+    },
+    {
+      "company": "ACME Academy",
+      "companySlug": "acme-academy",
+      "sector": "Education",
+      "author": "Seed Example",
+      "branch": "Kampüs (10.000 öğrenci)",
+      "branchId": "campus",
+      "branchRole": "campus",
+      "location": "İstanbul, TR",
+      "segment": "perimeter",
+      "product": "FortiGate 600F",
+      "vendor": "Fortinet",
+      "throughputGbps": 36,
+      "priceUsd": 12000,
+      "ruleCount": 6,
+      "actions": {
+        "allow": 3,
+        "deny": 2,
+        "reject": 0,
+        "limit": 1
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "Palo Alto PA-3220",
+          "vendor": "Palo Alto",
+          "throughputGbps": 5.5,
+          "priceUsd": 20000
+        },
+        {
+          "product": "pfSense Plus (Netgate 8200)",
+          "vendor": "Netgate",
+          "throughputGbps": 18.5,
+          "priceUsd": 2199
+        },
+        {
+          "product": "Sophos XGS 4300",
+          "vendor": "Sophos",
+          "throughputGbps": 23,
+          "priceUsd": 11000
+        },
+        {
+          "product": "Check Point Quantum 6200",
+          "vendor": "Check Point",
+          "throughputGbps": 28,
+          "priceUsd": 18000
+        }
+      ]
+    },
+    {
+      "company": "Northwind Retail",
+      "companySlug": "northwind-retail",
+      "sector": "Retail",
+      "author": "Seed Example",
+      "branch": "Merkez + Mağaza Ağı",
+      "branchId": "hq",
+      "branchRole": "headquarters",
+      "location": "İzmir, TR",
+      "segment": "perimeter",
+      "product": "pfSense Plus (Netgate 4200)",
+      "vendor": "Netgate",
+      "throughputGbps": 9.9,
+      "priceUsd": 799,
+      "ruleCount": 8,
+      "actions": {
+        "allow": 4,
+        "deny": 3,
+        "reject": 0,
+        "limit": 1
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "FortiGate 40F",
+          "vendor": "Fortinet",
+          "throughputGbps": 5,
+          "priceUsd": 500
+        },
+        {
+          "product": "OPNsense (DEC740)",
+          "vendor": "Deciso",
+          "throughputGbps": 7,
+          "priceUsd": 950
+        },
+        {
+          "product": "Ubiquiti UDM-Pro",
+          "vendor": "Ubiquiti",
+          "throughputGbps": 3.5,
+          "priceUsd": 380
+        },
+        {
+          "product": "Sophos XGS 107",
+          "vendor": "Sophos",
+          "throughputGbps": 7,
+          "priceUsd": 750
+        }
+      ]
+    }
+  ]
+}

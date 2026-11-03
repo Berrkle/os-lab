@@ -15,6 +15,8 @@ cp -r ../templates/company <your-slug>
 # edit <your-slug>/company.json and write <your-slug>/README.md
 python3 ../scripts/validate.py <your-slug>
 python3 ../scripts/build-seed.py            # refresh the dashboard seed
+python3 ../scripts/catalog.py               # refresh catalog.json / catalog.md
+# optional: prototype the rules in ../vm/ (ufw, nftables or a neutral table)
 ```
 
 A submission is **one folder** containing:
@@ -34,7 +36,7 @@ Before you open the pull request:
 - [ ] Each segment lists a chosen product **and 4 alternatives** with price and throughput.
 - [ ] Public services sit in a DMZ; management is VPN-only; no public SSH.
 - [ ] `monitoring.owner` names a responsible party, not "the team".
-- [ ] You re-ran `build-seed.py` and committed `companies.generated.ts`.
+- [ ] You re-ran `build-seed.py` **and** `catalog.py` and committed the generated files.
 - [ ] Your `README.md` reads like a chapter, not a form.
 
 ## What reviewers look for

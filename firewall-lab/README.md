@@ -26,9 +26,14 @@ firewall-lab/
     northwind-retail/        seed: small retailer, PCI segmentation
   knowledge/                 the concepts, grounded in what we covered
     segmentation.md  rule-ordering.md  product-selection.md  monitoring.md
+  vm/                        a disposable guest to prototype a rule set and watch
+                             it behave — renders to UFW, nftables, or a neutral
+                             policy table (UFW is just the on-ramp)
+  catalog.json / catalog.md  AUTO: every submitted firewall + its props, rebuilt on each PR
   scripts/
     validate.py              check a company against the schema (stdlib only)
     build-seed.py            compile companies → dashboard seed
+    catalog.py               collect every firewall + props into catalog.{json,md}
 ```
 
 ## Contribute your company (the exercise)
@@ -44,12 +49,16 @@ firewall-lab/
    your bandwidth reasoning, the product comparison in prose, the "why we did
    *not* choose" notes, your monitoring plan. This is the part the course grows
    "like a book."
-4. **Validate and rebuild the dashboard seed:**
+4. **Validate, rebuild the seed, and refresh the catalog:**
    ```sh
    python3 firewall-lab/scripts/validate.py <your-slug>
    python3 firewall-lab/scripts/build-seed.py
+   python3 firewall-lab/scripts/catalog.py
    ```
-5. **Open a PR.** See [`companies/README.md`](companies/README.md) for the
+5. **(Optional) prototype it** in [`vm/`](vm/) — render your rules to UFW,
+   nftables or a vendor-neutral table and apply them in a throwaway Ubuntu guest.
+6. **Open a PR.** CI validates every company and republishes the firewall
+   catalog on each PR. See [`companies/README.md`](companies/README.md) for the
    checklist and what reviewers look for.
 
 ## The rules of a good submission
@@ -70,11 +79,14 @@ Straight from the lecture notes:
 - Tracking a **current CVE** and your response (mitigation vs. patch) is bonus —
   and remember a normal firewall can't stop an application-layer bug.
 
-## Relationship to the rest of os-lab
+## Not just UFW
 
-The rule sets here are written against [UFW](https://help.ubuntu.com/community/UFW)
-semantics — the same `allow` / `deny` / `reject` / `limit` actions and
-first-match ordering we practised. You can prototype any rule set in
-[`linux-lab`](../linux-lab/) on an Ubuntu guest before committing it, and wire
-block alerts to Telegram with [`ufw-logger`](https://github.com/keyvanarasteh/ufw-logger).
-This lab is a candidate midterm capability in the os-lab → qLar pipeline.
+We started with [UFW](https://help.ubuntu.com/community/UFW) to learn the three
+things **every** firewall shares — rules, their **order**, and the **default
+policy** — not because the answer is always UFW. Those ideas are identical on
+pfSense, OPNsense and FortiGate, which is why a company's rules are written once,
+abstractly, and [`vm/`](vm/) renders them to UFW, nftables (the filter
+pfSense/OPNsense generate underneath) **or** a vendor-neutral policy table you
+translate onto any appliance. Prototype in the throwaway guest, and wire block
+alerts to Telegram with [`ufw-logger`](https://github.com/keyvanarasteh/ufw-logger).
+This lab is a candidate midterm capability in the os-lab pipeline.
