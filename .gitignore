@@ -44,3 +44,5 @@ lat.md/.cache/
 # Private, off-the-record local notes (never committed)
 *.local.md
 .private/
+teached/**/*
+dashboard/node_modules/

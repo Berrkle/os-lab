@@ -11,7 +11,8 @@ Node server at runtime.
 [[dashboard/src/shell/app-shell.tsx]] carries the sidebar (labs with their
 availability pills), Spotlight and theme ported from qLar. Pages are React
 islands: [[dashboard/src/views/host-page.tsx]],
-[[dashboard/src/views/lab-page.tsx]], [[dashboard/src/views/jobs-page.tsx]] and
+[[dashboard/src/views/lab-page.tsx]], [[dashboard/src/views/jobs-page.tsx]],
+[[dashboard/src/views/contribute-page.tsx]] and
 the Android workbench in [[dashboard/src/views/android/pages.tsx]].
 [[dashboard/src/lib/api.ts]] is the typed client; it mirrors qLar's
 `shared/os-lab.ts` contract.

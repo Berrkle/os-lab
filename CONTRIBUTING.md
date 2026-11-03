@@ -63,6 +63,43 @@ For the Android lab runbook see [`android-lab/lab/README.md`](android-lab/lab/RE
 for Windows non-admin use [`android-lab/lab/README-WINDOWS.md`](android-lab/lab/README-WINDOWS.md),
 and for iOS [`ios-lab/README.md`](ios-lab/README.md).
 
+## Curated Contribution Roadmap & Priority TODOs
+
+Looking for high-impact areas to contribute? The following curated tasks are classified across our three core domains: **Penetration Testing**, **Open Source Operating Systems**, and **Firewall Solutions**. They incorporate architectural patterns from our desktop runtime (local MCP hosting, capability discovery, single-instance execution, release profile tuning) and real-world security engineering instrumentation.
+
+These tasks are also interactively browsable and filterable inside the dashboard under the **Contribute → Roadmap & TODOs** tab.
+
+### 1. Penetration Testing (Pentesting)
+
+| ID | Task | Scope & Reference | Priority / Effort |
+|---|---|---|---|
+| **PENT-01** | **Native Frida Instrumentation Module & Runtime Hook Suite** | Universal Interceptor skeleton (`onEnter`, `onLeave`, `retval.replace`), native test harness (`hedef.c`), and observation/modification scripts (`gozlem.js`, `degistir.js`). | **High** · Medium |
+| **PENT-02** | **Automated Browser Extension Injection & Malicious Script Audit Engine** | Static and dynamic scanner for Manifest V3/V2 extensions; audits permissions (`all_urls`, `cookies`, `scripting`, `activeTab`, `nativeMessaging`) and AST/regex patterns for `eval`, `executeScript`, and two-stage dynamic payload delivery. | **High** · Medium |
+| **PENT-03** | **Headless Android Analysis Pipeline & Objection SSL Pinning Bypass** | Containerized Alpine/Docker Android emulator runner; automated `frida-server` deployment, system CA installation for mitmproxy, and automated objection hooks for universal SSL pinning bypass. | **High** · Large |
+| **PENT-04** | **Local MCP Security Tool Provider Host (Pattern D8/D9)** | Embedded Model Context Protocol (MCP) stdio JSON-RPC server exposing isolated security tools (Frida attachment, APK manifest inspector, socket audit) to autonomous AI agents. | **Medium** · Medium |
+| **PENT-05** | **Binary Exploitation & Hardening Verification Harness** | Automated binary mitigation audit (`readelf` check for NX, ASLR/PIE, Stack Canaries, RELRO) and AFL++ crash triage smoke runner in `linux-lab/`. | **Medium** · Medium |
+
+### 2. Open Source Operating Systems
+
+| ID | Task | Scope & Reference | Priority / Effort |
+|---|---|---|---|
+| **OS-01** | **Automated Linux & Ubuntu Server Lab Provisioning with Systemd Lifecycle Engine** | Cloud-init unattended server deployment (Ubuntu Server / Alpine); hardened systemd service templates (`ProtectSystem=strict`, `PrivateTmp=true`, `Type=notify`) with automated watchdog timers and journal logging. | **High** · Medium |
+| **OS-02** | **Remote-SSH Fleet Orchestration & Zero-Config Key Distribution** | Remote-SSH manager automating ed25519 key generation, dynamic IP discovery across virtualization bridges/NAT, and `~/.ssh/config` formatting with ProxyCommand and Cloudflare Access support. | **High** · Medium |
+| **OS-03** | **Host Hardware & Installed Software Capability Detection Engine (Pattern D6)** | Cross-platform capability scanner querying package managers (`apt`, `dpkg`), toolchain versions (`git`, `node`, `uv`, `python3`), hypervisor capabilities (`/dev/kvm`, `VT-x/AMD-V`, `WSL2`), feeding the dashboard host view and client registry without external telemetry. | **High** · Small–Medium |
+| **OS-04** | **Automated Auth Log Audit & Brute-Force Extraction Daemon** | Lightweight event-driven systemd service parsing `/var/log/auth.log` or SSH journal logs; extracts failed brute-force attacks, attacker IPs, and unauthorized `sudo` attempts into structured SQLite/JSON for dashboard analytics. | **Medium** · Small |
+| **OS-05** | **Release Profile Tuning & Single-Instance Process Enforcement (Pattern D1/D5)** | Compiler profile optimization (`lto = true`, `codegen-units = 1`, `opt-level = "s"`, `panic = "abort"`, binary stripping) and single-instance socket/lockfile enforcement preventing redundant process execution. | **Medium** · Tiny–Small |
+
+### 3. Firewall Solutions
+
+| ID | Task | Scope & Reference | Priority / Effort |
+|---|---|---|---|
+| **FW-01** | **UFW Automation Engine & Priority-Aware Rule Optimizer** | Programmatic UFW orchestrator managing default policies (`default deny incoming`, `default allow outgoing`) and rule ordering; optimizes rule sequence by placing high-frequency traffic rules ahead of broad matchers; handles `deny` vs `reject` semantics. | **High** · Medium |
+| **FW-02** | **Real-Time Firewall Log Streaming & Telegram Alert Daemon with Loop Suppression** | Daemon tailing `/var/log/ufw.log` with instant alert dispatches; includes intelligent noise reduction and loop-prevention filters suppressing outbound ALLOW logs and port 53 DNS loops to avoid notification storms. | **High** · Medium |
+| **FW-03** | **Automated Firewall Security Audit Engine & Systemd Timer** | Continuous compliance checker on systemd timer (`ufw-audit.timer`); audits active rules against RFC 1918 private subnets (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16), flags insecure exposed management ports, and validates DMZ boundaries. | **High** · Small–Medium |
+| **FW-04** | **Layer 7 WAF Integration & Application Threat Defense** | Ready-to-deploy L7 WAF recipes (ModSecurity / OWASP Core Rule Set / Nginx reverse proxy) illustrating defense-in-depth where L3/L4 packet filters cannot inspect payloads (e.g., PHP memory exhaustion RCE, request smuggling). | **Medium** · Medium |
+| **FW-05** | **Multi-Branch Enterprise Network Segmentation & Open Source Appliance Benchmarks** | Realistic multi-branch topology templates (HQ, Branch, DMZ, Dev LAN) with CIDR allocations (/24, /17) and VLAN tagging; automated performance benchmarks comparing throughput and latency across pfSense, OPNsense, IPFire, and native UFW/nftables. | **Medium** · Large |
+| **FW-06** | **Zero-Trust Role-Based VPN Gateway vs Direct SSH Ingress** | WireGuard mesh gateway eliminating public SSH port exposure; provides automated key provisioning and role-based subnet routing per authenticated client profile. | **Medium** · Medium |
+
 ## Step 4: Add tests
 
 Add or update tests in `android-lab/lab/tests/` for any change in behaviour.
