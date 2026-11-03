@@ -1,0 +1,6 @@
+services:
+  macos:
+    devices:
+      - /dev/dri
+    environment:
+      GPU: "Y"
