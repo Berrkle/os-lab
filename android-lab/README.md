@@ -5,7 +5,7 @@ security testing and reverse engineering, built on `budtmo/docker-android`,
 MobSF, mitmproxy, Frida, and containerized RE toolkits.
 
 This is the Android counterpart to `../win-lab/`. The research and lab assets
-were brought over from `apk-lab`; the Ubuntu Server host setup is new here.
+were developed as a standalone project and consolidated into os-lab; the Ubuntu Server host setup is new here.
 
 > Authorization only. Everything here is for testing apps you own or have
 > explicit permission to assess, in isolated lab containers.
@@ -27,7 +27,7 @@ were brought over from `apk-lab`; the Ubuntu Server host setup is new here.
 | [`knowledge/references.md`](knowledge/references.md) | Curated external references (tool images, guides, attack-sim projects) |
 | [`format/Agent Build Brief.md`](format/Agent%20Build%20Brief.md) | Handover template for commissioning agents/subagents/skills |
 | [`guidelines/`](guidelines/) | UI/UX design reference images for the planned frontend |
-| [`TODO.md`](TODO.md) | Project roadmap and gap analysis carried over from apk-lab |
+| [`TODO.md`](TODO.md) | Project roadmap and gap analysis |
 
 ## Quick start
 
@@ -123,7 +123,7 @@ backend core those future agents and UI drive via `make` targets and scripts.
 
 ## Status
 
-- [x] Knowledge base and verified cheat sheet (carried over from apk-lab)
+- [x] Knowledge base and verified cheat sheet
 - [x] Agent handover format
 - [x] Compact lab (compose stack, WF1/WF2, hooks, runbook)
 - [x] Windows Zero-Admin and VirtualBox/Podman lab suite

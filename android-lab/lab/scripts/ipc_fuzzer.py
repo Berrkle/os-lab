@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Automated IPC & Component Attack Surface Fuzzer (apk-lab)
+Automated IPC & Component Attack Surface Fuzzer (android-lab)
 Tests exported Android Activities, Broadcast Receivers, Services, and Content Providers
 for authorization bypasses, unhandled intent extras, SQL injection, and crashes.
 """

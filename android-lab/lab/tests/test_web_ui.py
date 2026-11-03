@@ -24,7 +24,7 @@ def test_web_ui_health_endpoint(web_server):
     assert req.status == 200
     data = json.loads(req.read().decode("utf-8"))
     assert data["status"] == "ok"
-    assert data["app"] == "apk-lab"
+    assert data["app"] == "android-lab"
 
 
 def test_web_ui_dashboard_page(web_server):
@@ -32,7 +32,7 @@ def test_web_ui_dashboard_page(web_server):
     req = urllib.request.urlopen(url)
     assert req.status == 200
     body = req.read().decode("utf-8")
-    assert "apk-lab" in body
+    assert "android-lab" in body
     assert "Mobile Security Console" in body
 
 

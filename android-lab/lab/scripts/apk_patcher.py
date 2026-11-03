@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Zero-Admin APK Patcher & Security Instrumentation Injector (apk-lab)
+Zero-Admin APK Patcher & Security Instrumentation Injector (android-lab)
 Modifies APK archives to enable network security bypass, debuggability,
 and optional Frida Gadget injection without requiring root on target devices.
 """
@@ -45,7 +45,7 @@ def sign_apk(apk_path: str) -> None:
             entries[name] = zin.read(name)
 
     # 2. Build MANIFEST.MF
-    manifest_lines = ["Manifest-Version: 1.0", "Created-By: apk-lab-signer", ""]
+    manifest_lines = ["Manifest-Version: 1.0", "Created-By: android-lab-signer", ""]
     entry_digests = {}
     for name in sorted(entries.keys()):
         digest = base64.b64encode(hashlib.sha256(entries[name]).digest()).decode('ascii')
@@ -59,7 +59,7 @@ def sign_apk(apk_path: str) -> None:
     manifest_digest = base64.b64encode(hashlib.sha256(manifest_bytes).digest()).decode('ascii')
     sf_lines = [
         "Signature-Version: 1.0",
-        "Created-By: apk-lab-signer",
+        "Created-By: android-lab-signer",
         f"SHA-256-Digest-Manifest: {manifest_digest}",
         ""
     ]
@@ -74,8 +74,8 @@ def sign_apk(apk_path: str) -> None:
     # 4. Generate RSA private key & self-signed X.509 cert
     key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     subject = issuer = x509.Name([
-        x509.NameAttribute(NameOID.COMMON_NAME, "apk-lab-debug"),
-        x509.NameAttribute(NameOID.ORGANIZATION_NAME, "apk-lab")
+        x509.NameAttribute(NameOID.COMMON_NAME, "android-lab-debug"),
+        x509.NameAttribute(NameOID.ORGANIZATION_NAME, "android-lab")
     ])
     cert = x509.CertificateBuilder().subject_name(
         subject

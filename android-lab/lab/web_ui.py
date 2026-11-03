@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Interactive Mobile Security Lab Web Console & Terminal (apk-lab)
+Interactive Mobile Security Lab Web Console & Terminal (android-lab)
 Implements the 6 UI phases from knowledge/segmentation.md:
 Phase 1: Lab Entry & Health Overview
 Phase 2: Code & Target Providers (APK upload / ADB Bridge)
@@ -59,7 +59,7 @@ HTML_DASHBOARD = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>apk-lab — Agentic Mobile Security Console</title>
+<title>android-lab — Agentic Mobile Security Console</title>
 <style>
   :root {
     --bg-base: #090d16;
@@ -247,7 +247,7 @@ HTML_DASHBOARD = """<!DOCTYPE html>
 <aside>
   <div class="brand">
     <div class="brand-logo">🛡️</div>
-    <span>apk-lab</span>
+    <span>android-lab</span>
   </div>
 
   <div class="nav-group-title">Navigation</div>
@@ -526,7 +526,7 @@ class LabHttpHandler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.end_headers()
-            self.wfile.write(json.dumps({"status": "ok", "app": "apk-lab", "version": "1.0.0"}).encode("utf-8"))
+            self.wfile.write(json.dumps({"status": "ok", "app": "android-lab", "version": "1.0.0"}).encode("utf-8"))
 
         elif path == "/api/logs":
             self.send_response(200)
@@ -683,7 +683,7 @@ def main():
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 5050
     server_address = ("127.0.0.1", port)
     httpd = HTTPServer(server_address, LabHttpHandler)
-    print(f"=== 🛡️ apk-lab Interactive Web Console Running ===")
+    print(f"=== 🛡️ android-lab Interactive Web Console Running ===")
     print(f"URL: http://127.0.0.1:{port}")
     print("Press Ctrl+C to stop.")
     try:

@@ -39,7 +39,7 @@ def get_default_api_key(host: str) -> str:
 def check_status(host: str = DEFAULT_HOST) -> bool:
     """Checks if MobSF server is reachable."""
     try:
-        req = urllib.request.Request(host + "/", headers={"User-Agent": "apk-lab-client"})
+        req = urllib.request.Request(host + "/", headers={"User-Agent": "android-lab-client"})
         with urllib.request.urlopen(req, timeout=3) as resp:
             return resp.status in (200, 302)
     except Exception:
@@ -83,7 +83,7 @@ def upload_apk(apk_path: str, host: str = DEFAULT_HOST, api_key: str = None) -> 
     headers = {
         "Authorization": api_key,
         "Content-Type": content_type,
-        "User-Agent": "apk-lab-client"
+        "User-Agent": "android-lab-client"
     }
 
     req = urllib.request.Request(url, data=body, headers=headers)
@@ -99,7 +99,7 @@ def trigger_scan(scan_hash: str, scan_type: str = "apk", host: str = DEFAULT_HOS
     headers = {
         "Authorization": api_key,
         "Content-Type": "application/x-www-form-urlencoded",
-        "User-Agent": "apk-lab-client"
+        "User-Agent": "android-lab-client"
     }
 
     req = urllib.request.Request(url, data=data, headers=headers)
@@ -115,7 +115,7 @@ def download_json_report(scan_hash: str, host: str = DEFAULT_HOST, api_key: str 
     headers = {
         "Authorization": api_key,
         "Content-Type": "application/x-www-form-urlencoded",
-        "User-Agent": "apk-lab-client"
+        "User-Agent": "android-lab-client"
     }
 
     req = urllib.request.Request(url, data=data, headers=headers)

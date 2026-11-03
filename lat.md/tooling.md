@@ -3,15 +3,16 @@
 Cross-cutting process, tests and conventions for the monorepo: CI, the android
 test suite, contribution flow and the project's security/licensing stance.
 
-## Continuous integration
+## Local test runner
 
-A GitHub Actions workflow runs the android test suite and a sample analysis on
-every push and PR.
+GitHub Actions is disabled for this repo; tests run locally via one script.
 
-The workflow [[.github/workflows/mobile-sec-scan.yml]] installs the android
-lab's dependencies, runs the pytest suite in [[android-lab/lab/tests]], executes
-a preflight and a sample static analysis, and uploads the generated report.
-Paths are rooted at `android-lab/lab` after the monorepo restructure.
+[[scripts/run-tests.sh]] is the CI replacement. It prepares a Python
+environment (a `.venv-test` unless `--no-venv`), runs the pytest suite in
+[[android-lab/lab/tests]], runs a sample-analysis smoke test, checks every
+shell script with `bash -n`, and runs `lat check` when `lat` is installed.
+`--quick` runs only the unit tests. The dormant workflow file
+[[.github/workflows/mobile-sec-scan.yml]] is kept for reference but is disabled.
 
 ## Tests
 

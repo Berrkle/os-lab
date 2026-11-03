@@ -4,7 +4,7 @@
 #   default / static : mobsf, mitmproxy, tools (runs without KVM)
 #   kvm              : android emulator (requires KVM host / VM)
 
-name: apk-lab-win
+name: android-lab-win
 
 services:
   # MobSF (Static + Dynamic scanner): runs cleanly without /dev/kvm

@@ -19,11 +19,15 @@ hooks, workflow recipes, and bug reports.
 
 ```bash
 git clone https://github.com/keyvanarasteh/os-lab
-cd os-lab/lab
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-python -m pytest tests -v        # make sure the suite is green before you start
+cd os-lab
+./scripts/run-tests.sh           # local test runner (creates .venv-test, runs the suite)
 ```
+
+> **CI note:** GitHub Actions is **disabled** for this repo (to avoid any
+> hosted-runner usage). [`scripts/run-tests.sh`](scripts/run-tests.sh) is the
+> local replacement — run it before opening a PR. It runs the android unit
+> tests, a sample-analysis smoke test, a repo-wide `bash -n` check, and
+> `lat check` when `lat` is installed. Use `--quick` for just the unit tests.
 
 For the Android lab runbook see [`lab/README.md`](lab/README.md), for Windows
 non-admin see [`lab/README-WINDOWS.md`](lab/README-WINDOWS.md), and for iOS see
@@ -34,8 +38,9 @@ non-admin see [`lab/README-WINDOWS.md`](lab/README-WINDOWS.md), and for iOS see
 1. **Fork** the repo and create a topic branch off `master`:
    `git checkout -b feat/short-description` (or `fix/…`, `docs/…`, `chore/…`).
 2. Make your change. Keep it focused — one logical change per PR.
-3. **Add or update tests** in `lab/tests/` for any behavior change.
-4. Run the suite locally: `python -m pytest lab/tests -v`.
+3. **Add or update tests** in `android-lab/lab/tests/` for any behavior change.
+4. Run the suite locally: `./scripts/run-tests.sh` (or
+   `cd android-lab/lab && python3 -m pytest tests -v`).
 5. If you touched architecture, behavior, or tests, update the knowledge graph
    in [`lat.md/`](lat.md/) and run `lat check`.
 6. Commit using [Conventional Commits](https://www.conventionalcommits.org/)

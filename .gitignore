@@ -38,3 +38,5 @@ __pycache__/
 *.pyc
 .venv/
 .pytest_cache/
+lat.md/.cache/
+.venv-test/

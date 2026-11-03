@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Comprehensive Android App Security Analyzer (apk-lab)
+Comprehensive Android App Security Analyzer (android-lab)
 Performs deep static vulnerability analysis, component attack surface evaluation,
 cryptographic audit, network security assessment, and OWASP Mobile Top 10 mapping.
 """

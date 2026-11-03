@@ -53,4 +53,4 @@ The lab ships a pytest suite in [[android-lab/lab/tests]].
 
 It covers the analyzer, reporter, MobSF client, secret scanner, patcher, flow
 parser, agentic engine and web UI, and runs in CI — see
-[[tooling#Continuous integration]].
+[[tooling#Local test runner]].

@@ -26,12 +26,12 @@ Keep PRs focused — one logical change per PR is easier to review and merge.
 
 ## How was this tested?
 
-<!-- Commands run, OS/arch, and results. e.g. `python -m pytest lab/tests -v` -->
+<!-- Commands run, OS/arch, and results. e.g. `./scripts/run-tests.sh` -->
 
 ## Checklist
 
 - [ ] My changes concern only apps/targets that are owned or authorized for testing.
-- [ ] I ran the relevant test suite and it passes (`python -m pytest lab/tests -v`).
+- [ ] I ran the relevant test suite and it passes (`./scripts/run-tests.sh`).
 - [ ] I updated documentation and, where relevant, `lat.md/` to reflect behavior changes.
 - [ ] I ran `lat check` and it passes (if `lat.md/` was touched).
 - [ ] My commits follow [Conventional Commits](https://www.conventionalcommits.org/).
