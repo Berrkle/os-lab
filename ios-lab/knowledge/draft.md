@@ -16,7 +16,7 @@ A third path, cross-compiling an iOS app without a simulator, is represented by
 `MobAI-App/iosbox`. It produces an unsigned `.ipa` from Flutter sources but
 cannot run or test the UI.
 
-## Why this is harder than the Android lab
+## Why this is harder than `android-lab`
 
 | Constraint | Android | iOS |
 |---|---|---|

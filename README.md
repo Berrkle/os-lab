@@ -1,108 +1,132 @@
-# 🛡️ apk-lab — Agentic Mobile Security Lab
+# os-lab: Windows, Android, iOS and Linux security labs on Ubuntu Server
 
-Research, documentation, and **compact runnable labs** for Android and iOS
-application security testing and reverse engineering. The Android lab is built
-on `budtmo/docker-android`, MobSF, mitmproxy, Frida, and containerized RE
-toolkits; the iOS lab covers a macOS VM on Ubuntu Server and native macOS
-Xcode/Simulator/Appium paths.
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-> ⚠️ Authorization only. Everything here is for testing apps you own or have
-> explicit permission to assess, in isolated lab containers.
+Four research-backed, runnable operating-system security labs in one repository,
+each a reproducible, isolated guest driven by `make` and a shared management CLI.
+
+- [`win-lab/`](win-lab/) — a **Windows** VM in Docker, built on
+  [`dockur/windows`](https://github.com/dockur/windows): web desktop, RDP,
+  shared folder, and a Makefile for setup, boot, backup and reset.
+- [`android-lab/`](android-lab/) — an **Android** security and
+  reverse-engineering lab built on `budtmo/docker-android`, MobSF, mitmproxy,
+  Frida and containerized RE tools, with Ubuntu, Windows zero-admin and
+  KVM-free static paths.
+- [`ios-lab/`](ios-lab/) — an **iOS** Simulator lab: a macOS VM in
+  `dockurr/macos` on Ubuntu Server, or native Xcode / `xcrun simctl` / Appium
+  on macOS.
+- [`linux-lab/`](linux-lab/) — a **Linux** VM in Docker, built on
+  [`qemux/qemu`](https://github.com/qemus/qemu): a disposable KVM guest for
+  malware detonation, ELF RE, exploit/kernel work and container-escape practice.
+
+All four target a headless Ubuntu Server with KVM; the Android and iOS labs also
+include a native or KVM-free path where relevant.
+
+> ⚠️ **Authorization and licensing only.** Use only Windows media and licences
+> you are entitled to; Apple's EULA restricts macOS virtualization to
+> Apple-branded hardware (the iOS container path is documented with that limit).
+> Test only Android/iOS apps you own or have explicit permission to assess, and
+> isolate any guest that runs untrusted software. See [SECURITY.md](SECURITY.md).
+
+## Management CLI
+
+[`./labctl`](labctl) is the single entry point for profiles, lifecycle, hardware
+resize and monitoring across the Linux-host labs:
+
+```bash
+./labctl all status                        # android + win + linux at a glance
+./labctl win   profile use lightweight && ./labctl win   start --wait
+./labctl linux profile use lightweight && ./labctl linux start --wait
+./labctl android start --wait && ./labctl android monitor
+./labctl ios   start --wait                # Ubuntu macOS-VM path
+./labctl linux resize --cpus 4 --ram 8G --apply
+```
+
+On macOS, the iOS lab uses the native path instead:
+`make -C ios-lab mac-doctor mac-setup mac-sim mac-appium`.
+
+`profile use` writes a preset into the lab's `.env`; `--profile P` is a one-shot
+overlay. `resize` is grow-only for VM disks. Systemd units are managed with
+`./labctl <lab> service install|uninstall`.
 
 ## Repo map
 
 | Path | What it is |
 |---|---|
-| [`lab/`](lab/) | **The compact lab** — compose stack + both workflow DAGs + Frida hooks. Start here to run things. |
-| [`lab/README.md`](lab/README.md) | Lab runbook (Linux / macOS): setup, workflows, make targets, agent brief |
-| [`lab/README-WINDOWS.md`](lab/README-WINDOWS.md) | **Windows Non-Admin runbook**: PowerShell CLI (`lab.ps1`), VirtualBox, Podman, userland |
-| [`knowledge/windows-nonadmin-lab.md`](knowledge/windows-nonadmin-lab.md) | **Windows Non-Admin architecture**: zero-elevation setup, VirtualBox, Podman, and native engine |
-| [`docker-android-cheat-sheet.md`](docker-android-cheat-sheet.md) | Master verified command reference (per-OS setup, run/lifecycle, pentest tools, troubleshooting) |
-| [`knowledge/draft.md`](knowledge/draft.md) | Docker-Android technical overview: capabilities, use cases, constraints |
-| [`knowledge/setup.md`](knowledge/setup.md) | Per-platform deployment guides (Kali, WSL2, VirtualBox, macOS) |
-| [`knowledge/segmentation.md`](knowledge/segmentation.md) | Master blueprint: 4 segments, 6 UI phases, agent classifications, UX principles |
-| [`knowledge/usecases.md`](knowledge/usecases.md) | Pentest & reverse-engineering usage patterns |
-| [`knowledge/references.md`](knowledge/references.md) | Curated external references (tool images, guides, attack-sim projects) |
-| [`ios-lab/`](ios-lab/) | **iOS lab** — macOS VM on Ubuntu Server and native macOS Simulator/Appium scripts |
-| [`ios-lab/README.md`](ios-lab/README.md) | iOS runbook: Ubuntu container path, macOS path, profiles and operations |
-| [`ios-lab/knowledge/`](ios-lab/knowledge/) | iOS research: Docker options, setup, operations, networking, use cases |
-| [`ios-lab/mac/`](ios-lab/mac/) | Native macOS scripts: Xcode checks, `simctl`, Appium and device presets |
-| [`format/Agent Build Brief.md`](format/Agent%20Build%20Brief.md) | Handover template for commissioning agents/subagents/skills |
-| [`guidelines/`](guidelines/) | UI/UX design reference images for the planned frontend |
+| [`labctl`](labctl) | **Management CLI** — profiles, lifecycle, resize, monitoring, config |
+| [`win-lab/`](win-lab/) | **Windows lab** — compose stack, Makefile, setup/run/backup scripts, research |
+| [`android-lab/`](android-lab/) | **Android lab** — README, knowledge, cheat sheet, UI guidelines |
+| [`android-lab/lab/`](android-lab/lab/) | Android runnable core — compose, Makefile, `lab.ps1`, hooks, tests, tools |
+| [`ios-lab/`](ios-lab/) | **iOS lab** — macOS VM on Ubuntu, native macOS scripts, research, profiles |
+| [`linux-lab/`](linux-lab/) | **Linux lab** — compose stack, Makefile, scripts, profiles, research |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) · [`SECURITY.md`](SECURITY.md) · [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) | Community & process |
+| [`lat.md/`](lat.md/) | Structured knowledge graph (architecture & behavior); validated by `lat check` |
 
-## Quick start (the lab)
+## Quick starts
 
-### Linux / WSL2 (with KVM)
+### Windows
 ```bash
-cd lab
-cp .env.example .env
-make preflight      # OS / KVM / docker / ports / disk
-make boot           # start stack, wait for emulator — noVNC at http://localhost:6080
-make wf1 APK=app.apk                    # static:  MobSF scan + JADX
-make wf2 APK=app.apk PKG=com.example    # dynamic: emulator + mitmproxy + frida
-make report                             # collect artifacts
+cd win-lab && cp .env.example .env     # change WINDOWS_PASSWORD
+sudo ./setup.sh && newgrp docker
+make preflight && make boot            # web viewer http://<server-ip>:8006/
+make wait-install                      # waits for storage/windows.boot
 ```
 
-### Windows (Zero-Admin / PowerShell)
-No Administrator privileges or `/dev/kvm` required. Supports VirtualBox, Podman, and pure userland:
-```powershell
-cd lab
-.\lab.ps1 preflight                     # check environment & non-admin status
-.\lab.ps1 setup                         # setup .venv, frida, mitmproxy, portable tools
-.\lab.ps1 wf1 -Apk path\to\app.apk      # static: manifest analysis + JADX + MobSF
-.\lab.ps1 wf2 -Apk path\to\app.apk -Pkg com.example  # dynamic: ADB + mitmproxy + frida
-.\lab.ps1 report                        # collect telemetry & artifacts
-```
-
-### iOS (Ubuntu Server or macOS)
+### Android
 ```bash
-cd ios-lab
-cp .env.example .env
-sudo ./setup.sh                 # Ubuntu: KVM + Docker; macOS: skip and use mac-* targets
-make preflight
-make boot                       # web viewer at http://localhost:8006/
-# macOS host instead:
-make mac-doctor mac-setup mac-sim mac-appium
+cd android-lab/lab && cp .env.example .env
+./setup.sh && newgrp docker
+make preflight && make boot            # noVNC http://<server-ip>:6080/
+make wf1 APK=app.apk                   # static: MobSF + JADX
+make wf2 APK=app.apk PKG=com.example   # dynamic: emulator + mitm + frida
 ```
-See [`ios-lab/README.md`](ios-lab/README.md) for the manual macOS installation,
-Xcode/Simulator steps and the native macOS path.
+No KVM? `./run.sh --static` runs a KVM-free static stack for `make wf1`.
+
+### iOS
+```bash
+# Ubuntu Server (macOS VM in Docker; manual macOS/Xcode install):
+cd ios-lab && cp .env.example .env && sudo ./setup.sh && newgrp docker
+make preflight && make boot            # web viewer http://<server-ip>:8006/
+# macOS (native):
+make mac-doctor && make mac-setup && make mac-sim && make mac-appium
+```
+
+### Linux
+```bash
+cd linux-lab && cp .env.example .env   # pick BOOT (distro), change LINUX_PASSWORD
+sudo ./setup.sh && newgrp docker
+make preflight && make boot            # web viewer http://<server-ip>:8006/
+make wait-ready                        # web viewer + SSH; then: make ssh
+```
 
 ## Architecture
 
 ```
-┌────────────────── lab/ (compact core) ──────────────────┐
-│ WF1 static   : MobSF scan → JADX decompile → report     │
-│ WF2 dynamic  : boot emulator → install APK →            │
-│                mitmproxy capture → Frida hooks          │
-│ services     : android :6080/:5555 · mobsf :8000 ·      │
-│                mitmproxy :8080/:8081 · tools (RE kit)   │
-└─────────────────────────────────────────────────────────┘
+Windows lab                              Android lab
+┌───────────────────────────┐            ┌──────────────────────────────┐
+│ QEMU + KVM                │            │ android emulator (KVM)       │
+│ noVNC :8006 · RDP :3389   │            │ noVNC :6080 · ADB :5555      │
+│ /storage /shared /oem     │            │ MobSF :8000 · mitm :8080/8081│
+└───────────────────────────┘            └──────────────────────────────┘
+
+iOS lab (Ubuntu / macOS paths)           Linux lab
+┌───────────────────────────┐            ┌──────────────────────────────┐
+│ macOS VM (dockurr/macos)  │            │ Linux VM (qemux/qemu, KVM)   │
+│ web :8006 · VNC :5900     │            │ noVNC :8006 · SSH :2222      │
+│ or native Xcode+Simulator │            │ /storage /shared             │
+└───────────────────────────┘            └──────────────────────────────┘
 ```
 
-The iOS lab adds a separate path: `dockurr/macos` in Docker/QEMU/KVM on Ubuntu
-Server, or native Xcode + `xcrun simctl` + Appium on macOS. There is no official
-iOS Simulator container; the Ubuntu path runs macOS and installs Xcode manually.
+## Contributing
 
-The knowledge docs define the full product blueprint (landing, providers,
-workflows, console, analytics — `knowledge/segmentation.md`); `lab/` is the
-backend core those future agents and UI drive via `make` targets and scripts.
-
-## Status
-
-- [x] Knowledge base & verified cheat sheet
-- [x] Agent handover format
-- [x] Compact lab (compose stack, WF1/WF2, hooks, runbook)
-- [x] Windows Zero-Admin & VirtualBox/Podman lab suite
-- [x] Agentic orchestrator (Orchestrator / Analyst / Exploit per segmentation.md)
-- [x] Interactive web console (`/`, `/providers`, `/workflows`, `/console`, `/reports`, `/sitemap`)
-- [x] Automated IPC & Component Fuzzer
-- [x] Zero-Admin APK Patcher & Frida Gadget Injector
-- [x] GitHub Actions CI/CD Security Audit Workflow
-- [x] iOS research: top-four Docker options, Ubuntu container lab and native macOS lab
-- [x] iOS profiles, preflight, backup, systemd, GPU override and Appium scripts
-- [x] Apache License 2.0
+Issues and PRs are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md), the
+[issue templates](.github/ISSUE_TEMPLATE/), and the
+[Code of Conduct](CODE_OF_CONDUCT.md). For vulnerabilities in the lab itself,
+follow the [Security Policy](SECURITY.md).
 
 ## License
 
-Licensed under the Apache License, Version 2.0. See [`LICENSE`](LICENSE).
-
+[Apache License 2.0](LICENSE). `dockur/windows` and `qemux/qemu` are MIT and do
+not distribute OS media; you are responsible for valid licences and for
+complying with each vendor's terms.

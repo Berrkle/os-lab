@@ -1,14 +1,42 @@
+# OS / editor
 .DS_Store
-ios-lab/.env
-ios-lab/.lab-profile
-ios-lab/storage/*
-!ios-lab/storage/.gitkeep
-ios-lab/shared/*
-!ios-lab/shared/.gitkeep
-ios-lab/backups/*
-!ios-lab/backups/.gitkeep
-ios-lab/artifacts/
+*.log
+*.swp
+
+# Local secrets & profiles (keep .env.example)
+**/.env
+!**/.env.example
+**/.lab-profile
+**/config.env
+!**/config.env.example
+android-lab/lab/.sim-device
 ios-lab/mac/config.env
 ios-lab/mac/.sim-device
 ios-lab/mac/.appium.pid
-*.log
+
+# Lat build cache
+.lat-build
+
+# Mutable lab state — keep the directory, ignore contents
+**/storage/*
+!**/storage/.gitkeep
+**/shared/*
+!**/shared/.gitkeep
+**/backups/*
+!**/backups/.gitkeep
+**/oem/*
+!**/oem/.gitkeep
+**/artifacts/*
+!**/artifacts/.gitkeep
+android-lab/lab/apks/*
+!android-lab/lab/apks/.gitkeep
+android-lab/lab/frida/*
+!android-lab/lab/frida/.gitkeep
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+lat.md/.cache/
+.venv-test/

@@ -40,8 +40,8 @@ Full runbook: [`knowledge/setup-ubuntu.md`](knowledge/setup-ubuntu.md).
 make status
 make logs
 make backup FULL=1
-make monitor
-make resize CPUS=8 RAM=12G APPLY=1
+../labctl ios monitor
+../labctl ios resize --cpus 8 --ram 12G --apply
 make down
 ```
 
@@ -79,13 +79,14 @@ Ubuntu container presets live in `profiles/`:
 | `performance` | 8 | 12G | heavier Xcode builds |
 
 ```bash
-make profiles
-make profile PROFILE=development
-make boot
+../labctl ios profiles
+../labctl ios profile use development
+../labctl ios start --wait
 ```
 
 The disk is persistent and grow-only. Change it with
-`make resize DISK=192G`; then extend the APFS container in macOS Disk Utility. GPU acceleration is opt-in with `make up-gpu` on a Vulkan-capable
+`../labctl ios resize --disk 192G`; then extend the APFS container in macOS Disk
+Utility. GPU acceleration is opt-in with `make up-gpu` on a Vulkan-capable
 Intel/AMD host.
 
 ## Layout
@@ -104,9 +105,6 @@ ios-lab/
 │   ├── wait-ready.sh
 │   ├── backup.sh
 │   ├── restore.sh
-│   ├── profile.sh
-│   ├── monitor.sh
-│   ├── resize.sh
 │   ├── install-service.sh
 │   └── uninstall-service.sh
 ├── storage/                 # macOS disk (gitignored)

@@ -1,0 +1,1072 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LAB=""
+LAB_DIR=""
+RUNTIME=""
+COMPOSE=()
+RUN_PROFILE="none"
+LAB_MODE=""
+
+if [ -t 1 ]; then
+  RED=$'\033[31m'; GREEN=$'\033[32m'; YELLOW=$'\033[33m'; CYAN=$'\033[36m'; BOLD=$'\033[1m'; RESET=$'\033[0m'
+else
+  RED=""; GREEN=""; YELLOW=""; CYAN=""; BOLD=""; RESET=""
+fi
+
+info() { printf '%s==>%s %s\n' "$GREEN" "$RESET" "$*"; }
+warn() { printf '%swarning:%s %s\n' "$YELLOW" "$RESET" "$*" >&2; }
+die() { printf '%serror:%s %s\n' "$RED" "$RESET" "$*" >&2; exit 1; }
+hr() { printf '%s\n' '------------------------------------------------------------'; }
+
+usage() {
+  cat <<'EOF'
+labctl - manage the win-lab, android-lab, ios-lab and linux-lab stacks
+
+Usage:
+  ./labctl <lab> <command> [options]
+  ./labctl all <command> [options]
+
+Labs:
+  win | windows      Windows VM lab (win-lab/)
+  android | apk      Android security lab (android-lab/lab/)
+  ios | ios-lab      iOS/macOS lab (ios-lab/); native macOS uses make -C ios-lab mac-*
+  linux | lin        Linux VM lab (linux-lab/)
+  all                Run a command for Linux-host labs
+
+Commands:
+  profiles                      List configuration profiles
+  profile use <name>            Apply a profile preset to .env
+  profile show                  Show the last applied profile and effective config
+  profile clear                 Clear the last-applied marker
+  config show [--profile P]     Show merged configuration (secrets masked)
+  config get <KEY>              Show one value
+  config set <KEY=VALUE>...     Persist values in .env
+  config unset <KEY>...         Remove values from .env
+  config edit                   Open .env in $EDITOR
+  config path                   Print the .env path
+  doctor [--profile P]          Run the lab preflight with the selected config
+  start [--profile P] [--wait]  Start the stack
+  start --wait-install          Windows only: wait for installation to finish
+  stop [--keep]                 Stop the stack (default: remove containers)
+  restart [options]             Recreate the stack using the current .env
+  status [--profile P]          One-shot state, endpoints and resource report
+  monitor [--once] [-i SEC]     Live dashboard (default refresh: 5s)
+  logs [-f] [service]           Show container logs
+  logs -f [service]
+  shell [service] [--adb]       Shell into the guest or tools container
+  urls                          Print access URLs
+  resize [options]              Change CPU/RAM/disk/device
+  service install|uninstall     Install/remove the systemd boot unit
+  service status                Show the systemd unit state
+  version                       Print version
+
+Options:
+  --profile P    One-shot profile overlay (does not modify .env)
+  --reveal       config get/show: show secret values
+  -h, --help     Show help
+
+Resize options:
+  --cpus N       CPU cores/limit
+  --ram SIZE     RAM, for example 4G or 8G
+  --disk SIZE    Windows only; grow the VM disk, for example 128G
+  --device NAME  Android only; emulator device profile
+  --apply        Stop and recreate the stack after writing .env
+  --dry-run      Show changes without writing .env
+
+Profiles:
+  win:      lightweight, development, performance
+  android:  lightweight, development, performance
+  ios:      lightweight, development, performance
+  linux:    lightweight, development, performance
+
+Examples:
+  ./labctl win profile use lightweight
+  ./labctl win start --wait
+  ./labctl win monitor
+  ./labctl win resize --cpus 4 --ram 8G --apply
+  ./labctl android doctor --profile lightweight
+  ./labctl android start --profile development --wait
+  ./labctl android resize --cpus 4 --ram 6g --device "Samsung Galaxy S10" --apply
+  ./labctl ios profile use development
+  ./labctl ios start --wait
+  ./labctl ios monitor
+  ./labctl ios resize --cpus 8 --ram 12G --apply
+  ./labctl linux profile use lightweight
+  ./labctl linux start --wait
+  ./labctl linux monitor
+  ./labctl linux resize --cpus 4 --ram 8G --apply
+  ./labctl all status
+EOF
+}
+
+set_lab() {
+  case "${1:-}" in
+    win|windows|win-lab) LAB="win"; LAB_DIR="$ROOT/win-lab" ;;
+    android|apk|android-lab) LAB="android"; LAB_DIR="$ROOT/android-lab/lab" ;;
+    ios|ios-lab) LAB="ios"; LAB_DIR="$ROOT/ios-lab" ;;
+    linux|lin|linux-lab) LAB="linux"; LAB_DIR="$ROOT/linux-lab" ;;
+    *) die "unknown lab: ${1:-} (use win, android, ios, linux or all)" ;;
+  esac
+}
+
+detect_runtime() {
+  RUNTIME=""
+  if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+    RUNTIME="docker"
+  elif command -v podman >/dev/null 2>&1 && podman info >/dev/null 2>&1; then
+    RUNTIME="podman"
+  fi
+  if [ -n "$RUNTIME" ]; then
+    COMPOSE=("$RUNTIME" compose)
+  else
+    COMPOSE=()
+  fi
+}
+
+need_runtime() {
+  detect_runtime
+  [ -n "$RUNTIME" ] || die "no usable Docker/Podman runtime; run: sudo make setup (inside the lab)"
+}
+
+compose() {
+  ( cd "$LAB_DIR" && "${COMPOSE[@]}" "$@" )
+}
+
+compose_win() {
+  compose -f docker-compose.win.yml "$@"
+}
+
+prepare_env() {
+  [ -f "$LAB_DIR/.env" ] || cp "$LAB_DIR/.env.example" "$LAB_DIR/.env"
+}
+
+valid_profile() {
+  local name="${1:-}"
+  [ "$name" = "none" ] && return 0
+  [[ "$name" =~ ^[a-z0-9_-]+$ ]] || die "invalid profile name: $name"
+  [ -f "$LAB_DIR/profiles/$name.env" ] || die "unknown profile: $name (try: ./labctl $LAB profiles)"
+}
+
+active_label() {
+  if [ -f "$LAB_DIR/.lab-profile" ]; then
+    tr -d '\r\n' < "$LAB_DIR/.lab-profile"
+  else
+    printf 'custom\n'
+  fi
+}
+
+apply_config() {
+  local profile="${1:-}"
+  if [ -n "$profile" ] && [ "$profile" != "none" ]; then
+    valid_profile "$profile"
+  fi
+  prepare_env
+  set -a
+  if ! . "$LAB_DIR/.env"; then
+    set +a
+    die "failed to load $LAB_DIR/.env (quote values that contain spaces)"
+  fi
+  if [ -n "$profile" ] && [ "$profile" != "none" ]; then
+    if ! . "$LAB_DIR/profiles/$profile.env"; then
+      set +a
+      die "failed to load profile: $profile"
+    fi
+  fi
+  set +a
+  RUN_PROFILE="${profile:-none}"
+  if [ "$LAB" = "android" ] && [ -z "${LAB_MODE:-}" ]; then
+    LAB_MODE="dynamic"
+  fi
+  export LAB_ENV_LOADED=1
+}
+
+parse_profile_opt() {
+  local value="$1"
+  valid_profile "$value"
+  printf '%s\n' "$value"
+}
+
+normalize_ram() {
+  local value="$1" num unit
+  [[ "$value" =~ ^([0-9]+)([mMgG])$ ]] || die "invalid RAM size: $value (use for example 4G or 4096M)"
+  num="${BASH_REMATCH[1]}"
+  unit="${BASH_REMATCH[2]}"
+  if [ "$LAB" = "win" ] || [ "$LAB" = "ios" ] || [ "$LAB" = "linux" ]; then
+    printf '%s%s' "$num" "${unit^^}"
+  else
+    printf '%s%s' "$num" "${unit,,}"
+  fi
+}
+
+normalize_disk() {
+  local value="$1" num unit
+  [[ "$value" =~ ^([0-9]+)([gGtT])$ ]] || die "invalid disk size: $value (use for example 128G or 1T)"
+  num="${BASH_REMATCH[1]}"
+  unit="${BASH_REMATCH[2]}"
+  printf '%s%s' "$num" "${unit^^}"
+}
+
+size_gb() {
+  local value="$1" num
+  num=$((10#${value%[gGtT]}))
+  case "${value: -1}" in
+    t|T) printf '%s' "$((num * 1024))" ;;
+    *) printf '%s' "$num" ;;
+  esac
+}
+
+validate_cpus() {
+  [[ "$1" =~ ^[1-9][0-9]*$ ]] || die "invalid CPU count: $1"
+  [ "$1" -le 64 ] || die "CPU count too large: $1"
+}
+
+validate_key() {
+  [[ "$1" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || die "invalid environment key: $1"
+}
+
+secret_key() {
+  case "$1" in
+    WINDOWS_PASSWORD|MOBSF_API_KEY|*_PASSWORD|*_SECRET|*_TOKEN) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+print_kv() {
+  local key="$1" reveal="${2:-0}" value
+  value="${!key-}"
+  if secret_key "$key" && [ "$reveal" != "1" ]; then
+    value="***"
+  fi
+  printf '%s=%s\n' "$key" "$value"
+}
+
+config_keys() {
+  local profile="${1:-}"
+  {
+    awk -F= '/^[A-Za-z_][A-Za-z0-9_]*=/{print $1}' "$LAB_DIR/.env"
+    if [ -n "$profile" ] && [ "$profile" != "none" ] && [ -f "$LAB_DIR/profiles/$profile.env" ]; then
+      awk -F= '/^[A-Za-z_][A-Za-z0-9_]*=/{print $1}' "$LAB_DIR/profiles/$profile.env"
+    fi
+  } | sort -u
+}
+
+render_env_value() {
+  local value="$1"
+  if [[ "$value" =~ ^[A-Za-z0-9_./:@%+=,-]*$ ]]; then
+    printf '%s' "$value"
+    return
+  fi
+  value="${value//\\/\\\\}"
+  value="${value//\"/\\\"}"
+  printf '"%s"' "$value"
+}
+
+set_env_var() {
+  local key="$1" value="$2" file="$LAB_DIR/.env" tmp rendered
+  prepare_env
+  rendered="$(render_env_value "$value")"
+  tmp="$(mktemp "${file}.XXXXXX")"
+  awk -v k="$key" -v v="$rendered" '
+    BEGIN { done = 0 }
+    $0 ~ "^[[:space:]]*" k "[[:space:]]*=" { print k "=" v; done = 1; next }
+    { print }
+    END { if (!done) print k "=" v }
+  ' "$file" > "$tmp"
+  mv "$tmp" "$file"
+}
+
+unset_env_var() {
+  local key="$1" file="$LAB_DIR/.env" tmp
+  prepare_env
+  tmp="$(mktemp "${file}.XXXXXX")"
+  awk -v k="$key" '
+    $0 ~ "^[[:space:]]*" k "[[:space:]]*=" { next }
+    { print }
+  ' "$file" > "$tmp"
+  mv "$tmp" "$file"
+}
+
+apply_profile_to_env() {
+  local name="$1" file="$LAB_DIR/profiles/$name.env" line key value
+  prepare_env
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in
+      ''|'#'*) continue ;;
+    esac
+    [[ "$line" == *=* ]] || continue
+    key="${line%%=*}"
+    value="${line#*=}"
+    if [[ "$value" == \"*\" && "$value" == *\" ]]; then
+      value="${value:1:${#value}-2}"
+    elif [[ "$value" == \'*\' && "$value" == *\' ]]; then
+      value="${value:1:${#value}-2}"
+    fi
+    validate_key "$key"
+    set_env_var "$key" "$value"
+  done < "$file"
+  printf '%s\n' "$name" > "$LAB_DIR/.lab-profile"
+}
+
+wait_http() {
+  local port="$1" timeout="$2" deadline
+  deadline=$((SECONDS + timeout))
+  info "waiting for http://127.0.0.1:$port/ (timeout ${timeout}s)"
+  while :; do
+    if curl -fsS -o /dev/null --max-time 3 "http://127.0.0.1:$port/"; then
+      info "endpoint is responding on :$port"
+      return 0
+    fi
+    [ "$SECONDS" -ge "$deadline" ] && die "endpoint :$port did not respond within ${timeout}s"
+    sleep 2
+  done
+}
+
+http_code() {
+  local code
+  if code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 2 "http://127.0.0.1:$1/" 2>/dev/null)"; then
+    printf '%s' "$code"
+  else
+    printf '000'
+  fi
+}
+
+http_line() {
+  local name="$1" port="$2" code
+  code="$(http_code "$port")"
+  if [ "$code" != "000" ]; then
+    printf '  %-9s http://127.0.0.1:%-5s HTTP %s\n' "$name" "$port" "$code"
+  else
+    printf '  %-9s http://127.0.0.1:%-5s DOWN\n' "$name" "$port"
+  fi
+}
+
+tcp_line() {
+  local name="$1" port="$2"
+  if timeout 1 bash -c "</dev/tcp/127.0.0.1/$port" 2>/dev/null; then
+    printf '  %-9s tcp  127.0.0.1:%-5s OPEN\n' "$name" "$port"
+  else
+    printf '  %-9s tcp  127.0.0.1:%-5s CLOSED\n' "$name" "$port"
+  fi
+}
+
+container_state() {
+  [ -n "$RUNTIME" ] || { printf 'missing'; return; }
+  "$RUNTIME" inspect "$1" --format '{{.State.Status}}' 2>/dev/null || printf 'missing'
+}
+
+print_stats() {
+  local names=("$@") running=() running_list name
+  [ ${#names[@]} -gt 0 ] || return 0
+  [ -n "$RUNTIME" ] || return 0
+  running_list="$("$RUNTIME" ps --format '{{.Names}}' 2>/dev/null || true)"
+  [ -n "$running_list" ] || return 0
+  for name in "${names[@]}"; do
+    if printf '%s\n' "$running_list" | grep -qx "$name"; then
+      running+=("$name")
+    fi
+  done
+  [ ${#running[@]} -gt 0 ] || return 0
+  "$RUNTIME" stats --no-stream --format '  {{.Name}}  cpu={{.CPUPerc}}  mem={{.MemUsage}}  net={{.NetIO}}  blk={{.BlockIO}}' "${running[@]}" 2>/dev/null \
+    || printf '  stats unavailable\n'
+}
+
+print_containers() {
+  local rows name status
+  rows=""
+  if [ -n "$RUNTIME" ]; then
+    rows="$("$RUNTIME" ps -a --format '{{.Names}}	{{.Status}}' 2>/dev/null || true)"
+  fi
+  for name in "$@"; do
+    status="$(printf '%s\n' "$rows" | awk -F'\t' -v n="$name" '$1 == n { print $2; exit }')"
+    if [ -n "$status" ]; then
+      printf '  %-16s %s\n' "$name" "$status"
+    else
+      printf '  %-16s missing\n' "$name"
+    fi
+  done
+}
+
+print_status() {
+  detect_runtime
+  local label mode_line endpoints
+  label="$(active_label)"
+  if [ "$RUN_PROFILE" != "none" ]; then
+    label="$RUN_PROFILE (one-shot)"
+  fi
+  printf '%s%s%s\n' "$BOLD" "$(date '+%Y-%m-%d %H:%M:%S')" "$RESET"
+  printf 'lab       %s\n' "$LAB"
+  printf 'config    %s\n' "$label"
+  if [ "$LAB" = "android" ]; then
+    LAB_MODE="${LAB_MODE:-dynamic}"
+    printf 'mode      %s\n' "$LAB_MODE"
+  fi
+  printf 'runtime   %s\n' "${RUNTIME:-none}"
+  hr
+  printf 'containers\n'
+  if [ "$LAB" = "win" ]; then
+    print_containers win-lab
+    print_stats win-lab
+  elif [ "$LAB" = "ios" ]; then
+    print_containers ios-lab
+    print_stats ios-lab
+  elif [ "$LAB" = "linux" ]; then
+    print_containers linux-lab
+    print_stats linux-lab
+  elif [ "$LAB_MODE" = "static" ]; then
+    print_containers lab-mobsf lab-mitmproxy lab-tools
+    print_stats lab-mobsf lab-mitmproxy lab-tools
+  else
+    print_containers lab-android lab-mobsf lab-mitmproxy lab-tools
+    print_stats lab-android lab-mobsf lab-mitmproxy lab-tools
+  fi
+  hr
+  printf 'endpoints\n'
+  if [ "$LAB" = "win" ]; then
+    http_line "web" "${WEB_PORT:-8006}"
+    tcp_line "rdp" "${RDP_PORT:-3389}"
+  elif [ "$LAB" = "ios" ]; then
+    http_line "web" "${WEB_PORT:-8006}"
+    tcp_line "vnc" "${VNC_PORT:-5900}"
+  elif [ "$LAB" = "linux" ]; then
+    http_line "web" "${WEB_PORT:-8006}"
+    tcp_line "ssh" "${SSH_PORT:-2222}"
+  elif [ "$LAB_MODE" = "static" ]; then
+    http_line "MobSF" "8000"
+    http_line "mitmweb" "8081"
+    tcp_line "mitmproxy" "8080"
+  else
+    http_line "noVNC" "6080"
+    http_line "MobSF" "8000"
+    http_line "mitmweb" "8081"
+    tcp_line "mitmproxy" "8080"
+    tcp_line "ADB" "5555"
+  fi
+  hr
+  printf 'resources\n'
+  if [ "$LAB" = "win" ]; then
+    if [ -f "$LAB_DIR/storage/windows.boot" ]; then
+      printf '  install   complete (storage/windows.boot)\n'
+    else
+      printf '  install   pending or not started\n'
+    fi
+    printf '  storage   %s\n' "$(du -sh "$LAB_DIR/storage" 2>/dev/null | awk '{print $1}' || printf '?')"
+    printf '  host free %s\n' "$(df -h "$LAB_DIR" 2>/dev/null | awk 'NR==2 {print $4}' || printf '?')"
+  elif [ "$LAB" = "ios" ] || [ "$LAB" = "linux" ]; then
+    printf '  storage   %s\n' "$(du -sh "$LAB_DIR/storage" 2>/dev/null | awk '{print $1}' || printf '?')"
+    printf '  shared    %s\n' "$(du -sh "$LAB_DIR/shared" 2>/dev/null | awk '{print $1}' || printf '?')"
+    printf '  host free %s\n' "$(df -h "$LAB_DIR" 2>/dev/null | awk 'NR==2 {print $4}' || printf '?')"
+  else
+    printf '  artifacts %s\n' "$(du -sh "$LAB_DIR/artifacts" 2>/dev/null | awk '{print $1}' || printf '?')"
+    printf '  apks      %s\n' "$(find "$LAB_DIR/apks" -maxdepth 1 -name '*.apk' 2>/dev/null | wc -l | tr -d ' ')"
+    if [ "$(container_state lab-android)" = "running" ]; then
+      printf '  device    %s\n' "$("$RUNTIME" exec lab-android cat device_status 2>/dev/null | tr -d '\r' | tail -1 || printf 'unknown')"
+    fi
+    printf '  host free %s\n' "$(df -h "$LAB_DIR" 2>/dev/null | awk 'NR==2 {print $4}' || printf '?')"
+  fi
+  hr
+}
+
+print_urls() {
+  if [ "$LAB" = "win" ]; then
+    printf 'web viewer  http://127.0.0.1:%s/\n' "${WEB_PORT:-8006}"
+    printf 'RDP         127.0.0.1:%s\n' "${RDP_PORT:-3389}"
+    printf 'shared      %s/shared\n' "$LAB_DIR"
+  elif [ "$LAB" = "ios" ]; then
+    printf 'web viewer  http://127.0.0.1:%s/\n' "${WEB_PORT:-8006}"
+    printf 'VNC         127.0.0.1:%s (tcp/udp)\n' "${VNC_PORT:-5900}"
+    printf 'shared      %s/shared (mount inside macOS: sudo -S mount_9p shared)\n' "$LAB_DIR"
+  elif [ "$LAB" = "linux" ]; then
+    printf 'web viewer  http://127.0.0.1:%s/\n' "${WEB_PORT:-8006}"
+    printf 'SSH         ssh -p %s %s@127.0.0.1\n' "${SSH_PORT:-2222}" "${LINUX_USER:-root}"
+    printf 'shared      %s/shared\n' "$LAB_DIR"
+  elif [ "$LAB_MODE" = "static" ]; then
+    printf 'MobSF       http://127.0.0.1:8000/\n'
+    printf 'mitmweb     http://127.0.0.1:8081/\n'
+    printf 'mitmproxy   127.0.0.1:8080\n'
+    printf 'tools       (cd %s && docker compose -f docker-compose.win.yml exec tools bash)\n' "$LAB_DIR"
+  else
+    printf 'noVNC       http://127.0.0.1:6080/\n'
+    printf 'ADB         127.0.0.1:5555\n'
+    printf 'MobSF       http://127.0.0.1:8000/\n'
+    printf 'mitmweb     http://127.0.0.1:8081/\n'
+    printf 'mitmproxy   127.0.0.1:8080\n'
+  fi
+}
+
+stop_stack() {
+  local keep="${1:-0}"
+  need_runtime
+  if [ "$LAB" = "win" ]; then
+    if [ "$keep" = "1" ]; then
+      compose stop windows
+    else
+      compose down
+    fi
+    return 0
+  fi
+  if [ "$LAB" = "ios" ]; then
+    if [ "$keep" = "1" ]; then
+      compose stop macos
+    else
+      compose down
+    fi
+    return 0
+  fi
+  if [ "$LAB" = "linux" ]; then
+    if [ "$keep" = "1" ]; then
+      compose stop linux
+    else
+      compose down
+    fi
+    return 0
+  fi
+  if [ "$keep" = "1" ]; then
+    compose stop 2>/dev/null || true
+    compose_win stop 2>/dev/null || true
+  else
+    compose down --remove-orphans 2>/dev/null || true
+    compose_win down --remove-orphans 2>/dev/null || true
+  fi
+}
+
+cmd_profiles() {
+  local file name desc mode cpu ram device
+  [ -d "$LAB_DIR/profiles" ] || die "no profiles directory in $LAB_DIR"
+  printf '%-14s %-9s %-7s %-7s %s\n' "PROFILE" "MODE" "CPU" "RAM" "DEVICE"
+  for file in "$LAB_DIR"/profiles/*.env; do
+    [ -e "$file" ] || continue
+    name="$(basename "$file" .env)"
+    desc="$(awk -F': ' '/^# Profile:/{print $2; exit}' "$file")"
+    mode="$(awk -F= '/^LAB_MODE=/{print $2; exit}' "$file")"
+    cpu="$(awk -F= '/^CPU_CORES=/{print $2; exit} /^ANDROID_CPUS=/{print $2; exit}' "$file")"
+    ram="$(awk -F= '/^RAM_SIZE=/{print $2; exit} /^ANDROID_MEMORY=/{print $2; exit}' "$file")"
+    device="$(awk -F= '/^EMULATOR_DEVICE=/{print $2; exit}' "$file")"
+    device="${device%\"}"; device="${device#\"}"
+    if [ -z "$mode" ]; then
+      if [ "$LAB" = "ios" ]; then mode="macos"; else mode="container"; fi
+    fi
+    [ -n "$cpu" ] || cpu="-"
+    [ -n "$ram" ] || ram="-"
+    [ -n "$device" ] || device="-"
+    printf '%-14s %-9s %-7s %-7s %s\n' "$name" "$mode" "$cpu" "$ram" "$device"
+    if [ -n "$desc" ]; then printf '  %s\n' "$desc"; fi
+  done
+  printf '\nLast applied: %s\n' "$(active_label)"
+}
+
+cmd_profile() {
+  local action="${1:-show}" name file
+  shift || true
+  case "$action" in
+    use)
+      [ $# -ge 1 ] || die "usage: ./labctl $LAB profile use <name>"
+      name="$1"
+      valid_profile "$name"
+      [ "$name" != "none" ] || { rm -f "$LAB_DIR/.lab-profile"; info "cleared profile marker"; return; }
+      apply_profile_to_env "$name"
+      info "applied profile '$name' to $LAB_DIR/.env"
+      if [ "$LAB" = "android" ]; then
+        info "mode: $(awk -F= '/^LAB_MODE=/{print $2; exit}' "$LAB_DIR/profiles/$name.env")"
+      fi
+      info "run './labctl $LAB restart' to apply it to a running stack"
+      ;;
+    show)
+      name="$(active_label)"
+      printf 'last applied profile: %s\n' "$name"
+      if [ "$name" != "custom" ] && [ -f "$LAB_DIR/profiles/$name.env" ]; then
+        printf '\n--- profiles/%s.env ---\n' "$name"
+        cat "$LAB_DIR/profiles/$name.env"
+      fi
+      printf '\n--- effective .env ---\n'
+      ( apply_config none; for name in CPU_CORES RAM_SIZE DISK_SIZE ANDROID_CPUS ANDROID_MEMORY EMULATOR_DEVICE LAB_MODE WEB_PORT RDP_PORT; do
+          if [ -n "${!name-}" ]; then printf '%s=%s\n' "$name" "${!name}"; fi
+        done )
+      ;;
+    clear)
+      rm -f "$LAB_DIR/.lab-profile"
+      info "cleared profile marker (the values in .env are unchanged)"
+      ;;
+    *)
+      die "usage: ./labctl $LAB profile [use|show|clear] [name]"
+      ;;
+  esac
+}
+
+cmd_config() {
+  local action="${1:-show}" profile="" reveal=0 arg key value file_keys
+  shift || true
+  case "$action" in
+    show)
+      while [ $# -gt 0 ]; do
+        case "$1" in
+          --profile) profile="${2:?--profile needs a value}"; shift ;;
+          --profile=*) profile="${1#*=}" ;;
+          --reveal) reveal=1 ;;
+          *) die "unknown option: $1" ;;
+        esac
+        shift
+      done
+      apply_config "$profile"
+      printf 'lab      %s\n' "$LAB"
+      printf 'overlay  %s\n' "${profile:-none}"
+      printf 'applied  %s\n\n' "$(active_label)"
+      for key in $(config_keys "$profile"); do
+        print_kv "$key" "$reveal"
+      done
+      ;;
+    get)
+      while [ $# -gt 0 ]; do
+        case "$1" in
+          --profile) profile="${2:?--profile needs a value}"; shift ;;
+          --profile=*) profile="${1#*=}" ;;
+          --reveal) reveal=1 ;;
+          -*) die "unknown option: $1" ;;
+          *) key="$1" ;;
+        esac
+        shift
+      done
+      [ -n "${key:-}" ] || die "usage: ./labctl $LAB config get <KEY>"
+      validate_key "$key"
+      apply_config "$profile"
+      print_kv "$key" "$reveal"
+      ;;
+    set)
+      [ $# -gt 0 ] || die "usage: ./labctl $LAB config set KEY=VALUE [KEY=VALUE...]"
+      prepare_env
+      for arg in "$@"; do
+        [[ "$arg" == *=* ]] || die "expected KEY=VALUE, got: $arg"
+        key="${arg%%=*}"
+        value="${arg#*=}"
+        validate_key "$key"
+        set_env_var "$key" "$value"
+        printf 'set %s=%s\n' "$key" "$value"
+      done
+      info "run './labctl $LAB restart' to apply changes"
+      ;;
+    unset)
+      [ $# -gt 0 ] || die "usage: ./labctl $LAB config unset KEY [KEY...]"
+      prepare_env
+      for key in "$@"; do
+        validate_key "$key"
+        unset_env_var "$key"
+        printf 'unset %s\n' "$key"
+      done
+      info "run './labctl $LAB restart' to apply changes"
+      ;;
+    edit)
+      prepare_env
+      "${EDITOR:-vi}" "$LAB_DIR/.env"
+      ;;
+    path)
+      prepare_env
+      printf '%s\n' "$LAB_DIR/.env"
+      ;;
+    *)
+      die "usage: ./labctl $LAB config [show|get|set|unset|edit|path]"
+      ;;
+  esac
+}
+
+cmd_doctor() {
+  local profile=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --profile) profile="${2:?--profile needs a value}"; shift ;;
+      --profile=*) profile="${1#*=}" ;;
+      -h|--help) usage; exit 0 ;;
+      *) die "unknown option: $1" ;;
+    esac
+    shift
+  done
+  apply_config "$profile"
+  ( cd "$LAB_DIR" && bash scripts/preflight.sh )
+}
+
+cmd_start() {
+  local profile="" wait=0 wait_install=0
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --profile) profile="${2:?--profile needs a value}"; shift ;;
+      --profile=*) profile="${1#*=}" ;;
+      --wait) wait=1 ;;
+      --wait-install) wait_install=1 ;;
+      -h|--help) usage; exit 0 ;;
+      *) die "unknown option: $1" ;;
+    esac
+    shift
+  done
+  apply_config "$profile"
+  need_runtime
+  if [ "$LAB" != "win" ] && [ "$wait_install" = "1" ]; then
+    die "--wait-install is Windows only"
+  fi
+  if [ "$LAB" = "win" ]; then
+    info "starting win-lab"
+    compose up -d windows
+    [ "$wait" = "1" ] && ( cd "$LAB_DIR" && bash scripts/wait-ready.sh --web )
+    [ "$wait_install" = "1" ] && ( cd "$LAB_DIR" && bash scripts/wait-ready.sh --install )
+  elif [ "$LAB" = "ios" ]; then
+    info "starting ios-lab (macOS VM)"
+    if [ "${GPU:-N}" = "Y" ]; then
+      compose -f docker-compose.yml -f docker-compose.gpu.yml up -d macos
+    else
+      compose up -d macos
+    fi
+    [ "$wait" = "1" ] && ( cd "$LAB_DIR" && bash scripts/wait-ready.sh )
+  elif [ "$LAB" = "linux" ]; then
+    info "starting linux-lab (qemux/qemu VM)"
+    compose up -d linux
+    [ "$wait" = "1" ] && ( cd "$LAB_DIR" && bash scripts/wait-ready.sh --web )
+  elif [ "$LAB_MODE" = "static" ]; then
+    info "starting android-lab in lightweight static mode (no KVM)"
+    compose down --remove-orphans >/dev/null 2>&1 || true
+    compose_win up -d mobsf mitmproxy tools
+    [ "$wait" = "1" ] && wait_http 8000 "${WEB_WAIT_TIMEOUT:-180}"
+  else
+    info "starting android-lab in dynamic mode"
+    compose_win down --remove-orphans >/dev/null 2>&1 || true
+    compose up -d
+    [ "$wait" = "1" ] && ( cd "$LAB_DIR" && bash scripts/wait-boot.sh "${BOOT_TIMEOUT:-900}" )
+  fi
+  hr
+  print_urls
+}
+
+cmd_stop() {
+  local keep=0
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --keep) keep=1 ;;
+      -h|--help) usage; exit 0 ;;
+      *) die "unknown option: $1" ;;
+    esac
+    shift
+  done
+  info "stopping $LAB"
+  stop_stack "$keep"
+  info "stopped"
+}
+
+cmd_restart() {
+  local args=("$@")
+  info "recreating $LAB using the current .env"
+  stop_stack 0
+  cmd_start "${args[@]}"
+}
+
+cmd_status() {
+  local profile=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --profile) profile="${2:?--profile needs a value}"; shift ;;
+      --profile=*) profile="${1#*=}" ;;
+      -h|--help) usage; exit 0 ;;
+      *) die "unknown option: $1" ;;
+    esac
+    shift
+  done
+  apply_config "$profile"
+  print_status
+}
+
+cmd_monitor() {
+  local once=0 interval=5 profile=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --once) once=1 ;;
+      -i|--interval) interval="${2:?--interval needs a value}"; shift ;;
+      --interval=*) interval="${1#*=}" ;;
+      --profile) profile="${2:?--profile needs a value}"; shift ;;
+      --profile=*) profile="${1#*=}" ;;
+      -h|--help) usage; exit 0 ;;
+      *) die "unknown option: $1" ;;
+    esac
+    shift
+  done
+  [[ "$interval" =~ ^[1-9][0-9]*$ ]] || die "interval must be a positive integer"
+  while :; do
+    if [ "$once" = "0" ] && [ -t 1 ]; then clear 2>/dev/null || printf '\033[H\033[J'; fi
+    apply_config "$profile"
+    print_status
+    [ "$once" = "1" ] && break
+    printf 'refresh every %ss; Ctrl-C to stop\n' "$interval"
+    sleep "$interval"
+  done
+}
+
+cmd_logs() {
+  local follow=0 static=0 profile="" service=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      -f|--follow) follow=1 ;;
+      --static) static=1 ;;
+      --profile) profile="${2:?--profile needs a value}"; shift ;;
+      --profile=*) profile="${1#*=}" ;;
+      -h|--help) usage; exit 0 ;;
+      -*) die "unknown option: $1" ;;
+      *) service="$1" ;;
+    esac
+    shift
+  done
+  apply_config "$profile"
+  need_runtime
+  local args=()
+  [ "$follow" = "1" ] && args+=("-f")
+  [ -n "$service" ] && args+=("$service")
+  if [ "$LAB" = "win" ]; then
+    compose logs "${args[@]}"
+  elif [ "$static" = "1" ] || [ "$LAB_MODE" = "static" ]; then
+    compose_win logs "${args[@]}"
+  else
+    compose logs "${args[@]}"
+  fi
+}
+
+cmd_shell() {
+  local profile="" service="" adb=0
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --adb) adb=1 ;;
+      --profile) profile="${2:?--profile needs a value}"; shift ;;
+      --profile=*) profile="${1#*=}" ;;
+      -h|--help) usage; exit 0 ;;
+      -*) die "unknown option: $1" ;;
+      *) service="$1" ;;
+    esac
+    shift
+  done
+  apply_config "$profile"
+  need_runtime
+  if [ "$LAB" = "win" ]; then
+    compose exec windows bash
+    return
+  fi
+  if [ "$LAB" = "ios" ]; then
+    compose exec macos sh
+    return
+  fi
+  if [ "$LAB" = "linux" ]; then
+    compose exec linux bash
+    return
+  fi
+  if [ "$adb" = "1" ] || [ "$service" = "adb" ]; then
+    compose exec android adb shell
+  elif [ "$LAB_MODE" = "static" ]; then
+    compose_win exec "${service:-tools}" bash
+  else
+    compose exec "${service:-tools}" bash
+  fi
+}
+
+cmd_urls() {
+  local profile=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --profile) profile="${2:?--profile needs a value}"; shift ;;
+      --profile=*) profile="${1#*=}" ;;
+      -h|--help) usage; exit 0 ;;
+      *) die "unknown option: $1" ;;
+    esac
+    shift
+  done
+  apply_config "$profile"
+  print_urls
+}
+
+cmd_resize() {
+  local cpus="" ram="" disk="" device="" apply=0 dry=0 changed=0
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --cpus|--cores) cpus="${2:?$1 needs a value}"; shift ;;
+      --cpus=*|--cores=*) cpus="${1#*=}" ;;
+      --ram|--memory) ram="${2:?$1 needs a value}"; shift ;;
+      --ram=*|--memory=*) ram="${1#*=}" ;;
+      --disk) disk="${2:?--disk needs a value}"; shift ;;
+      --disk=*) disk="${1#*=}" ;;
+      --device) device="${2:?--device needs a value}"; shift ;;
+      --device=*) device="${1#*=}" ;;
+      --apply) apply=1 ;;
+      --dry-run) dry=1 ;;
+      -h|--help) usage; exit 0 ;;
+      *) die "unknown option: $1" ;;
+    esac
+    shift
+  done
+  [ -n "$cpus$ram$disk$device" ] || die "nothing to resize (use --cpus, --ram, --disk or --device)"
+  prepare_env
+  apply_config none
+  if [ "$LAB" = "win" ] || [ "$LAB" = "ios" ] || [ "$LAB" = "linux" ]; then
+    [ -n "$device" ] && die "--device is Android only"
+    if [ -n "$cpus" ]; then
+      validate_cpus "$cpus"
+      changed=1
+      if [ "$dry" = "0" ]; then set_env_var CPU_CORES "$cpus"; fi
+      printf 'CPU_CORES %s -> %s\n' "${CPU_CORES:-?}" "$cpus"
+    fi
+    if [ -n "$ram" ]; then
+      ram="$(normalize_ram "$ram")"
+      changed=1
+      if [ "$dry" = "0" ]; then set_env_var RAM_SIZE "$ram"; fi
+      printf 'RAM_SIZE  %s -> %s\n' "${RAM_SIZE:-?}" "$ram"
+    fi
+    if [ -n "$disk" ]; then
+      disk="$(normalize_disk "$disk")"
+      local current="${DISK_SIZE:-}"
+      if [ -n "$current" ] && [ "$(size_gb "$disk")" -lt "$(size_gb "$current")" ]; then
+        die "disk can only grow: current $current, requested $disk. Back up and reinstall to use a smaller disk."
+      fi
+      changed=1
+      if [ "$dry" = "0" ]; then set_env_var DISK_SIZE "$disk"; fi
+      if [ "$LAB" = "ios" ]; then
+        printf 'DISK_SIZE %s -> %s (extend the APFS container in Disk Utility)\n' "${current:-?}" "$disk"
+      elif [ "$LAB" = "linux" ]; then
+        printf 'DISK_SIZE %s -> %s (grow the guest partition/filesystem after boot)\n' "${current:-?}" "$disk"
+      else
+        printf 'DISK_SIZE %s -> %s (extend the Windows partition after boot)\n' "${current:-?}" "$disk"
+      fi
+    fi
+  else
+    [ -n "$disk" ] && die "--disk is for the Windows/macOS VM lab; Android data lives in the android_data volume"
+    if [ "$LAB_MODE" = "static" ]; then
+      warn "static mode is active; CPU/RAM/device changes apply after switching to a dynamic profile"
+    fi
+    if [ -n "$cpus" ]; then
+      validate_cpus "$cpus"
+      changed=1
+      if [ "$dry" = "0" ]; then set_env_var ANDROID_CPUS "$cpus"; fi
+      printf 'ANDROID_CPUS   %s -> %s\n' "${ANDROID_CPUS:-?}" "$cpus"
+    fi
+    if [ -n "$ram" ]; then
+      ram="$(normalize_ram "$ram")"
+      changed=1
+      if [ "$dry" = "0" ]; then set_env_var ANDROID_MEMORY "$ram"; fi
+      printf 'ANDROID_MEMORY %s -> %s\n' "${ANDROID_MEMORY:-?}" "$ram"
+    fi
+    if [ -n "$device" ]; then
+      [[ "$device" != *$'\n'* ]] || die "invalid device name"
+      changed=1
+      if [ "$dry" = "0" ]; then set_env_var EMULATOR_DEVICE "$device"; fi
+      printf 'EMULATOR_DEVICE %s -> %s\n' "${EMULATOR_DEVICE:-?}" "$device"
+      warn "an existing AVD may keep its old hardware profile; reset the android_data volume if needed"
+    fi
+  fi
+  [ "$changed" = "1" ] || die "nothing changed"
+  if [ "$dry" = "1" ]; then
+    info "dry run: .env was not modified"
+    return
+  fi
+  if [ "$apply" = "1" ]; then
+    info "recreating $LAB to apply the new hardware"
+    stop_stack 0
+    cmd_start
+  else
+    info "run './labctl $LAB restart' to apply changes"
+  fi
+}
+
+cmd_service() {
+  local action="${1:-status}" unit
+  case "$LAB" in
+    win) unit="win-lab" ;;
+    ios) unit="ios-lab" ;;
+    linux) unit="linux-lab" ;;
+    *) unit="android-lab" ;;
+  esac
+  case "$action" in
+    install)
+      ( cd "$LAB_DIR" && bash scripts/install-service.sh )
+      ;;
+    uninstall)
+      ( cd "$LAB_DIR" && bash scripts/uninstall-service.sh )
+      ;;
+    status)
+      systemctl --no-pager --lines=0 status "$unit.service" || true
+      ;;
+    *)
+      die "usage: ./labctl $LAB service [install|uninstall|status]"
+      ;;
+  esac
+}
+
+cmd_all() {
+  local cmd="${1:-}"
+  shift || true
+  case "$cmd" in
+    start|stop|restart|status|doctor|profiles)
+      local lab rc=0 labs=(android win linux)
+      if [ "$(uname -s)" = "Linux" ]; then labs+=(ios); fi
+      for lab in "${labs[@]}"; do
+        "$ROOT/labctl" "$lab" "$cmd" "$@" || rc=$?
+      done
+      return "$rc"
+      ;;
+    monitor)
+      local once=0 interval=5 status_args=() labs=(android win linux)
+      if [ "$(uname -s)" = "Linux" ]; then labs+=(ios); fi
+      while [ $# -gt 0 ]; do
+        case "$1" in
+          --once) once=1 ;;
+          -i|--interval) interval="${2:?--interval needs a value}"; shift ;;
+          --interval=*) interval="${1#*=}" ;;
+          --profile) status_args+=("--profile" "${2:?--profile needs a value}"); shift ;;
+          --profile=*) status_args+=("--profile=${1#*=}") ;;
+        esac
+        shift
+      done
+      while :; do
+        if [ "$once" = "0" ] && [ -t 1 ]; then clear 2>/dev/null || printf '\033[H\033[J'; fi
+        for lab in "${labs[@]}"; do
+          "$ROOT/labctl" "$lab" status "${status_args[@]}"
+          printf '\n'
+        done
+        [ "$once" = "1" ] && break
+        sleep "$interval"
+      done
+      ;;
+    *)
+      die "unsupported command for all: ${cmd:-} (use start, stop, restart, status, monitor, doctor or profiles)"
+      ;;
+  esac
+}
+
+main() {
+  [ $# -gt 0 ] || { usage; exit 0; }
+  case "$1" in
+    -h|--help|help) usage; exit 0 ;;
+    version|--version) printf 'labctl 1.0.0\n'; exit 0 ;;
+  esac
+  local target="$1"
+  shift
+  if [ "$target" = "all" ]; then
+    cmd_all "$@"
+    return
+  fi
+  set_lab "$target"
+  if [ "$LAB" = "ios" ] && [ "$(uname -s)" = "Darwin" ]; then
+    die "ios-lab on macOS uses the native path: make -C ios-lab mac-doctor|mac-setup|mac-sim|mac-status|mac-stop|mac-appium"
+  fi
+  local cmd="${1:-}"
+  shift || true
+  case "$cmd" in
+    profiles) cmd_profiles "$@" ;;
+    profile) cmd_profile "$@" ;;
+    config) cmd_config "$@" ;;
+    doctor|preflight) cmd_doctor "$@" ;;
+    start|up) cmd_start "$@" ;;
+    stop|down) cmd_stop "$@" ;;
+    restart) cmd_restart "$@" ;;
+    status) cmd_status "$@" ;;
+    monitor) cmd_monitor "$@" ;;
+    logs) cmd_logs "$@" ;;
+    shell) cmd_shell "$@" ;;
+    urls) cmd_urls "$@" ;;
+    resize) cmd_resize "$@" ;;
+    service) cmd_service "$@" ;;
+    -h|--help|help|'') usage ;;
+    *) die "unknown command for $LAB: $cmd (run ./labctl --help)" ;;
+  esac
+}
+
+main "$@"

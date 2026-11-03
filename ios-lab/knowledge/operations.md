@@ -16,14 +16,14 @@ make update               # pull image, recreate
 seconds for the web viewer. The viewer is available during installation, so it
 is not a proof that macOS or Xcode is ready.
 
-With profiles and monitoring:
+With the repository-level CLI:
 
 ```bash
-make profiles
-make profile PROFILE=performance
-make boot
-make monitor
-make down
+../labctl ios profiles
+../labctl ios profile use performance
+../labctl ios start --wait
+../labctl ios monitor
+../labctl ios stop
 ```
 
 ## Changing hardware
@@ -33,8 +33,8 @@ grow.
 
 ```bash
 make down
-make resize CPUS=8 RAM=12G
-make boot
+../labctl ios resize --cpus 8 --ram 12G
+../labctl ios start --wait
 ```
 
 For disk growth, increase `DISK_SIZE` and recreate; macOS should see the new
@@ -44,12 +44,12 @@ back up first:
 ```bash
 make backup FULL=1
 make down
-make resize DISK=192G
-make boot
+../labctl ios resize --disk 192G
+../labctl ios start
 ```
 
-Disk values below the current size are refused because shrinking a live macOS
-disk is not supported.
+Disk values below the current size are refused by `labctl` because shrinking a
+live macOS disk is not supported.
 
 ## Backups
 
@@ -99,12 +99,11 @@ installed and accept its licence or Appium will fail to sign/build.
 ## Monitoring
 
 ```bash
-make monitor
-make monitor MONITOR_ARGS=--once
+../labctl ios monitor
 ```
 
 Shows container state, CPU/RAM, web/VNC endpoints, storage size and host free
-space. `make status` is a smaller one-shot check.
+space. `status` is a one-shot version.
 
 ## Updating
 
