@@ -1350,6 +1350,543 @@ export const COMPANIES: Company[] = [
   },
   {
     "schemaVersion": 1,
+    "name": "Multi-Branch nftables + QoS Lab",
+    "sector": "Education / Software",
+    "author": {
+      "name": "A*** E***",
+      "course": "BGT207",
+      "github": "apo536098-wq"
+    },
+    "summary": "A company with offices in Ankara, Istanbul and London, an academic branch of 10,000 students plus teachers and staff, and a software team. One Linux machine is the central firewall/router: default-drop nftables policy, an access matrix between groups, and tc HTB classes that share a 1 Gbit uplink (software 250-600, students 250-500, teachers/staff/offices 100-300 Mbit).",
+    "branches": [
+      {
+        "id": "ankara-office",
+        "name": "Ankara Office (central firewall)",
+        "role": "headquarters",
+        "location": "Ankara, Turkey",
+        "population": {},
+        "network": {
+          "cidr": "10.10.1.0/24",
+          "dmz": false,
+          "vlans": [
+            {
+              "id": 1,
+              "name": "ankara",
+              "cidr": "10.10.1.0/24",
+              "note": "Gateway 10.10.1.1, interface ank0."
+            }
+          ]
+        },
+        "bandwidth": {
+          "downMbps": 100,
+          "upMbps": 100,
+          "drivers": [
+            "office work",
+            "inter-branch traffic"
+          ]
+        },
+        "firewalls": [
+          {
+            "segment": "perimeter",
+            "chosen": {
+              "product": "nftables on Kali Linux (central router/firewall)",
+              "vendor": "Netfilter project",
+              "reason": "Stateful default-drop filtering, NAT, packet marking and tc HTB QoS on one box; reproducible and testable with nmap/iperf3."
+            },
+            "alternatives": [
+              {
+                "product": "OPNsense",
+                "vendor": "Deciso",
+                "reason": "Web UI and plugins for the same job; heavier than a single script. (Reviewer-added comparison; not in the student's original submission.)"
+              },
+              {
+                "product": "pfSense CE",
+                "vendor": "Netgate",
+                "reason": "Classic open-source firewall with traffic shaper and VPN. (Reviewer-added comparison; not in the student's original submission.)"
+              },
+              {
+                "product": "FortiGate 60F",
+                "vendor": "Fortinet",
+                "reason": "Commercial NGFW appliance, IPS and SD-WAN, for a real deployment. (Reviewer-added comparison; not in the student's original submission.)"
+              },
+              {
+                "product": "Sophos XGS 116",
+                "vendor": "Sophos",
+                "reason": "Small-office appliance with easy UI and synchronized endpoint protection. (Reviewer-added comparison; not in the student's original submission.)"
+              }
+            ],
+            "rules": [
+              {
+                "action": "allow",
+                "direction": "forward",
+                "proto": "any",
+                "from": "any",
+                "to": "any",
+                "note": "Replies to established connections must pass or nothing works (stateful tracking)."
+              },
+              {
+                "action": "deny",
+                "direction": "forward",
+                "proto": "any",
+                "from": "students",
+                "to": "internal",
+                "note": "Students reach no internal network (staff, software, offices)."
+              },
+              {
+                "action": "allow",
+                "direction": "forward",
+                "proto": "tcp",
+                "port": "80,443",
+                "from": "students",
+                "to": "internet",
+                "note": "Students get web (80/443, QUIC 443) and DNS only."
+              },
+              {
+                "action": "deny",
+                "direction": "forward",
+                "proto": "any",
+                "from": "teachers",
+                "to": "students,staff",
+                "note": "Teachers are blocked from the student and staff networks."
+              },
+              {
+                "action": "allow",
+                "direction": "forward",
+                "proto": "tcp",
+                "port": "80,443,587,993,995",
+                "from": "teachers",
+                "to": "internet",
+                "note": "Teachers get web, mail and video conferencing (Teams/Zoom ports) to the internet."
+              },
+              {
+                "action": "allow",
+                "direction": "forward",
+                "proto": "any",
+                "from": "staff",
+                "to": "offices",
+                "note": "Staff reach the offices for administrative work."
+              },
+              {
+                "action": "allow",
+                "direction": "forward",
+                "proto": "any",
+                "from": "software",
+                "to": "any",
+                "note": "Software team is the most privileged group and reaches everything."
+              },
+              {
+                "action": "allow",
+                "direction": "forward",
+                "proto": "tcp",
+                "port": "22,80,443,8080",
+                "from": "offices",
+                "to": "software",
+                "note": "Offices reach the software team only on SSH, web and 8080."
+              },
+              {
+                "action": "allow",
+                "direction": "in",
+                "proto": "tcp",
+                "port": 22,
+                "from": "software,ankara",
+                "to": "firewall",
+                "note": "The firewall itself accepts SSH only from the software and Ankara networks."
+              },
+              {
+                "action": "allow",
+                "direction": "in",
+                "proto": "udp",
+                "port": "53,67",
+                "from": "internal",
+                "to": "firewall",
+                "note": "DNS and DHCP (53, 67/udp) are served to internal networks only."
+              },
+              {
+                "action": "deny",
+                "direction": "forward",
+                "proto": "any",
+                "from": "any",
+                "to": "any",
+                "note": "Default rule: everything else is logged (rate-limited) and dropped."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "istanbul-office",
+        "name": "Istanbul Office",
+        "role": "branch",
+        "location": "Istanbul, Turkey",
+        "population": {},
+        "network": {
+          "cidr": "10.10.2.0/24",
+          "dmz": false,
+          "vlans": [
+            {
+              "id": 2,
+              "name": "istanbul",
+              "cidr": "10.10.2.0/24",
+              "note": "Gateway 10.10.2.1, interface ist0."
+            }
+          ]
+        },
+        "bandwidth": {
+          "downMbps": 100,
+          "upMbps": 100,
+          "drivers": [
+            "office work"
+          ]
+        },
+        "firewalls": [
+          {
+            "segment": "perimeter",
+            "chosen": {
+              "product": "nftables on Kali Linux (central router/firewall)",
+              "vendor": "Netfilter project",
+              "reason": "Stateful default-drop filtering, NAT, packet marking and tc HTB QoS on one box; reproducible and testable with nmap/iperf3."
+            },
+            "alternatives": [
+              {
+                "product": "OPNsense",
+                "vendor": "Deciso",
+                "reason": "Web UI and plugins for the same job; heavier than a single script. (Reviewer-added comparison; not in the student's original submission.)"
+              },
+              {
+                "product": "pfSense CE",
+                "vendor": "Netgate",
+                "reason": "Classic open-source firewall with traffic shaper and VPN. (Reviewer-added comparison; not in the student's original submission.)"
+              },
+              {
+                "product": "FortiGate 60F",
+                "vendor": "Fortinet",
+                "reason": "Commercial NGFW appliance, IPS and SD-WAN, for a real deployment. (Reviewer-added comparison; not in the student's original submission.)"
+              },
+              {
+                "product": "Sophos XGS 116",
+                "vendor": "Sophos",
+                "reason": "Small-office appliance with easy UI and synchronized endpoint protection. (Reviewer-added comparison; not in the student's original submission.)"
+              }
+            ],
+            "rules": [
+              {
+                "action": "allow",
+                "direction": "forward",
+                "proto": "tcp",
+                "port": "22,80,443,587,993,995",
+                "from": "offices",
+                "to": "internet",
+                "note": "Office traffic to the internet is limited to web, mail and SSH."
+              },
+              {
+                "action": "allow",
+                "direction": "forward",
+                "proto": "udp",
+                "port": "53,123",
+                "from": "offices",
+                "to": "internet",
+                "note": "Offices need DNS and NTP to the internet."
+              },
+              {
+                "action": "deny",
+                "direction": "forward",
+                "proto": "any",
+                "from": "any",
+                "to": "any",
+                "note": "Default rule: everything else is logged and dropped."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "london-office",
+        "name": "London Office",
+        "role": "branch",
+        "location": "London, United Kingdom",
+        "population": {},
+        "network": {
+          "cidr": "10.10.3.0/24",
+          "dmz": false,
+          "vlans": [
+            {
+              "id": 3,
+              "name": "london",
+              "cidr": "10.10.3.0/24",
+              "note": "Gateway 10.10.3.1, interface lon0."
+            }
+          ]
+        },
+        "bandwidth": {
+          "downMbps": 100,
+          "upMbps": 100,
+          "drivers": [
+            "office work"
+          ]
+        },
+        "firewalls": [
+          {
+            "segment": "perimeter",
+            "chosen": {
+              "product": "nftables on Kali Linux (central router/firewall)",
+              "vendor": "Netfilter project",
+              "reason": "Stateful default-drop filtering, NAT, packet marking and tc HTB QoS on one box; reproducible and testable with nmap/iperf3."
+            },
+            "alternatives": [
+              {
+                "product": "OPNsense",
+                "vendor": "Deciso",
+                "reason": "Web UI and plugins for the same job; heavier than a single script. (Reviewer-added comparison; not in the student's original submission.)"
+              },
+              {
+                "product": "pfSense CE",
+                "vendor": "Netgate",
+                "reason": "Classic open-source firewall with traffic shaper and VPN. (Reviewer-added comparison; not in the student's original submission.)"
+              },
+              {
+                "product": "FortiGate 60F",
+                "vendor": "Fortinet",
+                "reason": "Commercial NGFW appliance, IPS and SD-WAN, for a real deployment. (Reviewer-added comparison; not in the student's original submission.)"
+              },
+              {
+                "product": "Sophos XGS 116",
+                "vendor": "Sophos",
+                "reason": "Small-office appliance with easy UI and synchronized endpoint protection. (Reviewer-added comparison; not in the student's original submission.)"
+              }
+            ],
+            "rules": [
+              {
+                "action": "allow",
+                "direction": "forward",
+                "proto": "tcp",
+                "port": "22,80,443,587,993,995",
+                "from": "offices",
+                "to": "internet",
+                "note": "Office traffic to the internet is limited to web, mail and SSH."
+              },
+              {
+                "action": "allow",
+                "direction": "forward",
+                "proto": "udp",
+                "port": "53,123",
+                "from": "offices",
+                "to": "internet",
+                "note": "Offices need DNS and NTP to the internet."
+              },
+              {
+                "action": "deny",
+                "direction": "forward",
+                "proto": "any",
+                "from": "any",
+                "to": "any",
+                "note": "Default rule: everything else is logged and dropped."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "academic-branch",
+        "name": "Academic Branch",
+        "role": "campus",
+        "location": "Ankara, Turkey",
+        "population": {
+          "students": 10000
+        },
+        "network": {
+          "cidr": "10.20.0.0/16",
+          "dmz": false,
+          "vlans": [
+            {
+              "id": 20,
+              "name": "students",
+              "cidr": "10.20.0.0/18",
+              "note": "/18 = 16,382 hosts; 10,000 students do not fit in a /24."
+            },
+            {
+              "id": 64,
+              "name": "teachers",
+              "cidr": "10.20.64.0/24",
+              "note": "Live lessons and video conferencing."
+            },
+            {
+              "id": 65,
+              "name": "staff",
+              "cidr": "10.20.65.0/24",
+              "note": "Administrative work."
+            }
+          ]
+        },
+        "bandwidth": {
+          "downMbps": 250,
+          "upMbps": 250,
+          "drivers": [
+            "student web traffic",
+            "live lessons",
+            "administrative work"
+          ]
+        },
+        "firewalls": [
+          {
+            "segment": "perimeter",
+            "chosen": {
+              "product": "nftables on Kali Linux (central router/firewall)",
+              "vendor": "Netfilter project",
+              "reason": "Stateful default-drop filtering, NAT, packet marking and tc HTB QoS on one box; reproducible and testable with nmap/iperf3."
+            },
+            "alternatives": [
+              {
+                "product": "OPNsense",
+                "vendor": "Deciso",
+                "reason": "Web UI and plugins for the same job; heavier than a single script. (Reviewer-added comparison; not in the student's original submission.)"
+              },
+              {
+                "product": "pfSense CE",
+                "vendor": "Netgate",
+                "reason": "Classic open-source firewall with traffic shaper and VPN. (Reviewer-added comparison; not in the student's original submission.)"
+              },
+              {
+                "product": "FortiGate 60F",
+                "vendor": "Fortinet",
+                "reason": "Commercial NGFW appliance, IPS and SD-WAN, for a real deployment. (Reviewer-added comparison; not in the student's original submission.)"
+              },
+              {
+                "product": "Sophos XGS 116",
+                "vendor": "Sophos",
+                "reason": "Small-office appliance with easy UI and synchronized endpoint protection. (Reviewer-added comparison; not in the student's original submission.)"
+              }
+            ],
+            "rules": [
+              {
+                "action": "allow",
+                "direction": "forward",
+                "proto": "tcp",
+                "port": "80,443",
+                "from": "students",
+                "to": "internet",
+                "note": "Students share 250-500 Mbit with SFQ so one student cannot take the whole class."
+              },
+              {
+                "action": "deny",
+                "direction": "forward",
+                "proto": "any",
+                "from": "students",
+                "to": "internal",
+                "note": "Students never reach teachers, staff, software or offices."
+              },
+              {
+                "action": "deny",
+                "direction": "forward",
+                "proto": "any",
+                "from": "any",
+                "to": "any",
+                "note": "Default rule: everything else is logged and dropped."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "software-team",
+        "name": "Software Team",
+        "role": "branch",
+        "location": "Ankara, Turkey",
+        "population": {},
+        "network": {
+          "cidr": "10.30.1.0/24",
+          "dmz": false,
+          "vlans": [
+            {
+              "id": 30,
+              "name": "software",
+              "cidr": "10.30.1.0/24",
+              "note": "Most privileged group, isolated in its own block."
+            }
+          ]
+        },
+        "bandwidth": {
+          "downMbps": 250,
+          "upMbps": 250,
+          "drivers": [
+            "deployments",
+            "CI/CD (priority 1, 250-600 Mbit)"
+          ]
+        },
+        "firewalls": [
+          {
+            "segment": "perimeter",
+            "chosen": {
+              "product": "nftables on Kali Linux (central router/firewall)",
+              "vendor": "Netfilter project",
+              "reason": "Stateful default-drop filtering, NAT, packet marking and tc HTB QoS on one box; reproducible and testable with nmap/iperf3."
+            },
+            "alternatives": [
+              {
+                "product": "OPNsense",
+                "vendor": "Deciso",
+                "reason": "Web UI and plugins for the same job; heavier than a single script. (Reviewer-added comparison; not in the student's original submission.)"
+              },
+              {
+                "product": "pfSense CE",
+                "vendor": "Netgate",
+                "reason": "Classic open-source firewall with traffic shaper and VPN. (Reviewer-added comparison; not in the student's original submission.)"
+              },
+              {
+                "product": "FortiGate 60F",
+                "vendor": "Fortinet",
+                "reason": "Commercial NGFW appliance, IPS and SD-WAN, for a real deployment. (Reviewer-added comparison; not in the student's original submission.)"
+              },
+              {
+                "product": "Sophos XGS 116",
+                "vendor": "Sophos",
+                "reason": "Small-office appliance with easy UI and synchronized endpoint protection. (Reviewer-added comparison; not in the student's original submission.)"
+              }
+            ],
+            "rules": [
+              {
+                "action": "allow",
+                "direction": "forward",
+                "proto": "any",
+                "from": "software",
+                "to": "any",
+                "note": "Software team may reach every group; deployments are latency sensitive."
+              },
+              {
+                "action": "allow",
+                "direction": "forward",
+                "proto": "tcp",
+                "port": "22,80,443,8080",
+                "from": "offices",
+                "to": "software",
+                "note": "Offices reach servers only on SSH, web and 8080."
+              },
+              {
+                "action": "deny",
+                "direction": "forward",
+                "proto": "any",
+                "from": "any",
+                "to": "any",
+                "note": "Default rule: everything else is logged and dropped."
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "remoteAccess": {
+      "type": "site-to-site-vpn",
+      "note": "Inter-branch links are assumed to be VPN (WireGuard for London is on the roadmap); SSH to the firewall only from the software and Ankara networks."
+    },
+    "monitoring": {
+      "siem": "nftables counters and rate-limited kernel log prefixes (FW-INPUT-DROP, FW-FWD-DROP) read with journalctl; Prometheus/Grafana and Wazuh/Graylog are on the roadmap.",
+      "owner": "The lab operator who runs company_fw.sh reviews the drop counters and logs; no 24/7 owner exists in the original design.",
+      "alertSink": "journald on the firewall host (Alertmanager planned).",
+      "appVsSecurity": "Not separated yet; QoS class counters (tc -s class) cover bandwidth while FW-* log prefixes cover security events."
+    },
+    "slug": "multi-branch-nftables-lab"
+  },
+  {
+    "schemaVersion": 1,
     "slug": "northwind-retail",
     "name": "Northwind Retail",
     "sector": "Retail",
