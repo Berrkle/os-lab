@@ -1350,6 +1350,366 @@ export const COMPANIES: Company[] = [
   },
   {
     "schemaVersion": 1,
+    "name": "GüvenTek Bilişim A.Ş.",
+    "sector": "Technology",
+    "author": {
+      "name": "G*** Ş***",
+      "course": "BGT207",
+      "github": "GvnTech-cmd"
+    },
+    "summary": "A 370-person technology company with an Istanbul HQ (ERP, mail, database), an Ankara operations branch and an Izmir R&D office holding all source code. Each office has its own /16 and FortiGate; offices are joined by IPsec VPN, default-deny everywhere, a guest VLAN that only reaches the internet, and FortiAnalyzer logs in Istanbul.",
+    "branches": [
+      {
+        "id": "istanbul-hq",
+        "name": "Istanbul HQ",
+        "role": "headquarters",
+        "location": "Istanbul, Turkey",
+        "population": {
+          "staff": 200
+        },
+        "network": {
+          "cidr": "10.10.0.0/16",
+          "dmz": false,
+          "vlans": [
+            {
+              "id": 10,
+              "name": "admin",
+              "cidr": "10.10.10.0/24",
+              "note": "Management and administrative staff (150)."
+            },
+            {
+              "id": 20,
+              "name": "it-security",
+              "cidr": "10.10.20.0/24",
+              "note": "IT and security team (50)."
+            },
+            {
+              "id": 30,
+              "name": "servers",
+              "cidr": "10.10.30.0/24",
+              "note": "ERP, mail, database."
+            },
+            {
+              "id": 99,
+              "name": "guest",
+              "cidr": "192.168.99.0/24",
+              "note": "Same guest range at every office; internet only."
+            }
+          ]
+        },
+        "bandwidth": {
+          "downMbps": 500,
+          "upMbps": 500,
+          "drivers": [
+            "ERP",
+            "mail",
+            "VPN",
+            "SIEM logs"
+          ]
+        },
+        "firewalls": [
+          {
+            "segment": "perimeter",
+            "chosen": {
+              "product": "FortiGate 100F (HA)",
+              "vendor": "Fortinet",
+              "reason": "Sized for 350 Mbps of calculated need on a 500 Mbps fiber line, HA because the ERP and mail servers live here."
+            },
+            "alternatives": [
+              {
+                "product": "PA-440",
+                "vendor": "Palo Alto Networks",
+                "reason": "Strong app control for a mid-size HQ. (Reviewer-added comparison; not in the student's original submission.)"
+              },
+              {
+                "product": "Secure Firewall 1210",
+                "vendor": "Cisco",
+                "reason": "Fits Cisco switching. (Reviewer-added comparison; not in the student's original submission.)"
+              },
+              {
+                "product": "Quantum Spark 1600",
+                "vendor": "Check Point",
+                "reason": "Cost-effective small/mid gateway. (Reviewer-added comparison; not in the student's original submission.)"
+              },
+              {
+                "product": "XGS 2300",
+                "vendor": "Sophos",
+                "reason": "Easy management. (Reviewer-added comparison; not in the student's original submission.)"
+              }
+            ],
+            "rules": [
+              {
+                "action": "allow",
+                "direction": "in",
+                "proto": "tcp",
+                "port": "443,993,1433",
+                "from": "vlan10-admin",
+                "to": "vlan30-servers",
+                "note": "ERP, mail and database servers sit in their own VLAN and are exposed only to staff."
+              },
+              {
+                "action": "deny",
+                "direction": "in",
+                "proto": "any",
+                "from": "vlan99-guest",
+                "to": "internal-vlans",
+                "note": "Guest VLAN 99 reaches no internal server, internet only."
+              },
+              {
+                "action": "deny",
+                "direction": "out",
+                "proto": "any",
+                "from": "internal-vlans",
+                "to": "p2p",
+                "note": "Torrent, P2P and illegal sites are blocked by Web Filter and Application Control."
+              },
+              {
+                "action": "allow",
+                "direction": "forward",
+                "proto": "udp",
+                "port": "500,4500",
+                "from": "vpn-peers",
+                "to": "vpn-peers",
+                "note": "Site-to-site IPsec VPN to Ankara and Izmir."
+              },
+              {
+                "action": "deny",
+                "direction": "in",
+                "proto": "any",
+                "from": "any",
+                "to": "any",
+                "note": "Default Deny: everything not explicitly allowed is dropped and logged."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "ankara-branch",
+        "name": "Ankara Operations Branch",
+        "role": "branch",
+        "location": "Ankara, Turkey",
+        "population": {
+          "staff": 100
+        },
+        "network": {
+          "cidr": "10.20.0.0/16",
+          "dmz": false,
+          "vlans": [
+            {
+              "id": 10,
+              "name": "sales-ops",
+              "cidr": "10.20.10.0/24",
+              "note": "Sales and operations staff (80)."
+            },
+            {
+              "id": 20,
+              "name": "tech-support",
+              "cidr": "10.20.20.0/24",
+              "note": "Technical support (20)."
+            },
+            {
+              "id": 99,
+              "name": "guest",
+              "cidr": "192.168.99.0/24",
+              "note": "Same guest range at every office; internet only."
+            }
+          ]
+        },
+        "bandwidth": {
+          "downMbps": 200,
+          "upMbps": 200,
+          "drivers": [
+            "field operations",
+            "support",
+            "VPN"
+          ]
+        },
+        "firewalls": [
+          {
+            "segment": "perimeter",
+            "chosen": {
+              "product": "FortiGate 60F",
+              "vendor": "Fortinet",
+              "reason": "175 Mbps calculated need on a 200 Mbps fiber line for 100 staff."
+            },
+            "alternatives": [
+              {
+                "product": "PA-410",
+                "vendor": "Palo Alto Networks",
+                "reason": "Small-branch NGFW. (Reviewer-added comparison; not in the student's original submission.)"
+              },
+              {
+                "product": "Secure Firewall 1210",
+                "vendor": "Cisco",
+                "reason": "Cisco-friendly. (Reviewer-added comparison; not in the student's original submission.)"
+              },
+              {
+                "product": "Quantum Spark 1550",
+                "vendor": "Check Point",
+                "reason": "Branch gateway. (Reviewer-added comparison; not in the student's original submission.)"
+              },
+              {
+                "product": "XGS 116",
+                "vendor": "Sophos",
+                "reason": "Desktop unit with easy UI. (Reviewer-added comparison; not in the student's original submission.)"
+              }
+            ],
+            "rules": [
+              {
+                "action": "deny",
+                "direction": "in",
+                "proto": "any",
+                "from": "vlan99-guest",
+                "to": "internal-vlans",
+                "note": "Guest VLAN 99 is internet only."
+              },
+              {
+                "action": "deny",
+                "direction": "out",
+                "proto": "any",
+                "from": "internal-vlans",
+                "to": "p2p",
+                "note": "Torrent and P2P are blocked by Web Filter and Application Control."
+              },
+              {
+                "action": "allow",
+                "direction": "forward",
+                "proto": "udp",
+                "port": "500,4500",
+                "from": "vpn-peers",
+                "to": "vpn-peers",
+                "note": "IPsec VPN back to the Istanbul HQ."
+              },
+              {
+                "action": "deny",
+                "direction": "in",
+                "proto": "any",
+                "from": "any",
+                "to": "any",
+                "note": "Default Deny: everything not explicitly allowed is dropped and logged."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "izmir-rnd",
+        "name": "Izmir R&D and Software",
+        "role": "branch",
+        "location": "Izmir, Turkey",
+        "population": {
+          "software": 70
+        },
+        "network": {
+          "cidr": "10.30.0.0/16",
+          "dmz": false,
+          "vlans": [
+            {
+              "id": 10,
+              "name": "rnd-software",
+              "cidr": "10.30.10.0/24",
+              "note": "Developers and test servers; fully isolated."
+            },
+            {
+              "id": 99,
+              "name": "guest",
+              "cidr": "192.168.99.0/24",
+              "note": "Same guest range at every office; internet only."
+            }
+          ]
+        },
+        "bandwidth": {
+          "downMbps": 1000,
+          "upMbps": 1000,
+          "drivers": [
+            "Git",
+            "builds",
+            "test servers"
+          ]
+        },
+        "firewalls": [
+          {
+            "segment": "perimeter",
+            "chosen": {
+              "product": "FortiGate 200F",
+              "vendor": "Fortinet",
+              "reason": "787 Mbps calculated need on a 1 Gbps line; all source code lives here."
+            },
+            "alternatives": [
+              {
+                "product": "PA-1410",
+                "vendor": "Palo Alto Networks",
+                "reason": "Higher threat prevention for an IP-sensitive site. (Reviewer-added comparison; not in the student's original submission.)"
+              },
+              {
+                "product": "Secure Firewall 3110",
+                "vendor": "Cisco",
+                "reason": "Throughput headroom. (Reviewer-added comparison; not in the student's original submission.)"
+              },
+              {
+                "product": "Quantum Force 9100",
+                "vendor": "Check Point",
+                "reason": "Strong DLP-adjacent policy. (Reviewer-added comparison; not in the student's original submission.)"
+              },
+              {
+                "product": "XGS 3100",
+                "vendor": "Sophos",
+                "reason": "Cost-effective. (Reviewer-added comparison; not in the student's original submission.)"
+              }
+            ],
+            "rules": [
+              {
+                "action": "deny",
+                "direction": "in",
+                "proto": "any",
+                "from": "any",
+                "to": "vlan10-rnd",
+                "note": "Nobody, including HQ management, reaches the R&D VLAN from outside; source code is the crown jewel."
+              },
+              {
+                "action": "limit",
+                "direction": "out",
+                "proto": "any",
+                "from": "vlan10-rnd",
+                "to": "internet",
+                "note": "Outbound data from R&D is under strict DLP rules to stop code leakage."
+              },
+              {
+                "action": "deny",
+                "direction": "in",
+                "proto": "any",
+                "from": "vlan99-guest",
+                "to": "internal-vlans",
+                "note": "Guest VLAN 99 is internet only."
+              },
+              {
+                "action": "deny",
+                "direction": "in",
+                "proto": "any",
+                "from": "any",
+                "to": "any",
+                "note": "Default Deny: everything not explicitly allowed is dropped and logged."
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "remoteAccess": {
+      "type": "site-to-site-vpn",
+      "note": "All offices reach the internet locally and are connected to each other by IPsec VPN."
+    },
+    "monitoring": {
+      "siem": "All FortiGate logs go to a FortiAnalyzer (SIEM) server in the Istanbul HQ; Grafana-style NOC/SOC screens.",
+      "owner": "The IT and Security team in Istanbul during 09:00-18:00; an on-call IT staff member gets SMS for critical out-of-hours alerts.",
+      "alertSink": "Automatic e-mail (CPU over 80%, VPN down, critical IPS rule) and SMS to the on-call engineer.",
+      "appVsSecurity": "Not separated in the original; NOC screens show traffic while IPS/antivirus events come from FortiAnalyzer."
+    },
+    "slug": "guventek-bilisim"
+  },
+  {
+    "schemaVersion": 1,
     "name": "Kurumsal Ağ Güvenliği ve Altyapı Planlaması",
     "sector": "Education / Software",
     "author": {
