@@ -11,3 +11,4 @@ profile identifies the contributor.
 | F*** Y*** A*** | [@fatmayelizapaydin](https://github.com/fatmayelizapaydin) | [Kurumsal Ağ Güvenliği ve Altyapı Planlaması](companies/kurumsal-ag-planlamasi/) |
 | G*** Ş*** | [@GvnTech-cmd](https://github.com/GvnTech-cmd) | [GüvenTek Bilişim A.Ş.](companies/guventek-bilisim/) |
 | U*** B*** | [@ufuk888](https://github.com/ufuk888) | [Kurumsal Ağ Topolojisi ve Güvenlik Mimarisi](companies/siber-guvenlik-sirketi/) |
+| B*** F*** Y*** | [@bfurkanyildiz](https://github.com/bfurkanyildiz) | [Kurumsal Çok Şubeli Ağ Mimarisi ve NGFW Tasarımı](companies/kurumsal-cok-subeli-ngfw/) |
