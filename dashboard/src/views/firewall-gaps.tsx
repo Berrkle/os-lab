@@ -58,12 +58,21 @@ function Card({ f, i, hot, setHot }: { f: Finding; i: number; hot: boolean; setH
       </div>
       <h3>{f.title}</h3>
       <p className="fwg-evidence">{f.evidence}</p>
+      {f.instances && f.instances.length > 0 && (
+        <ul className="fwg-inst">
+          {f.instances.slice(0, 3).map((t, n) => <li key={n}>{t}</li>)}
+          {f.instances.length > 3 && !open && <li className="fwg-more-n">+{f.instances.length - 3} more</li>}
+        </ul>
+      )}
       <div className="fwg-src"><Icon size={13} weight="duotone" /> {f.source === "asked" ? "Asked in the group" : "Taught in class"} · {f.ref}</div>
       <button type="button" className="fwg-more" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
-        {open ? "Hide fix" : "How to fix"}
+        {open ? "Hide details" : f.instances && f.instances.length > 3 ? `All ${f.instances.length} · how to fix` : "How to fix"}
       </button>
       <div className="fwg-fold" data-open={open}>
         <div>
+          {f.instances && f.instances.length > 3 && (
+            <ul className="fwg-inst fwg-inst-all">{f.instances.slice(3).map((t, n) => <li key={n}>{t}</li>)}</ul>
+          )}
           <p className="fwg-why">{f.why}</p>
           <p className="fwg-fix"><WrenchIcon size={13} weight="bold" /> {f.fix}</p>
         </div>
@@ -75,6 +84,8 @@ function Card({ f, i, hot, setHot }: { f: Finding; i: number; hot: boolean; setH
 export function GapsTab({ company }: { company: Company }) {
   const audit = auditCompany(company);
   const [hot, setHot] = useState<number | null>(null);
+  const [all, setAll] = useState(false);
+  const shown = all ? audit.findings : audit.findings.slice(0, 10);
   const asked = audit.findings.filter((f) => f.source === "asked").length;
   return (
     <section className="fwg" aria-label="Gaps and missing pieces">
@@ -82,27 +93,27 @@ export function GapsTab({ company }: { company: Company }) {
         <Ring score={audit.score} />
         <div>
           <span className="fw-eyebrow">02 / Gap audit</span>
-          <h2>{audit.total === 0 ? "Nothing missing" : `${audit.total} gaps in this design`}</h2>
+          <h2>{audit.total === 0 ? "Nothing missing" : `${audit.issues} issues across ${audit.total} gaps`}</h2>
           <p>
-            Checked against what was asked in the BGT207 group and taught in the recordings: {audit.checks} checks, top {audit.findings.length} shown, worst first.
+            Checked against what was asked in the BGT207 group and taught in the recordings: {audit.checks} checks run. Every affected branch, firewall and rule is listed, worst first.
           </p>
           <div className="fwg-legend">
             <span><ChatsCircleIcon size={13} weight="duotone" /> {asked} from the brief</span>
-            <span><ChalkboardTeacherIcon size={13} weight="duotone" /> {audit.findings.length - asked} from lectures</span>
+            <span><ChalkboardTeacherIcon size={13} weight="duotone" /> {audit.total - asked} from lectures</span>
           </div>
         </div>
       </div>
 
-      {audit.findings.length > 0 && (
+      {shown.length > 0 && (
         <div className="fwg-matrix" style={{ ["--n" as string]: audit.findings.length }} role="table" aria-label="Which branch each gap touches">
           <div className="fwg-mrow fwg-mhead" role="row">
             <span />
-            {audit.findings.map((_, i) => <span key={i} data-hot={hot === i}>{i + 1}</span>)}
+            {shown.map((_, i) => <span key={i} data-hot={hot === i}>{i + 1}</span>)}
           </div>
           {company.branches.map((b, r) => (
             <div className="fwg-mrow" role="row" key={b.id}>
               <span className="fwg-mname" title={b.name}>{b.name}</span>
-              {audit.findings.map((f, i) => {
+              {shown.map((f, i) => {
                 const hit = f.branches.length === 0 || f.branches.includes(b.id);
                 return (
                   <span
@@ -123,8 +134,13 @@ export function GapsTab({ company }: { company: Company }) {
       )}
 
       <div className="fwg-grid">
-        {audit.findings.map((f, i) => <Card key={f.id} f={f} i={i} hot={hot === i} setHot={setHot} />)}
+        {shown.map((f, i) => <Card key={f.id} f={f} i={i} hot={hot === i} setHot={setHot} />)}
       </div>
+      {audit.findings.length > 10 && (
+        <button type="button" className="fwg-all" onClick={() => setAll((v) => !v)}>
+          {all ? "Show the top 10" : `Show all ${audit.total} gaps`}
+        </button>
+      )}
     </section>
   );
 }
