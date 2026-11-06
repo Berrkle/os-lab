@@ -1,6 +1,6 @@
 # AnadoluNet Technology Holding
 
-> Contributed by **B*** Ö***** ([@Pireburak](https://github.com/Pireburak)) · BGT207 Güvenlik Duvarı Çözümleri · 2026-2027 Güz midterm project.
+> Contributed by `B*** Ö***` ([@Pireburak](https://github.com/Pireburak)) · BGT207 Güvenlik Duvarı Çözümleri · 2026-2027 Güz midterm project.
 > Student names are masked on purpose. Converted to `company.json` from the student's own README and `config/` files; the runnable nftables/tc lab of the original repository is not included here.
 
 ## 1. Scenario: AnadoluNet Technology Holding

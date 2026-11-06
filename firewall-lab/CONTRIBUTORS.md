@@ -13,3 +13,6 @@ profile identifies the contributor.
 | U*** B*** | [@ufuk888](https://github.com/ufuk888) | [Kurumsal Ağ Topolojisi ve Güvenlik Mimarisi](companies/siber-guvenlik-sirketi/) |
 | B*** F*** Y*** | [@bfurkanyildiz](https://github.com/bfurkanyildiz) | [Kurumsal Çok Şubeli Ağ Mimarisi ve NGFW Tasarımı](companies/kurumsal-cok-subeli-ngfw/) |
 | Y*** Y*** | [@yusufiyilmaz](https://github.com/yusufiyilmaz) | [Hayal A.Ş. — Ağ Güvenliği Planlaması](companies/hayal-as-ag-guvenligi/) |
+| H*** A*** K*** | [@frudotz](https://github.com/frudotz) | [K1-FW — Çok Lokasyonlu Kurumsal Ağ ve Güvenlik Duvarı](companies/k1-fw-cok-lokasyonlu-ag/) |
+| A*** M*** K*** | [@RedRiveRR](https://github.com/RedRiveRR) | [Çok Siteli Kurumsal Güvenlik Duvarı Projesi](companies/cok-siteli-kurumsal-guvenlik-duvari/) |
+| D*** P*** | [@denizpekova](https://github.com/denizpekova) | [MT Technology Group](companies/mt-technology-group/) |
