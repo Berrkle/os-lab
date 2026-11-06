@@ -164,6 +164,33 @@
               "note": "IT and staff get web access; without this rule the default deny would cut them off. IoT and servers are not in this rule."
             },
             {
+              "action": "allow",
+              "direction": "forward",
+              "proto": "tcp",
+              "port": "443,445,587,993",
+              "from": "vlan10-it,vlan20-employees",
+              "to": "vlan30-servers",
+              "note": "Staff reach the web, file (445) and e-mail (587, 993) services on the Ankara servers; without this rule the default deny would cut them off."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "proto": "tcp",
+              "port": "443,445,514,587,993",
+              "from": "vpn-peers",
+              "to": "vlan30-servers",
+              "note": "Branches and home workers reach the same shared servers through the VPN, and firewall logs reach the SIEM on 514."
+            },
+            {
+              "action": "allow",
+              "direction": "out",
+              "proto": "tcp",
+              "port": 443,
+              "from": "vlan30-servers",
+              "to": "internet",
+              "note": "Servers download security updates as soon as they are released."
+            },
+            {
               "action": "deny",
               "direction": "in",
               "proto": "any",
@@ -256,7 +283,7 @@
               "vendor": "Palo Alto Networks",
               "throughputGbps": 1.0,
               "priceUsd": 1804,
-              "reason": "Güvenlik çok iyi ama bu büyüklükte bir ofis için pahalı"
+              "reason": "Güvenlik çok iyi. Ama Ankara'dan ayrı bir panelle yönetilmesi gerekir ve lisansları ayrı alınır"
             },
             {
               "product": "pfSense (Netgate 6100)",
@@ -281,9 +308,9 @@
               "direction": "in",
               "proto": "tcp",
               "port": "443,22",
-              "from": "vlan99-management",
+              "from": "vlan99-management,ankara-vlan99-over-vpn",
               "to": "firewall",
-              "note": "Admin screens of the firewall open only from the management VLAN 99, with two-step verification."
+              "note": "Admin screens of the firewall open only from the management VLAN 99 here or in Ankara over the VPN, with two-step verification."
             },
             {
               "action": "deny",
@@ -327,6 +354,15 @@
               "from": "firewall",
               "to": "ankara-hq",
               "note": "The encrypted VPN tunnel to Ankara: without it the branch cannot reach shared servers and its logs cannot reach the SIEM."
+            },
+            {
+              "action": "allow",
+              "direction": "out",
+              "proto": "tcp",
+              "port": "443,445,514,587,993",
+              "from": "firewall,vlan10-it,vlan20-employees",
+              "to": "ankara-servers",
+              "note": "Through the VPN, staff reach the shared Ankara servers (web 443, files 445, e-mail 587 and 993) and the firewall sends its logs to the SIEM (514)."
             },
             {
               "action": "deny",
@@ -445,16 +481,16 @@
               "direction": "in",
               "proto": "tcp",
               "port": "443,22",
-              "from": "vlan99-management",
+              "from": "vlan99-management,ankara-vlan99-over-vpn",
               "to": "firewall",
-              "note": "Admin screens of the firewall open only from the management VLAN 99, with two-step verification."
+              "note": "Admin screens of the firewall open only from the management VLAN 99 here or in Ankara over the VPN, with two-step verification."
             },
             {
               "action": "allow",
               "direction": "out",
               "proto": "udp",
               "port": "500,4500",
-              "from": "vlan20-employees",
+              "from": "firewall",
               "to": "ankara-hq",
               "note": "Personal data of European customers travels to Ankara only through the encrypted VPN (UK GDPR)."
             },
@@ -491,6 +527,15 @@
               "from": "vlan10-it,vlan20-employees",
               "to": "internet",
               "note": "IT and staff get web access; without this rule the default deny would cut them off."
+            },
+            {
+              "action": "allow",
+              "direction": "out",
+              "proto": "tcp",
+              "port": "443,445,514,587,993",
+              "from": "firewall,vlan10-it,vlan20-employees",
+              "to": "ankara-servers",
+              "note": "Through the VPN, staff reach the shared Ankara servers (web 443, files 445, e-mail 587 and 993) and the firewall sends its logs to the SIEM (514)."
             },
             {
               "action": "deny",
@@ -629,9 +674,9 @@
               "direction": "in",
               "proto": "tcp",
               "port": "443,22",
-              "from": "vlan99-management",
+              "from": "vlan99-management,ankara-vlan99-over-vpn",
               "to": "firewall",
-              "note": "Admin screens of the firewall open only from the management VLAN 99, with two-step verification."
+              "note": "Admin screens of the firewall open only from the management VLAN 99 here or in Ankara over the VPN, with two-step verification."
             },
             {
               "action": "allow",
@@ -699,6 +744,42 @@
               "from": "firewall",
               "to": "ankara-hq",
               "note": "The encrypted VPN tunnel to Ankara: without it the branch cannot reach shared servers and its logs cannot reach the SIEM."
+            },
+            {
+              "action": "allow",
+              "direction": "out",
+              "proto": "tcp",
+              "port": "443,445,514,587,993",
+              "from": "firewall,vlan10-it,vlan20-staff,vlan30-faculty",
+              "to": "ankara-servers",
+              "note": "Through the VPN, staff reach the shared Ankara servers (web 443, files 445, e-mail 587 and 993) and the firewall sends its logs to the SIEM (514)."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "proto": "tcp",
+              "port": "80,443",
+              "from": "vlan10-it,vlan20-staff,vlan30-faculty,vlan50-labs",
+              "to": "vlan60-servers",
+              "note": "Staff, faculty and labs reach the grade and e-learning system; the rule above covers students only."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "proto": "tcp",
+              "port": 443,
+              "from": "ankara-vpn",
+              "to": "vlan60-servers",
+              "note": "Staff working from outside reach the grade and e-learning system only through the VPN."
+            },
+            {
+              "action": "allow",
+              "direction": "out",
+              "proto": "tcp",
+              "port": 443,
+              "from": "vlan60-servers",
+              "to": "internet",
+              "note": "Servers download security updates as soon as they are released."
             },
             {
               "action": "deny",
@@ -818,9 +899,9 @@
               "direction": "in",
               "proto": "tcp",
               "port": "443,22",
-              "from": "vlan99-management",
+              "from": "vlan99-management,ankara-vlan99-over-vpn",
               "to": "firewall",
-              "note": "Admin screens of the firewall open only from the management VLAN 99, with two-step verification."
+              "note": "Admin screens of the firewall open only from the management VLAN 99 here or in Ankara over the VPN, with two-step verification."
             },
             {
               "action": "allow",
@@ -844,7 +925,7 @@
               "direction": "out",
               "proto": "tcp",
               "port": "80,443",
-              "from": "vlan10-it,vlan20-developers",
+              "from": "vlan10-it,vlan20-developers,vlan30-test-servers",
               "to": "internet",
               "note": "Web and package downloads for developers. The DLP profile on this rule stops source code being uploaded anywhere except the company GitHub account."
             },
@@ -856,6 +937,24 @@
               "from": "firewall",
               "to": "ankara-hq",
               "note": "The encrypted VPN tunnel to Ankara: without it the branch cannot reach shared servers and its logs cannot reach the SIEM."
+            },
+            {
+              "action": "allow",
+              "direction": "out",
+              "proto": "tcp",
+              "port": "443,445,514,587,993",
+              "from": "firewall,vlan10-it,vlan20-developers",
+              "to": "ankara-servers",
+              "note": "Through the VPN, staff reach the shared Ankara servers (web 443, files 445, e-mail 587 and 993) and the firewall sends its logs to the SIEM (514)."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "proto": "tcp",
+              "port": "22,443",
+              "from": "vlan20-developers",
+              "to": "vlan30-test-servers",
+              "note": "Developers reach their test servers; without this rule the default deny would cut them off."
             },
             {
               "action": "deny",
@@ -975,9 +1074,9 @@
               "direction": "in",
               "proto": "tcp",
               "port": "443,22",
-              "from": "vlan99-management",
+              "from": "vlan99-management,ankara-vlan99-over-vpn",
               "to": "firewall",
-              "note": "Admin screens of the firewall open only from the management VLAN 99, with two-step verification."
+              "note": "Admin screens of the firewall open only from the management VLAN 99 here or in Ankara over the VPN, with two-step verification."
             },
             {
               "action": "deny",
@@ -1007,6 +1106,24 @@
               "note": "The encrypted VPN tunnel to Ankara: without it the branch cannot reach shared servers and its logs cannot reach the SIEM."
             },
             {
+              "action": "allow",
+              "direction": "out",
+              "proto": "tcp",
+              "port": "443,445,514,587,993",
+              "from": "firewall,vlan10-it,vlan20-researchers",
+              "to": "ankara-servers",
+              "note": "Through the VPN, staff reach the shared Ankara servers (web 443, files 445, e-mail 587 and 993) and the firewall sends its logs to the SIEM (514)."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "proto": "tcp",
+              "port": "443,445",
+              "from": "vlan20-researchers",
+              "to": "vlan30-rnd-servers",
+              "note": "Researchers reach project files on the R&D servers; without this rule the default deny would cut them off."
+            },
+            {
               "action": "deny",
               "direction": "in",
               "proto": "any",
@@ -1022,7 +1139,7 @@
     "note": "Branches connect to the Ankara hub by encrypted VPN; home workers use VPN with two-step verification; firewall admin screens are reachable only from the management VLAN."
   },
   "monitoring": {
-    "siem": "Wazuh SIEM in Ankara (any vendor's logs, including the R&D Check Point), Zabbix for line and device health, GLPI ticketing so no incident is forgotten. Log retention: firewall and security logs are kept for 1 year, the last 90 days online; academic internet access logs are kept at least 2 years with a timestamp (Law 5651); London logs hold as little personal data as possible (UK GDPR).",
+    "siem": "Wazuh SIEM in Ankara (any vendor's logs, including the R&D Check Point), Zabbix for line and device health, GLPI ticketing so no incident is forgotten. Log retention: firewall and security logs are kept for 1 year, the last 90 days online; academic and Istanbul guest Wi-Fi internet access logs are kept at least 2 years with a timestamp (Law 5651); London logs hold as little personal data as possible (UK GDPR). Turkish sites follow KVKK: camera recordings and personal data are kept only as long as needed.",
     "owner": "The NOC job belongs to the Ankara IT team; the SOC (4 L1, 2 L2, 1 L3 and a SOC manager) owns security alerts. The Ankara IT team owns patching and backups: Fortinet and Check Point update notices are followed automatically and a security update is installed as soon as it is released; on top of that, the firmware of every device is checked every 30 days; every firewall config is exported to the Ankara backup server each night and after every change, and a restore is tested every 3 months.",
     "alertSink": "SIEM alerts to the SOC by phone, e-mail and message; weekday 08:00-24:00 in-house SOC, nights and weekends an outsourced security firm, on-call person phoned for critical alerts.",
     "appVsSecurity": "NOC watches whether the network works; SOC watches attacks; handling follows the NIST four-phase incident process."
@@ -1033,13 +1150,13 @@
       "id": "CVE-2026-24858",
       "product": "FortiOS (all FortiGate branches)",
       "status": "patched",
-      "note": "Temporary: admin login through FortiCloud SSO stays off, and admin screens open only from VLAN 99. Permanent: FortiOS is updated to the fixed version in the Fortinet advisory as soon as it is released."
+      "note": "Temporary: admin login through FortiCloud SSO stays off, and admin screens open only from VLAN 99. Permanent: FortiOS is upgraded to a fixed version (7.6.6, 7.4.11, 7.2.13, 7.0.19 or above, Fortinet advisory FG-IR-26-060)."
     },
     {
       "id": "CVE-2024-24919",
       "product": "Check Point Quantum Spark 1800 (R&D)",
       "status": "patched",
-      "note": "Temporary: no password-only VPN accounts, two-step verification on every login. Permanent: the Check Point hotfix for Quantum Spark is installed before go-live."
+      "note": "Temporary: Remote Access VPN and Mobile Access stay off on this gateway, because the flaw needs one of them. Permanent: the Check Point security fix for Quantum Spark is installed."
     }
   ]
 }

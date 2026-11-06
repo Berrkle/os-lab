@@ -21,7 +21,7 @@ Hayali bir şirket kuruyoruz ve bu şirketin tüm şubelerine adım adım güven
 - [Kural setleri ve işletme](#kural-setleri-ve-işletme)
 - [Durum](#durum)
 
-Terimlerin açıklamaları için: [SOZLUK.md](SOZLUK.md)
+Terimlerin açıklamaları için: [SOZLUK.md](#sözlük)
 
 ## Güvenlik duvarı nedir?
 
@@ -240,7 +240,7 @@ FortiGate 200F   █████████████████████
 | Yazılım | 1 Gbps | FortiGate 90G | 2,2 Gbps | 1 |
 | Ar-Ge | 500 Mbps | Check Point Quantum Spark 1800 | 2 Gbps | 1 |
 
-Her şubenin 5 adayı kendi klasöründeki `top5-firewall.md` dosyasında. Hızların kaynakları [KAYNAKLAR.md](KAYNAKLAR.md) dosyasında.
+Her şubenin 5 adayı kendi klasöründeki `top5-firewall.md` dosyasında. Hızların kaynakları [KAYNAKLAR.md](#kaynaklar) dosyasında.
 
 ### Neden çoğunlukla FortiGate?
 
@@ -259,7 +259,7 @@ Her şubenin 5 adayı kendi klasöründeki `top5-firewall.md` dosyasında. Hızl
 **Neden önemli?** Kurulum rastgele yapılırsa bir şey unutulur ve açık kalır. Belli bir sırayla gidince her şey kontrol edilmiş olur.
 
 İki yerde anlattık:
-- **[KURULUM.md](KURULUM.md):** Her şubede aynı olan 13 adım ve şubelerin kurulum sırası.
+- **[KURULUM.md](#güvenlik-duvarı-kurulumu):** Her şubede aynı olan 13 adım ve şubelerin kurulum sırası.
 - **Her şubenin `kurulum-adimlari.md` dosyası:** O şubenin bölümleri (VLAN), şubeye özel adımlar ve testler.
 
 **Kurulum sırası:** Ankara → İstanbul → Londra → Yazılım → Ar-Ge → Akademik. Önce merkez kurulur, çünkü diğer şubeler ona bağlanacak. En büyük ve en riskli şube (Akademik) en sona, yarıyıl tatiline bırakılır.
@@ -275,13 +275,13 @@ Her şubenin 5 adayı kendi klasöründeki `top5-firewall.md` dosyasında. Hızl
 
 **Neden önemli?** Güvenlik duvarı saldırıyı engeller ama bunu birinin görmesi gerekir. Kimse bakmazsa saldırgan aylarca denemeye devam edebilir.
 
-Ayrıntılar [IZLEME.md](IZLEME.md) dosyasında. Özetle:
+Ayrıntılar [IZLEME.md](#i̇zleme-monitoring) dosyasında. Özetle:
 
 - **Sistematik kısım:** Bütün güvenlik duvarlarının kayıtları Ankara'da tek bir yerde (SIEM) toplanır. Yazılım şüpheli bir şey görünce alarm verir. Bazı alarmlara otomatik müdahale edilir.
 - **İnsan kısmı:** Alarmlara güvenlik ekibi (SOC) bakar. Önce L1 analist inceler, ciddiyse L2'ye iletir. Gündüz şirketin kendi ekibi, gece dışarıdan bir güvenlik firması izler.
 - **Profesyonel dünyada:** Olaylar NIST'in 4 aşamasıyla yönetilir: hazırlık, tespit, durdurma, ders çıkarma.
 
-Her şubede neyi, neden ve nasıl koruduğumuzun toplu hâli: [RISKLER.md](RISKLER.md)
+Her şubede neyi, neden ve nasıl koruduğumuzun toplu hâli: [RISKLER.md](#riskler)
 
 ## Kural setleri ve işletme
 
@@ -294,8 +294,10 @@ Güvenlik duvarı kuralları yukarıdan aşağı okur, **eşleşen ilk kural** u
 1. **Temel servisler:** DHCP, DNS ve NTP açılır. Açılmazsa cihazlar IP alamaz, ağ durur.
 2. **Yönetim:** Ayar ekranı sadece yönetim bölümünden (VLAN 99) açılır.
 3. **Yasaklar:** Misafir şirket ağına, öğrenci veritabanına, test sunucusu gerçek sistemlere giremez.
-4. **İzinler:** Çalışanların internet çıkışı ve Ankara'ya VPN. Son kural her şeyi kapattığı için bu izinler tek tek yazılır.
+4. **İzinler:** Çalışanların kendi sunucuları, Ankara'daki ortak sunucular, internet çıkışı ve Ankara'ya VPN. Son kural her şeyi kapattığı için bu izinler tek tek yazılır.
 5. **Son kural (default deny):** Yukarıda izin verilmeyen her şey engellenir ve kaydedilir.
+
+**Kurallardaki portlar ne?** 443 web, 445 dosya paylaşımı, 514 güvenlik duvarı kayıtları, 587 ve 993 e-posta, 22 test sunucularına bağlantı, 500 ve 4500 VPN.
 
 **Akademik şubede sıra neden değişti?** Torrent yasağı, öğrenci hız sınırının altındaydı. İlk eşleşen kural uygulandığı için torrent hız sınırı kuralına takılıp geçiyordu. Yasağı üste aldık.
 
@@ -319,9 +321,10 @@ Ankara ve Akademik şubede iki cihaz vardır (HA, aktif-pasif). Biri bozulursa d
 
 | Kayıt türü | Süre | Neden? |
 |------------|------|--------|
-| Akademik şube internet erişim kayıtları | En az 2 yıl, zaman damgalı | 5651 sayılı kanun |
+| Akademik şube ve İstanbul misafir Wi-Fi'ı internet erişim kayıtları | En az 2 yıl, zaman damgalı | 5651 sayılı kanun |
 | Güvenlik duvarı ve güvenlik olayları | 1 yıl (son 90 gün hızlı erişilebilir) | Olay araştırması ve denetim |
 | Londra kayıtları | Gerektiği kadar, en az kişisel veriyle | UK GDPR |
+| Kamera kayıtları ve kişisel veriler | Gerektiği kadar | KVKK |
 
 ### Yedek ve güncelleme
 
@@ -334,8 +337,8 @@ Bu işlerin sorumlusu Ankara BT ekibidir.
 
 | CVE | Etkilenen | Geçici önlem | Kalıcı çözüm |
 |-----|-----------|--------------|--------------|
-| CVE-2026-24858 | FortiGate şubeleri | FortiCloud ile yönetici girişi kapalı, ayar ekranı sadece VLAN 99'dan açılır | Fortinet'in düzelttiği sürüm çıkar çıkmaz yüklenir |
-| CVE-2024-24919 | Ar-Ge Check Point | Sadece şifreyle VPN hesabı yok, her girişte iki adımlı doğrulama var | Check Point yaması kurulumdan önce yüklenir |
+| CVE-2026-24858 | FortiGate şubeleri | FortiCloud ile yönetici girişi kapalı, ayar ekranı sadece VLAN 99'dan açılır | FortiOS düzeltilmiş sürüme yükseltilir (7.6.6, 7.4.11, 7.2.13, 7.0.19 veya üstü) |
+| CVE-2024-24919 | Ar-Ge Check Point | Remote Access VPN ve Mobile Access kapalı, çünkü açık ancak bunlardan biri çalışırken kullanılabiliyor | Quantum Spark için Check Point yaması yüklenir |
 
 ### Fiyatlar
 
@@ -654,7 +657,7 @@ Her şubede **neyi koruduğumuzu**, **neyden koruduğumuzu** ve **nasıl korudu�
 | **Ar-Ge** | Ar-Ge bilgisayarları | Zararlı dosya indirilmesi | Her dosya önce kum havuzunda deneniyor |
 | **Hepsi** | Kamera, yazıcı gibi cihazlar | Bu cihazlar hacklenip çalışanlara ulaşılması | IoT cihazları ayrı bölümde (VLAN 80), internete çıkamıyor |
 | **Hepsi** | Güvenlik duvarının kendisi | Saldırganın güvenlik duvarını ele geçirmesi | Fabrika şifresi değişti, iki adımlı doğrulama, ayar ekranı sadece içeriden açılıyor |
-| **Hepsi** | Bütün şirket | Bir saldırının kimse fark etmeden sürmesi | Kayıtlar merkezde toplanıyor, SOC ekibi 7/24 izliyor ([IZLEME.md](IZLEME.md)) |
+| **Hepsi** | Bütün şirket | Bir saldırının kimse fark etmeden sürmesi | Kayıtlar merkezde toplanıyor, SOC ekibi 7/24 izliyor ([IZLEME.md](#i̇zleme-monitoring)) |
 
 
 ---
@@ -921,7 +924,7 @@ FortiGate 200F      ████████████████████
 
 # Ankara Ofisi – Kurulum
 
-Ortak adımlar: [KURULUM.md](../KURULUM.md). Burada sadece Ankara'ya özel olanlar var.
+Ortak adımlar: [KURULUM.md](#güvenlik-duvarı-kurulumu). Burada sadece Ankara'ya özel olanlar var.
 
 **Cihaz:** FortiGate 200F × 2 (biri çalışır, biri bekler)
 **İsimler:** `FG-ANKARA-01`, `FG-ANKARA-02`
@@ -1003,7 +1006,7 @@ Satış ve operasyon ofisi. Müşterilerle burada çalışılır.
 | 1 | **FortiGate 100F** | 1 Gbps | Ankara'daki FortiGate ile aynı panelden yönetilir. Misafir Wi-Fi'ı ayrı ağa almak kolay |
 | 2 | Sophos XGS 2100 | 1,25 Gbps | Uygun fiyatlı, arayüzü kolay. Ama Ankara'dan ayrı bir panelle yönetilmesi gerekir |
 | 3 | Check Point Quantum Spark 1600 | 1,5 Gbps | Küçük ofisler için iyi. Lisans maliyeti yüksek |
-| 4 | Palo Alto PA-440 | ~1 Gbps | Güvenlik çok iyi ama bu büyüklükte bir ofis için pahalı |
+| 4 | Palo Alto PA-440 | ~1 Gbps | Güvenlik çok iyi. Ama Ankara'dan ayrı bir panelle yönetilmesi gerekir ve lisansları ayrı alınır |
 | 5 | pfSense (Netgate 6100) | ~1 Gbps (IPS açıkken, kurallara göre değişir) | Ücretsiz yazılım, ucuz donanım. Ama üretici desteği sınırlı ve BT ekibinin bilgisi önemli |
 
 ## Bant genişliği karşılaştırması
@@ -1024,7 +1027,7 @@ FortiGate 100F      ████████████████████
 
 # İstanbul Ofisi – Kurulum
 
-Ortak adımlar: [KURULUM.md](../KURULUM.md). Burada sadece İstanbul'a özel olanlar var.
+Ortak adımlar: [KURULUM.md](#güvenlik-duvarı-kurulumu). Burada sadece İstanbul'a özel olanlar var.
 
 **Cihaz:** FortiGate 100F × 1
 **İsim:** `FG-ISTANBUL-01`
@@ -1123,7 +1126,7 @@ FortiGate 60F       ████████████████████
 
 # Londra Ofisi – Kurulum
 
-Ortak adımlar: [KURULUM.md](../KURULUM.md). Burada sadece Londra'ya özel olanlar var.
+Ortak adımlar: [KURULUM.md](#güvenlik-duvarı-kurulumu). Burada sadece Londra'ya özel olanlar var.
 
 **Cihaz:** FortiGate 60F × 1
 **İsim:** `FG-LONDRA-01`
@@ -1234,7 +1237,7 @@ FortiGate 600F      ████████████████████
 
 # Akademik Şube – Kurulum
 
-Ortak adımlar: [KURULUM.md](../KURULUM.md). Burada sadece Akademik şubeye özel olanlar var.
+Ortak adımlar: [KURULUM.md](#güvenlik-duvarı-kurulumu). Burada sadece Akademik şubeye özel olanlar var.
 
 **Cihaz:** FortiGate 600F × 2 (biri çalışır, biri bekler)
 **İsimler:** `FG-AKADEMIK-01`, `FG-AKADEMIK-02`
@@ -1343,7 +1346,7 @@ FortiGate 90G       ████████████████████
 
 # Yazılım Ekibi – Kurulum
 
-Ortak adımlar: [KURULUM.md](../KURULUM.md). Burada sadece Yazılım ekibine özel olanlar var.
+Ortak adımlar: [KURULUM.md](#güvenlik-duvarı-kurulumu). Burada sadece Yazılım ekibine özel olanlar var.
 
 **Cihaz:** FortiGate 90G × 1
 **İsim:** `FG-YAZILIM-01`
@@ -1445,7 +1448,7 @@ Spark 1800          ████████████████            
 
 # Ar-Ge Ekibi – Kurulum
 
-Ortak adımlar: [KURULUM.md](../KURULUM.md). Burada sadece Ar-Ge'ye özel olanlar var.
+Ortak adımlar: [KURULUM.md](#güvenlik-duvarı-kurulumu). Burada sadece Ar-Ge'ye özel olanlar var.
 
 **Cihaz:** Check Point Quantum Spark 1800 × 1
 **İsim:** `CP-ARGE-01`
