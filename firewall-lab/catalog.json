@@ -1,10 +1,10 @@
 {
   "generatedBy": "firewall-lab/scripts/catalog.py",
   "summary": {
-    "companies": 3,
-    "branches": 9,
-    "firewalls": 12,
-    "rules": 62,
+    "companies": 4,
+    "branches": 14,
+    "firewalls": 17,
+    "rules": 85,
     "priceUsd": {
       "min": 700,
       "max": 12000,
@@ -12,12 +12,14 @@
     },
     "chosenByVendor": {
       "Fortinet": 8,
+      "Netfilter project": 5,
       "Palo Alto Networks": 1,
       "Cloudflare": 1,
       "WatchGuard": 1,
       "Netgate": 1
     },
     "chosenByProduct": {
+      "Netfilter project nftables on Kali Linux (central router/firewall)": 5,
       "Fortinet FortiGate 60F": 3,
       "Fortinet FortiGate 100F": 1,
       "Fortinet FortiGate 600F": 1,
@@ -30,12 +32,13 @@
       "Netgate pfSense Plus (Netgate 4200)": 1
     },
     "vendorsConsidered": {
-      "Fortinet": 11,
-      "Sophos": 8,
-      "Netgate": 6,
+      "Fortinet": 16,
+      "Sophos": 13,
+      "Netgate": 11,
+      "Deciso": 10,
       "Check Point": 6,
-      "Deciso": 5,
       "Palo Alto Networks": 5,
+      "Netfilter project": 5,
       "WatchGuard": 3,
       "Cisco": 3,
       "Palo Alto": 2,
@@ -585,6 +588,251 @@
         {
           "product": "Quantum Spark 1600 / 1800",
           "vendor": "Check Point",
+          "throughputGbps": null,
+          "priceUsd": null
+        }
+      ]
+    },
+    {
+      "company": "Multi-Branch nftables + QoS Lab",
+      "companySlug": "multi-branch-nftables-lab",
+      "sector": "Education / Software",
+      "author": "A*** E***",
+      "branch": "Ankara Office (central firewall)",
+      "branchId": "ankara-office",
+      "branchRole": "headquarters",
+      "location": "Ankara, Turkey",
+      "segment": "perimeter",
+      "product": "nftables on Kali Linux (central router/firewall)",
+      "vendor": "Netfilter project",
+      "throughputGbps": null,
+      "priceUsd": null,
+      "ruleCount": 11,
+      "actions": {
+        "allow": 8,
+        "deny": 3,
+        "reject": 0,
+        "limit": 0
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "OPNsense",
+          "vendor": "Deciso",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "pfSense CE",
+          "vendor": "Netgate",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "FortiGate 60F",
+          "vendor": "Fortinet",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Sophos XGS 116",
+          "vendor": "Sophos",
+          "throughputGbps": null,
+          "priceUsd": null
+        }
+      ]
+    },
+    {
+      "company": "Multi-Branch nftables + QoS Lab",
+      "companySlug": "multi-branch-nftables-lab",
+      "sector": "Education / Software",
+      "author": "A*** E***",
+      "branch": "Istanbul Office",
+      "branchId": "istanbul-office",
+      "branchRole": "branch",
+      "location": "Istanbul, Turkey",
+      "segment": "perimeter",
+      "product": "nftables on Kali Linux (central router/firewall)",
+      "vendor": "Netfilter project",
+      "throughputGbps": null,
+      "priceUsd": null,
+      "ruleCount": 3,
+      "actions": {
+        "allow": 2,
+        "deny": 1,
+        "reject": 0,
+        "limit": 0
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "OPNsense",
+          "vendor": "Deciso",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "pfSense CE",
+          "vendor": "Netgate",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "FortiGate 60F",
+          "vendor": "Fortinet",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Sophos XGS 116",
+          "vendor": "Sophos",
+          "throughputGbps": null,
+          "priceUsd": null
+        }
+      ]
+    },
+    {
+      "company": "Multi-Branch nftables + QoS Lab",
+      "companySlug": "multi-branch-nftables-lab",
+      "sector": "Education / Software",
+      "author": "A*** E***",
+      "branch": "London Office",
+      "branchId": "london-office",
+      "branchRole": "branch",
+      "location": "London, United Kingdom",
+      "segment": "perimeter",
+      "product": "nftables on Kali Linux (central router/firewall)",
+      "vendor": "Netfilter project",
+      "throughputGbps": null,
+      "priceUsd": null,
+      "ruleCount": 3,
+      "actions": {
+        "allow": 2,
+        "deny": 1,
+        "reject": 0,
+        "limit": 0
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "OPNsense",
+          "vendor": "Deciso",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "pfSense CE",
+          "vendor": "Netgate",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "FortiGate 60F",
+          "vendor": "Fortinet",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Sophos XGS 116",
+          "vendor": "Sophos",
+          "throughputGbps": null,
+          "priceUsd": null
+        }
+      ]
+    },
+    {
+      "company": "Multi-Branch nftables + QoS Lab",
+      "companySlug": "multi-branch-nftables-lab",
+      "sector": "Education / Software",
+      "author": "A*** E***",
+      "branch": "Academic Branch",
+      "branchId": "academic-branch",
+      "branchRole": "campus",
+      "location": "Ankara, Turkey",
+      "segment": "perimeter",
+      "product": "nftables on Kali Linux (central router/firewall)",
+      "vendor": "Netfilter project",
+      "throughputGbps": null,
+      "priceUsd": null,
+      "ruleCount": 3,
+      "actions": {
+        "allow": 1,
+        "deny": 2,
+        "reject": 0,
+        "limit": 0
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "OPNsense",
+          "vendor": "Deciso",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "pfSense CE",
+          "vendor": "Netgate",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "FortiGate 60F",
+          "vendor": "Fortinet",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Sophos XGS 116",
+          "vendor": "Sophos",
+          "throughputGbps": null,
+          "priceUsd": null
+        }
+      ]
+    },
+    {
+      "company": "Multi-Branch nftables + QoS Lab",
+      "companySlug": "multi-branch-nftables-lab",
+      "sector": "Education / Software",
+      "author": "A*** E***",
+      "branch": "Software Team",
+      "branchId": "software-team",
+      "branchRole": "branch",
+      "location": "Ankara, Turkey",
+      "segment": "perimeter",
+      "product": "nftables on Kali Linux (central router/firewall)",
+      "vendor": "Netfilter project",
+      "throughputGbps": null,
+      "priceUsd": null,
+      "ruleCount": 3,
+      "actions": {
+        "allow": 2,
+        "deny": 1,
+        "reject": 0,
+        "limit": 0
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "OPNsense",
+          "vendor": "Deciso",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "pfSense CE",
+          "vendor": "Netgate",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "FortiGate 60F",
+          "vendor": "Fortinet",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Sophos XGS 116",
+          "vendor": "Sophos",
           "throughputGbps": null,
           "priceUsd": null
         }
