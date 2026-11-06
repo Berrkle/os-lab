@@ -1,21 +1,22 @@
 {
   "generatedBy": "firewall-lab/scripts/catalog.py",
   "summary": {
-    "companies": 12,
-    "branches": 48,
-    "firewalls": 52,
-    "rules": 538,
+    "companies": 13,
+    "branches": 52,
+    "firewalls": 58,
+    "rules": 913,
     "priceUsd": {
-      "min": 700,
+      "min": 0,
       "max": 205357,
-      "total": 439026
+      "total": 485756
     },
     "chosenByVendor": {
-      "Fortinet": 35,
+      "Fortinet": 39,
       "Netgate": 5,
       "Netfilter project": 5,
       "Palo Alto Networks": 3,
       "Cloudflare": 2,
+      "Açık kaynak": 2,
       "WatchGuard": 1,
       "Check Point": 1
     },
@@ -26,6 +27,7 @@
       "Fortinet FortiGate 100F": 3,
       "Fortinet FortiGate 200F": 3,
       "Fortinet FortiGate 600F": 2,
+      "Açık kaynak ModSecurity + OWASP Core Rule Set (Nginx, iki sunucu, aktif-pasif)": 2,
       "Fortinet FortiGate 200F (HA)": 2,
       "Fortinet Fortinet FortiGate 200F": 2,
       "Palo Alto Networks PA-3400 series (HA)": 1,
@@ -34,6 +36,10 @@
       "Fortinet FortiGate 1800F class (HA)": 1,
       "Fortinet FortiGate 100F class": 1,
       "WatchGuard Firebox T-series": 1,
+      "Fortinet FortiGate 200G": 1,
+      "Fortinet FortiGate 120G": 1,
+      "Fortinet FortiGate 70G": 1,
+      "Fortinet FortiGate 900G": 1,
       "Fortinet FortiGate 80F (HA çifti, aktif-pasif)": 1,
       "Fortinet FortiGate 200G (HA çifti, aktif-pasif)": 1,
       "Cloudflare Cloudflare Business (WAF + DDoS + Bot) — 3 alan adı": 1,
@@ -55,22 +61,24 @@
       "Fortinet FortiGate 80F": 1
     },
     "vendorsConsidered": {
-      "Fortinet": 57,
-      "Palo Alto Networks": 39,
-      "Check Point": 34,
-      "Sophos": 32,
-      "Cisco": 25,
+      "Fortinet": 63,
+      "Palo Alto Networks": 43,
+      "Check Point": 38,
+      "Sophos": 36,
+      "Cisco": 29,
       "Netgate": 22,
       "Deciso": 18,
       "Netfilter project": 5,
       "WatchGuard": 4,
+      "Cloudflare": 4,
+      "F5": 4,
       "Juniper": 4,
       "SonicWall": 3,
       "Palo Alto": 2,
       "MikroTik": 2,
       "Ubiquiti": 2,
-      "Cloudflare": 2,
-      "F5": 2,
+      "Açık kaynak": 2,
+      "Barracuda": 2,
       "Netgate / Deciso": 1,
       "Amazon": 1,
       "Akamai": 1,
@@ -617,6 +625,300 @@
           "vendor": "Check Point",
           "throughputGbps": null,
           "priceUsd": null
+        }
+      ]
+    },
+    {
+      "company": "Atlas Holding",
+      "companySlug": "atlas-holding",
+      "sector": "Education",
+      "author": "İ*** Y***",
+      "branch": "İstanbul Genel Merkez",
+      "branchId": "istanbul",
+      "branchRole": "headquarters",
+      "location": "İstanbul, TR",
+      "segment": "perimeter",
+      "product": "FortiGate 200G",
+      "vendor": "Fortinet",
+      "throughputGbps": 6,
+      "priceUsd": 8920,
+      "ruleCount": 145,
+      "actions": {
+        "allow": 135,
+        "deny": 6,
+        "reject": 1,
+        "limit": 3
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "PA-3410",
+          "vendor": "Palo Alto Networks",
+          "throughputGbps": 7.5,
+          "priceUsd": 25140
+        },
+        {
+          "product": "Force 3950",
+          "vendor": "Check Point",
+          "throughputGbps": 5.5,
+          "priceUsd": null
+        },
+        {
+          "product": "Firepower 1150",
+          "vendor": "Cisco",
+          "throughputGbps": 4.9,
+          "priceUsd": 7830
+        },
+        {
+          "product": "XGS 2300",
+          "vendor": "Sophos",
+          "throughputGbps": 5.9,
+          "priceUsd": 4290
+        }
+      ]
+    },
+    {
+      "company": "Atlas Holding",
+      "companySlug": "atlas-holding",
+      "sector": "Education",
+      "author": "İ*** Y***",
+      "branch": "İstanbul Genel Merkez",
+      "branchId": "istanbul",
+      "branchRole": "headquarters",
+      "location": "İstanbul, TR",
+      "segment": "dmz-waf",
+      "product": "ModSecurity + OWASP Core Rule Set (Nginx, iki sunucu, aktif-pasif)",
+      "vendor": "Açık kaynak",
+      "throughputGbps": null,
+      "priceUsd": 0,
+      "ruleCount": 4,
+      "actions": {
+        "allow": 2,
+        "deny": 1,
+        "reject": 0,
+        "limit": 1
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "Cloudflare WAF (Business planı, yıllık)",
+          "vendor": "Cloudflare",
+          "throughputGbps": null,
+          "priceUsd": 2400
+        },
+        {
+          "product": "FortiWeb 400F",
+          "vendor": "Fortinet",
+          "throughputGbps": 0.5,
+          "priceUsd": 22400
+        },
+        {
+          "product": "Barracuda WAF 660",
+          "vendor": "Barracuda",
+          "throughputGbps": null,
+          "priceUsd": 22990
+        },
+        {
+          "product": "F5 BIG-IP Advanced WAF i2800",
+          "vendor": "F5",
+          "throughputGbps": null,
+          "priceUsd": 46075
+        }
+      ]
+    },
+    {
+      "company": "Atlas Holding",
+      "companySlug": "atlas-holding",
+      "sector": "Education",
+      "author": "İ*** Y***",
+      "branch": "İzmir Ofisi",
+      "branchId": "izmir",
+      "branchRole": "branch",
+      "location": "İzmir, TR",
+      "segment": "perimeter",
+      "product": "FortiGate 120G",
+      "vendor": "Fortinet",
+      "throughputGbps": 2.8,
+      "priceUsd": 4280,
+      "ruleCount": 60,
+      "actions": {
+        "allow": 53,
+        "deny": 6,
+        "reject": 1,
+        "limit": 0
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "PA-460",
+          "vendor": "Palo Alto Networks",
+          "throughputGbps": 2.1,
+          "priceUsd": 4750
+        },
+        {
+          "product": "Force 3920",
+          "vendor": "Check Point",
+          "throughputGbps": 3.2,
+          "priceUsd": null
+        },
+        {
+          "product": "Firepower 1140",
+          "vendor": "Cisco",
+          "throughputGbps": 3.3,
+          "priceUsd": 2860
+        },
+        {
+          "product": "XGS 2100",
+          "vendor": "Sophos",
+          "throughputGbps": 5.6,
+          "priceUsd": 2290
+        }
+      ]
+    },
+    {
+      "company": "Atlas Holding",
+      "companySlug": "atlas-holding",
+      "sector": "Education",
+      "author": "İ*** Y***",
+      "branch": "Amsterdam Ofisi",
+      "branchId": "amsterdam",
+      "branchRole": "branch",
+      "location": "Amsterdam, NL",
+      "segment": "perimeter",
+      "product": "FortiGate 70G",
+      "vendor": "Fortinet",
+      "throughputGbps": 1.3,
+      "priceUsd": 1210,
+      "ruleCount": 67,
+      "actions": {
+        "allow": 45,
+        "deny": 22,
+        "reject": 0,
+        "limit": 0
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "PA-410",
+          "vendor": "Palo Alto Networks",
+          "throughputGbps": 0.8,
+          "priceUsd": 850
+        },
+        {
+          "product": "Spark 1600",
+          "vendor": "Check Point",
+          "throughputGbps": 1.5,
+          "priceUsd": null
+        },
+        {
+          "product": "Firepower 1010",
+          "vendor": "Cisco",
+          "throughputGbps": 0.88,
+          "priceUsd": 1070
+        },
+        {
+          "product": "XGS 88",
+          "vendor": "Sophos",
+          "throughputGbps": 2,
+          "priceUsd": 640
+        }
+      ]
+    },
+    {
+      "company": "Atlas Holding",
+      "companySlug": "atlas-holding",
+      "sector": "Education",
+      "author": "İ*** Y***",
+      "branch": "Ankara Akademik Şube",
+      "branchId": "ankara-akademik",
+      "branchRole": "campus",
+      "location": "Ankara, TR",
+      "segment": "perimeter",
+      "product": "FortiGate 900G",
+      "vendor": "Fortinet",
+      "throughputGbps": 30,
+      "priceUsd": 32320,
+      "ruleCount": 95,
+      "actions": {
+        "allow": 85,
+        "deny": 8,
+        "reject": 1,
+        "limit": 1
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "PA-3440",
+          "vendor": "Palo Alto Networks",
+          "throughputGbps": 12.8,
+          "priceUsd": 64040
+        },
+        {
+          "product": "Force 9300",
+          "vendor": "Check Point",
+          "throughputGbps": 10.5,
+          "priceUsd": null
+        },
+        {
+          "product": "Secure Firewall 3110",
+          "vendor": "Cisco",
+          "throughputGbps": 17,
+          "priceUsd": 23740
+        },
+        {
+          "product": "XGS 3300",
+          "vendor": "Sophos",
+          "throughputGbps": 12,
+          "priceUsd": 6700
+        }
+      ]
+    },
+    {
+      "company": "Atlas Holding",
+      "companySlug": "atlas-holding",
+      "sector": "Education",
+      "author": "İ*** Y***",
+      "branch": "Ankara Akademik Şube",
+      "branchId": "ankara-akademik",
+      "branchRole": "campus",
+      "location": "Ankara, TR",
+      "segment": "dmz-waf",
+      "product": "ModSecurity + OWASP Core Rule Set (Nginx, iki sunucu, aktif-pasif)",
+      "vendor": "Açık kaynak",
+      "throughputGbps": null,
+      "priceUsd": 0,
+      "ruleCount": 4,
+      "actions": {
+        "allow": 2,
+        "deny": 1,
+        "reject": 0,
+        "limit": 1
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "Cloudflare WAF (Business planı, yıllık)",
+          "vendor": "Cloudflare",
+          "throughputGbps": null,
+          "priceUsd": 2400
+        },
+        {
+          "product": "FortiWeb 400F",
+          "vendor": "Fortinet",
+          "throughputGbps": 0.5,
+          "priceUsd": 22400
+        },
+        {
+          "product": "Barracuda WAF 660",
+          "vendor": "Barracuda",
+          "throughputGbps": null,
+          "priceUsd": 22990
+        },
+        {
+          "product": "F5 BIG-IP Advanced WAF i2800",
+          "vendor": "F5",
+          "throughputGbps": null,
+          "priceUsd": 46075
         }
       ]
     },
