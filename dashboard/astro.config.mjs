@@ -5,9 +5,12 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
 
 const api = process.env.OSLAB_API ?? "http://127.0.0.1:5050";
+// scripts/deploy-page.sh builds for GitHub Pages under /<repo>/; everything else serves from /
+const base = process.env.SITE_BASE || undefined;
 
 export default defineConfig({
   output: "static",
+  base,
   integrations: [react()],
   build: { format: "directory" },
   devToolbar: { enabled: false },
