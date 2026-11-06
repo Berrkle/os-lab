@@ -12,3 +12,4 @@ profile identifies the contributor.
 | G*** Ş*** | [@GvnTech-cmd](https://github.com/GvnTech-cmd) | [GüvenTek Bilişim A.Ş.](companies/guventek-bilisim/) |
 | U*** B*** | [@ufuk888](https://github.com/ufuk888) | [Kurumsal Ağ Topolojisi ve Güvenlik Mimarisi](companies/siber-guvenlik-sirketi/) |
 | B*** F*** Y*** | [@bfurkanyildiz](https://github.com/bfurkanyildiz) | [Kurumsal Çok Şubeli Ağ Mimarisi ve NGFW Tasarımı](companies/kurumsal-cok-subeli-ngfw/) |
+| Y*** Y*** | [@yusufiyilmaz](https://github.com/yusufiyilmaz) | [Hayal A.Ş. — Ağ Güvenliği Planlaması](companies/hayal-as-ag-guvenligi/) |

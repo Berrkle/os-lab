@@ -1710,6 +1710,920 @@ export const COMPANIES: Company[] = [
   },
   {
     "schemaVersion": 1,
+    "name": "Hayal A.Ş. — Ağ Güvenliği Planlaması",
+    "sector": "Education software",
+    "author": {
+      "name": "Y*** Y***",
+      "course": "BGT207",
+      "github": "yusufiyilmaz"
+    },
+    "summary": "Hayal A.Ş. builds education software and runs its own academic campus. Six sites (Ankara HQ, Istanbul, London, a 10,000-student academic branch, a software team and a separate R&D building) each have their own line and firewall (FortiGate, Check Point in R&D for brand diversity), common VLANs (IT, staff, IoT, management), an encrypted VPN to Ankara and a Wazuh SIEM watched by a hybrid SOC.",
+    "branches": [
+      {
+        "id": "ankara-hq",
+        "name": "Ankara Office (Headquarters)",
+        "role": "headquarters",
+        "location": "Ankara, Turkey",
+        "population": {
+          "staff": 240
+        },
+        "network": {
+          "cidr": "10.10.0.0/16",
+          "dmz": true,
+          "vlans": [
+            {
+              "id": 10,
+              "name": "BT",
+              "cidr": "10.10.10.0/24",
+              "note": "20 BT personeli"
+            },
+            {
+              "id": 20,
+              "name": "Çalışan",
+              "cidr": "10.10.20.0/24",
+              "note": "220 personel"
+            },
+            {
+              "id": 30,
+              "name": "Sunucu",
+              "cidr": "10.10.30.0/24",
+              "note": "E-posta, dosya sunucusu, izleme sistemleri"
+            },
+            {
+              "id": 40,
+              "name": "DMZ",
+              "cidr": "10.10.40.0/24",
+              "note": "İnternete açık sunucular (şirket web sitesi)"
+            },
+            {
+              "id": 80,
+              "name": "IoT",
+              "cidr": "10.10.80.0/24",
+              "note": "Kamera, yazıcı, kartlı giriş"
+            },
+            {
+              "id": 99,
+              "name": "Yönetim",
+              "cidr": "10.10.99.0/24",
+              "note": "Cihazların ayar ekranları"
+            }
+          ]
+        },
+        "bandwidth": {
+          "downMbps": 1000,
+          "upMbps": 1000,
+          "drivers": [
+            "shared servers",
+            "SIEM",
+            "branch VPN hub",
+            "video meetings"
+          ]
+        },
+        "firewalls": [
+          {
+            "segment": "perimeter",
+            "chosen": {
+              "product": "FortiGate 200F",
+              "vendor": "Fortinet",
+              "throughputGbps": 3.0,
+              "reason": "Chosen. Diğer şubelerdeki FortiGate'lerle aynı ekrandan yönetilir. Bütün şubelerin bağlandığı merkez olmaya uygun. 1 Gbps hattın 3 katı hız, büyüme payı var"
+            },
+            "alternatives": [
+              {
+                "product": "Palo Alto PA-1420",
+                "vendor": "Palo Alto Networks",
+                "throughputGbps": 4.8,
+                "reason": "Hangi uygulamanın kullanıldığını çok iyi tanır. Daha pahalı"
+              },
+              {
+                "product": "Check Point Quantum Force 9100",
+                "vendor": "Check Point",
+                "throughputGbps": 4.95,
+                "reason": "Kurumsal yönetim paneli çok gelişmiş. Lisans maliyeti yüksek"
+              },
+              {
+                "product": "Cisco Secure Firewall 3105",
+                "vendor": "Cisco",
+                "throughputGbps": 10.0,
+                "reason": "Çok güçlü, ağda Cisco switch varsa uyumlu. Bu şube için fazla büyük ve pahalı"
+              },
+              {
+                "product": "Sophos XGS 2300",
+                "vendor": "Sophos",
+                "throughputGbps": 1.4,
+                "reason": "Uygun fiyatlı, kullanımı kolay. 1 Gbps hatta yetiyor ama büyüme payı az"
+              }
+            ],
+            "rules": [
+              {
+                "action": "allow",
+                "direction": "in",
+                "proto": "udp",
+                "port": "53,67:68,123",
+                "from": "internal-vlans",
+                "to": "firewall",
+                "note": "DHCP, DNS and NTP are opened first: with everything denied by default, forgetting them stops the network."
+              },
+              {
+                "action": "allow",
+                "direction": "in",
+                "proto": "tcp",
+                "port": "443,22",
+                "from": "vlan99-management",
+                "to": "firewall",
+                "note": "Admin screens of the firewall open only from the management VLAN 99, with two-step verification."
+              },
+              {
+                "action": "allow",
+                "direction": "in",
+                "proto": "tcp",
+                "port": 443,
+                "from": "any",
+                "to": "vlan40-dmz",
+                "note": "Only the company web site is reachable from the internet, and it sits in the DMZ."
+              },
+              {
+                "action": "deny",
+                "direction": "in",
+                "proto": "any",
+                "from": "vlan40-dmz",
+                "to": "internal-vlans",
+                "note": "A hacked web server in the DMZ must not reach the internal network."
+              },
+              {
+                "action": "allow",
+                "direction": "in",
+                "proto": "udp",
+                "port": "500,4500",
+                "from": "vpn-peers",
+                "to": "firewall",
+                "note": "Home workers connect by VPN with mandatory two-step verification; branches terminate their VPN here."
+              },
+              {
+                "action": "deny",
+                "direction": "in",
+                "proto": "any",
+                "from": "any",
+                "to": "any",
+                "note": "Default deny: anything not allowed above is blocked and logged to the central SIEM."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "istanbul-office",
+        "name": "Istanbul Office",
+        "role": "branch",
+        "location": "Istanbul, Turkey",
+        "population": {
+          "staff": 120
+        },
+        "network": {
+          "cidr": "10.20.0.0/16",
+          "dmz": false,
+          "vlans": [
+            {
+              "id": 10,
+              "name": "BT",
+              "cidr": "10.20.10.0/24",
+              "note": "10 BT personeli"
+            },
+            {
+              "id": 20,
+              "name": "Çalışan",
+              "cidr": "10.20.20.0/24",
+              "note": "110 personel"
+            },
+            {
+              "id": 50,
+              "name": "Misafir",
+              "cidr": "10.20.50.0/24",
+              "note": "Misafir ve müşteri Wi-Fi'ı"
+            },
+            {
+              "id": 80,
+              "name": "IoT",
+              "cidr": "10.20.80.0/24",
+              "note": "Kamera, yazıcı, kartlı giriş"
+            },
+            {
+              "id": 99,
+              "name": "Yönetim",
+              "cidr": "10.20.99.0/24",
+              "note": "Cihazın ayar ekranı"
+            }
+          ]
+        },
+        "bandwidth": {
+          "downMbps": 500,
+          "upMbps": 500,
+          "drivers": [
+            "sales",
+            "customer data",
+            "guest Wi-Fi"
+          ]
+        },
+        "firewalls": [
+          {
+            "segment": "perimeter",
+            "chosen": {
+              "product": "FortiGate 100F",
+              "vendor": "Fortinet",
+              "throughputGbps": 1.0,
+              "reason": "Chosen. Ankara'daki FortiGate ile aynı panelden yönetilir. Misafir Wi-Fi'ı ayrı ağa almak kolay"
+            },
+            "alternatives": [
+              {
+                "product": "Sophos XGS 2100",
+                "vendor": "Sophos",
+                "throughputGbps": 1.25,
+                "reason": "Uygun fiyatlı, arayüzü kolay. Ama Ankara'dan ayrı bir panelle yönetilmesi gerekir"
+              },
+              {
+                "product": "Check Point Quantum Spark 1600",
+                "vendor": "Check Point",
+                "throughputGbps": 1.5,
+                "reason": "Küçük ofisler için iyi. Lisans maliyeti yüksek"
+              },
+              {
+                "product": "Palo Alto PA-440",
+                "vendor": "Palo Alto Networks",
+                "throughputGbps": 1.0,
+                "reason": "Güvenlik çok iyi ama bu büyüklükte bir ofis için pahalı"
+              },
+              {
+                "product": "pfSense (Netgate 6100)",
+                "vendor": "Netgate",
+                "throughputGbps": 1.0,
+                "reason": "Ücretsiz yazılım, ucuz donanım. Ama üretici desteği sınırlı ve BT ekibinin bilgisi önemli"
+              }
+            ],
+            "rules": [
+              {
+                "action": "allow",
+                "direction": "in",
+                "proto": "udp",
+                "port": "53,67:68,123",
+                "from": "internal-vlans",
+                "to": "firewall",
+                "note": "DHCP, DNS and NTP are opened first: with everything denied by default, forgetting them stops the network."
+              },
+              {
+                "action": "allow",
+                "direction": "in",
+                "proto": "tcp",
+                "port": "443,22",
+                "from": "vlan99-management",
+                "to": "firewall",
+                "note": "Admin screens of the firewall open only from the management VLAN 99, with two-step verification."
+              },
+              {
+                "action": "deny",
+                "direction": "in",
+                "proto": "any",
+                "from": "vlan50-guest",
+                "to": "internal-vlans",
+                "note": "Guest Wi-Fi (VLAN 50) reaches the internet only, never the company network (protects customer data)."
+              },
+              {
+                "action": "deny",
+                "direction": "out",
+                "proto": "any",
+                "from": "vlan80-iot",
+                "to": "any",
+                "note": "IoT devices (VLAN 80) cannot reach the internet or staff PCs."
+              },
+              {
+                "action": "deny",
+                "direction": "in",
+                "proto": "any",
+                "from": "any",
+                "to": "any",
+                "note": "Default deny: anything not allowed above is blocked and logged to the central SIEM."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "london-office",
+        "name": "London Office",
+        "role": "branch",
+        "location": "London, United Kingdom",
+        "population": {
+          "staff": 38
+        },
+        "network": {
+          "cidr": "10.30.0.0/16",
+          "dmz": false,
+          "vlans": [
+            {
+              "id": 10,
+              "name": "BT",
+              "cidr": "10.30.10.0/24",
+              "note": "3 BT personeli"
+            },
+            {
+              "id": 20,
+              "name": "Çalışan",
+              "cidr": "10.30.20.0/24",
+              "note": "35 personel"
+            },
+            {
+              "id": 50,
+              "name": "Misafir",
+              "cidr": "10.30.50.0/24",
+              "note": "Misafir Wi-Fi'ı"
+            },
+            {
+              "id": 80,
+              "name": "IoT",
+              "cidr": "10.30.80.0/24",
+              "note": "Kamera, yazıcı, kartlı giriş"
+            },
+            {
+              "id": 99,
+              "name": "Yönetim",
+              "cidr": "10.30.99.0/24",
+              "note": "Cihazın ayar ekranı"
+            }
+          ]
+        },
+        "bandwidth": {
+          "downMbps": 200,
+          "upMbps": 200,
+          "drivers": [
+            "e-mail",
+            "VPN to Ankara"
+          ]
+        },
+        "firewalls": [
+          {
+            "segment": "perimeter",
+            "chosen": {
+              "product": "FortiGate 60F",
+              "vendor": "Fortinet",
+              "throughputGbps": 0.7,
+              "reason": "Chosen. Ankara'dan uzaktan yönetilir. Küçük ve ucuz. Ana hat koparsa 4G/5G yedek hatta otomatik geçer"
+            },
+            "alternatives": [
+              {
+                "product": "Check Point Quantum Spark 1600",
+                "vendor": "Check Point",
+                "throughputGbps": 1.5,
+                "reason": "Küçük ofislerde yaygın. Ama ayrı panel ve pahalı lisans"
+              },
+              {
+                "product": "Palo Alto PA-440",
+                "vendor": "Palo Alto Networks",
+                "throughputGbps": 1.0,
+                "reason": "Çok güvenli ama 38 kişilik ofis için pahalı"
+              },
+              {
+                "product": "Sophos XGS 2100",
+                "vendor": "Sophos",
+                "throughputGbps": 1.25,
+                "reason": "Bu ofis için fazla büyük. Sophos'un daha küçük modelleri de kullanılabilir"
+              },
+              {
+                "product": "pfSense (Netgate 6100)",
+                "vendor": "Netgate",
+                "throughputGbps": 1.0,
+                "reason": "Ucuz. Ama uzaktan yönetimi ve desteği diğerleri kadar kolay değil"
+              }
+            ],
+            "rules": [
+              {
+                "action": "allow",
+                "direction": "in",
+                "proto": "udp",
+                "port": "53,67:68,123",
+                "from": "internal-vlans",
+                "to": "firewall",
+                "note": "DHCP, DNS and NTP are opened first: with everything denied by default, forgetting them stops the network."
+              },
+              {
+                "action": "allow",
+                "direction": "in",
+                "proto": "tcp",
+                "port": "443,22",
+                "from": "vlan99-management",
+                "to": "firewall",
+                "note": "Admin screens of the firewall open only from the management VLAN 99, with two-step verification."
+              },
+              {
+                "action": "allow",
+                "direction": "out",
+                "proto": "udp",
+                "port": "500,4500",
+                "from": "vlan20-employees",
+                "to": "ankara-hq",
+                "note": "Personal data of European customers travels to Ankara only through the encrypted VPN (UK GDPR)."
+              },
+              {
+                "action": "deny",
+                "direction": "in",
+                "proto": "any",
+                "from": "vlan50-guest",
+                "to": "internal-vlans",
+                "note": "Guest Wi-Fi is internet only."
+              },
+              {
+                "action": "deny",
+                "direction": "out",
+                "proto": "any",
+                "from": "vlan80-iot",
+                "to": "any",
+                "note": "IoT devices cannot reach the internet or staff PCs."
+              },
+              {
+                "action": "deny",
+                "direction": "in",
+                "proto": "any",
+                "from": "any",
+                "to": "any",
+                "note": "Default deny: anything not allowed above is blocked and logged to the central SIEM."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "academic-branch",
+        "name": "Academic Branch",
+        "role": "campus",
+        "location": "Istanbul, Turkey",
+        "population": {
+          "staff": 215,
+          "students": 10000
+        },
+        "network": {
+          "cidr": "10.40.0.0/15",
+          "dmz": false,
+          "vlans": [
+            {
+              "id": 10,
+              "name": "BT",
+              "cidr": "10.40.10.0/24",
+              "note": "15 BT personeli"
+            },
+            {
+              "id": 20,
+              "name": "Personel",
+              "cidr": "10.40.20.0/24",
+              "note": "200 personel"
+            },
+            {
+              "id": 30,
+              "name": "Hoca",
+              "cidr": "10.40.30.0/23",
+              "note": "400 hoca"
+            },
+            {
+              "id": 50,
+              "name": "Laboratuvar",
+              "cidr": "10.40.50.0/24",
+              "note": "Bilgisayar laboratuvarları"
+            },
+            {
+              "id": 60,
+              "name": "Sunucu",
+              "cidr": "10.40.60.0/24",
+              "note": "Not sistemi, uzaktan eğitim sistemi"
+            },
+            {
+              "id": 70,
+              "name": "Öğrenci Wi-Fi",
+              "cidr": "10.41.0.0/16",
+              "note": "10.000 öğrenci"
+            },
+            {
+              "id": 80,
+              "name": "IoT",
+              "cidr": "10.40.80.0/24",
+              "note": "Kamera, turnike, yazıcı"
+            },
+            {
+              "id": 99,
+              "name": "Yönetim",
+              "cidr": "10.40.99.0/24",
+              "note": "Cihazların ayar ekranları"
+            }
+          ]
+        },
+        "bandwidth": {
+          "downMbps": 10000,
+          "upMbps": 10000,
+          "drivers": [
+            "10,000 students",
+            "LMS",
+            "online lessons"
+          ]
+        },
+        "firewalls": [
+          {
+            "segment": "perimeter",
+            "chosen": {
+              "product": "FortiGate 600F",
+              "vendor": "Fortinet",
+              "throughputGbps": 10.5,
+              "reason": "Chosen. 10 Gbps hattı karşılıyor. Captive portal, kullanıcı başı hız sınırı ve kayıt tutma hazır geliyor. Diğer şubelerle aynı panel"
+            },
+            "alternatives": [
+              {
+                "product": "Palo Alto PA-3440",
+                "vendor": "Palo Alto Networks",
+                "throughputGbps": 12.8,
+                "reason": "Daha hızlı ve uygulama tanıması çok iyi. Ama 2 cihaz alındığında maliyet çok artıyor"
+              },
+              {
+                "product": "Sophos XGS 5500",
+                "vendor": "Sophos",
+                "throughputGbps": 12.4,
+                "reason": "Hızlı ve görece ucuz. Eğitim kurumlarında yaygın"
+              },
+              {
+                "product": "Cisco Secure Firewall 3120",
+                "vendor": "Cisco",
+                "throughputGbps": 21.0,
+                "reason": "Çok güçlü, büyüme payı fazla. Yönetimi daha karmaşık ve pahalı"
+              },
+              {
+                "product": "Check Point Quantum Force 19100",
+                "vendor": "Check Point",
+                "throughputGbps": 28.8,
+                "reason": "En güçlü aday ama bu şube için fazla büyük ve en pahalısı"
+              }
+            ],
+            "rules": [
+              {
+                "action": "allow",
+                "direction": "in",
+                "proto": "udp",
+                "port": "53,67:68,123",
+                "from": "internal-vlans",
+                "to": "firewall",
+                "note": "DHCP, DNS and NTP are opened first: with everything denied by default, forgetting them stops the network."
+              },
+              {
+                "action": "allow",
+                "direction": "in",
+                "proto": "tcp",
+                "port": "443,22",
+                "from": "vlan99-management",
+                "to": "firewall",
+                "note": "Admin screens of the firewall open only from the management VLAN 99, with two-step verification."
+              },
+              {
+                "action": "allow",
+                "direction": "in",
+                "proto": "tcp",
+                "port": "80,443",
+                "from": "vlan70-student-wifi",
+                "to": "vlan60-servers",
+                "note": "Students reach the grade and e-learning servers through the web site only (80/443)."
+              },
+              {
+                "action": "deny",
+                "direction": "in",
+                "proto": "any",
+                "from": "vlan70-student-wifi",
+                "to": "database",
+                "note": "Students can never reach the database directly."
+              },
+              {
+                "action": "limit",
+                "direction": "out",
+                "proto": "any",
+                "from": "vlan70-student-wifi",
+                "to": "internet",
+                "note": "Every student is limited to 5 Mbps so a few big downloads cannot fill the campus line."
+              },
+              {
+                "action": "deny",
+                "direction": "out",
+                "proto": "any",
+                "from": "vlan70-student-wifi",
+                "to": "p2p",
+                "note": "Torrent traffic is blocked on the student network."
+              },
+              {
+                "action": "deny",
+                "direction": "forward",
+                "proto": "any",
+                "from": "vlan70-student-wifi",
+                "to": "vlan70-student-wifi",
+                "note": "Students cannot see each other on Wi-Fi (client isolation stops infection spreading)."
+              },
+              {
+                "action": "deny",
+                "direction": "out",
+                "proto": "any",
+                "from": "vlan80-iot",
+                "to": "any",
+                "note": "IoT devices (cameras, turnstiles, printers) have no internet access."
+              },
+              {
+                "action": "deny",
+                "direction": "in",
+                "proto": "any",
+                "from": "any",
+                "to": "any",
+                "note": "Default deny: anything not allowed above is blocked and logged to the central SIEM."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "software-team",
+        "name": "Software Team",
+        "role": "branch",
+        "location": "Istanbul, Turkey",
+        "population": {
+          "staff": 10,
+          "software": 60
+        },
+        "network": {
+          "cidr": "10.50.0.0/16",
+          "dmz": false,
+          "vlans": [
+            {
+              "id": 10,
+              "name": "BT",
+              "cidr": "10.50.10.0/24",
+              "note": "5 BT personeli"
+            },
+            {
+              "id": 20,
+              "name": "Yazılımcı",
+              "cidr": "10.50.20.0/24",
+              "note": "60 yazılımcı + 5 personel"
+            },
+            {
+              "id": 30,
+              "name": "Test sunucuları",
+              "cidr": "10.50.30.0/24",
+              "note": "Yazılımların denendiği sunucular"
+            },
+            {
+              "id": 80,
+              "name": "IoT",
+              "cidr": "10.50.80.0/24",
+              "note": "Kamera, yazıcı, kartlı giriş"
+            },
+            {
+              "id": 99,
+              "name": "Yönetim",
+              "cidr": "10.50.99.0/24",
+              "note": "Cihazın ayar ekranı"
+            }
+          ]
+        },
+        "bandwidth": {
+          "downMbps": 1000,
+          "upMbps": 1000,
+          "drivers": [
+            "code and container downloads",
+            "test servers"
+          ]
+        },
+        "firewalls": [
+          {
+            "segment": "perimeter",
+            "chosen": {
+              "product": "FortiGate 90G",
+              "vendor": "Fortinet",
+              "throughputGbps": 2.2,
+              "reason": "Chosen. Hattın 2 katı hız. Diğer şubelerle aynı panel. Kaynak kodun dışarı gönderilmesini engelleyebiliyor (DLP)"
+            },
+            "alternatives": [
+              {
+                "product": "Palo Alto PA-460",
+                "vendor": "Palo Alto Networks",
+                "throughputGbps": 2.1,
+                "reason": "Uygulama tanıması çok iyi. Örneğin GitHub'da \"okumaya izin ver, başka hesaba yüklemeyi engelle\" denebilir. Pahalı"
+              },
+              {
+                "product": "Check Point Quantum Spark 1800",
+                "vendor": "Check Point",
+                "throughputGbps": 2.0,
+                "reason": "Güvenli, hızı yeterli. Ayrı panel ve pahalı lisans"
+              },
+              {
+                "product": "Sophos XGS 2300",
+                "vendor": "Sophos",
+                "throughputGbps": 1.4,
+                "reason": "Uygun fiyatlı ama 1 Gbps hatta büyüme payı az"
+              },
+              {
+                "product": "OPNsense (kendi sunucumuzda)",
+                "vendor": "Deciso",
+                "throughputGbps": 1.0,
+                "reason": "Ücretsiz. DevOps ekibi yönetebilir. Ama üretici desteği yok ve hız sınırda"
+              }
+            ],
+            "rules": [
+              {
+                "action": "allow",
+                "direction": "in",
+                "proto": "udp",
+                "port": "53,67:68,123",
+                "from": "internal-vlans",
+                "to": "firewall",
+                "note": "DHCP, DNS and NTP are opened first: with everything denied by default, forgetting them stops the network."
+              },
+              {
+                "action": "allow",
+                "direction": "in",
+                "proto": "tcp",
+                "port": "443,22",
+                "from": "vlan99-management",
+                "to": "firewall",
+                "note": "Admin screens of the firewall open only from the management VLAN 99, with two-step verification."
+              },
+              {
+                "action": "allow",
+                "direction": "out",
+                "proto": "tcp",
+                "port": 443,
+                "from": "vlan20-developers",
+                "to": "company-github",
+                "note": "Source code may go only to the company's own GitHub account (DLP); other destinations are blocked."
+              },
+              {
+                "action": "deny",
+                "direction": "in",
+                "proto": "any",
+                "from": "vlan30-test-servers",
+                "to": "production",
+                "note": "Test servers and real production servers live in separate VLANs; tests cannot reach real systems."
+              },
+              {
+                "action": "deny",
+                "direction": "in",
+                "proto": "any",
+                "from": "any",
+                "to": "any",
+                "note": "Default deny: anything not allowed above is blocked and logged to the central SIEM."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "rnd-team",
+        "name": "R&D Team (separate building)",
+        "role": "branch",
+        "location": "Ankara, Turkey",
+        "population": {
+          "staff": 6,
+          "rnd": 22
+        },
+        "network": {
+          "cidr": "10.60.0.0/16",
+          "dmz": false,
+          "vlans": [
+            {
+              "id": 10,
+              "name": "BT",
+              "cidr": "10.60.10.0/24",
+              "note": "3 BT personeli"
+            },
+            {
+              "id": 20,
+              "name": "Araştırmacı",
+              "cidr": "10.60.20.0/24",
+              "note": "22 mühendis + 3 personel"
+            },
+            {
+              "id": 30,
+              "name": "Ar-Ge sunucuları",
+              "cidr": "10.60.30.0/24",
+              "note": "Proje dosyaları, deney verileri"
+            },
+            {
+              "id": 80,
+              "name": "IoT",
+              "cidr": "10.60.80.0/24",
+              "note": "Kamera, yazıcı, kartlı giriş"
+            },
+            {
+              "id": 99,
+              "name": "Yönetim",
+              "cidr": "10.60.99.0/24",
+              "note": "Cihazın ayar ekranı"
+            }
+          ]
+        },
+        "bandwidth": {
+          "downMbps": 500,
+          "upMbps": 500,
+          "drivers": [
+            "project files",
+            "prototype data"
+          ]
+        },
+        "firewalls": [
+          {
+            "segment": "perimeter",
+            "chosen": {
+              "product": "Check Point Quantum Spark 1800",
+              "vendor": "Check Point",
+              "throughputGbps": 2.0,
+              "reason": "Chosen. Diğer şubelerden farklı üretici. SandBlast kum havuzu şüpheli dosyaları açılmadan önce test ediyor"
+            },
+            "alternatives": [
+              {
+                "product": "Palo Alto PA-440",
+                "vendor": "Palo Alto Networks",
+                "throughputGbps": 1.0,
+                "reason": "WildFire kum havuzu çok iyi. O da farklı bir üretici olur"
+              },
+              {
+                "product": "FortiGate 70F",
+                "vendor": "Fortinet",
+                "throughputGbps": 0.8,
+                "reason": "Hızı yeterli ama diğer şubelerle aynı üretici olduğu için katmanlı güvenlik zayıflar"
+              },
+              {
+                "product": "Sophos XGS 2100",
+                "vendor": "Sophos",
+                "throughputGbps": 1.25,
+                "reason": "İyi ama kum havuzu ve DLP özellikleri ilk ikisi kadar güçlü değil"
+              },
+              {
+                "product": "pfSense (Netgate 6100)",
+                "vendor": "Netgate",
+                "throughputGbps": 1.0,
+                "reason": "Ucuz ama kum havuzu ve DLP hazır gelmiyor. En gizli şube için uygun değil"
+              }
+            ],
+            "rules": [
+              {
+                "action": "allow",
+                "direction": "in",
+                "proto": "udp",
+                "port": "53,67:68,123",
+                "from": "internal-vlans",
+                "to": "firewall",
+                "note": "DHCP, DNS and NTP are opened first: with everything denied by default, forgetting them stops the network."
+              },
+              {
+                "action": "allow",
+                "direction": "in",
+                "proto": "tcp",
+                "port": "443,22",
+                "from": "vlan99-management",
+                "to": "firewall",
+                "note": "Admin screens of the firewall open only from the management VLAN 99, with two-step verification."
+              },
+              {
+                "action": "deny",
+                "direction": "out",
+                "proto": "tcp",
+                "port": 443,
+                "from": "vlan20-researchers",
+                "to": "personal-cloud",
+                "note": "DLP: Google Drive, Dropbox and personal e-mail are closed so project files cannot leave."
+              },
+              {
+                "action": "allow",
+                "direction": "in",
+                "proto": "tcp",
+                "port": "80,443",
+                "from": "internet",
+                "to": "sandbox",
+                "note": "Every downloaded file is tried in a sandbox before it reaches R&D PCs."
+              },
+              {
+                "action": "deny",
+                "direction": "in",
+                "proto": "any",
+                "from": "any",
+                "to": "any",
+                "note": "Default deny: anything not allowed above is blocked and logged to the central SIEM."
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "remoteAccess": {
+      "type": "role-based-vpn",
+      "note": "Branches connect to the Ankara hub by encrypted VPN; home workers use VPN with two-step verification; firewall admin screens are reachable only from the management VLAN."
+    },
+    "monitoring": {
+      "siem": "Wazuh SIEM in Ankara (any vendor's logs, including the R&D Check Point), Zabbix for line and device health, GLPI ticketing so no incident is forgotten.",
+      "owner": "The NOC job belongs to the Ankara IT team; the SOC (4 L1, 2 L2, 1 L3 and a SOC manager) owns security alerts.",
+      "alertSink": "SIEM alerts to the SOC by phone, e-mail and message; weekday 08:00-24:00 in-house SOC, nights and weekends an outsourced security firm, on-call person phoned for critical alerts.",
+      "appVsSecurity": "NOC watches whether the network works; SOC watches attacks; handling follows the NIST four-phase incident process."
+    },
+    "slug": "hayal-as-ag-guvenligi"
+  },
+  {
+    "schemaVersion": 1,
     "name": "Kurumsal Ağ Güvenliği ve Altyapı Planlaması",
     "sector": "Education / Software",
     "author": {
