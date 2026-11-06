@@ -2161,6 +2161,692 @@ export const COMPANIES: Company[] = [
   },
   {
     "schemaVersion": 1,
+    "name": "Kurumsal Çok Şubeli Ağ Mimarisi ve NGFW Tasarımı",
+    "sector": "Software / Education",
+    "author": {
+      "name": "B*** F*** Y***",
+      "course": "BGT207",
+      "github": "bfurkanyildiz"
+    },
+    "summary": "A global company with Istanbul HQ (software and R&D), an Ankara R&D and public-sector office, a London Europe hub and a 10,000-student academic campus (about 20,900 endpoints). Palo Alto and FortiGate HA pairs run zone-based zero-trust rule sets with R&D isolation and GDPR checks, site-to-site IPsec/SD-WAN, and a 24/7 SOC with SIEM, SOAR, NetFlow and NDR.",
+    "branches": [
+      {
+        "id": "istanbul-hq",
+        "name": "Istanbul HQ (Software and R&D Center)",
+        "role": "headquarters",
+        "location": "Istanbul, Turkey",
+        "population": {
+          "staff": 265,
+          "software": 180,
+          "rnd": 90
+        },
+        "network": {
+          "cidr": "10.10.0.0/16",
+          "dmz": true,
+          "vlans": [
+            {
+              "id": 10,
+              "name": "İdari & Yönetim Personeli",
+              "cidr": "10.10.10.0/24"
+            },
+            {
+              "id": 20,
+              "name": "Yazılım Geliştirme Ekibi",
+              "cidr": "10.10.20.0/23"
+            },
+            {
+              "id": 30,
+              "name": "Ar-Ge Ekibi",
+              "cidr": "10.10.30.0/24"
+            },
+            {
+              "id": 99,
+              "name": "Teknik / IT, DevOps & Siber Güvenlik",
+              "cidr": "10.10.99.0/24"
+            },
+            {
+              "id": 200,
+              "name": "Misafir & Toplantı Odaları",
+              "cidr": "172.16.200.0/24"
+            },
+            {
+              "id": 100,
+              "name": "Sunucu & Veri Merkezi",
+              "cidr": "10.10.100.0/24"
+            }
+          ]
+        },
+        "bandwidth": {
+          "downMbps": 7000,
+          "upMbps": 7000,
+          "drivers": [
+            "CI/CD",
+            "R&D cloud sync",
+            "branch VPN",
+            "VoIP"
+          ]
+        },
+        "firewalls": [
+          {
+            "segment": "perimeter",
+            "chosen": {
+              "product": "Palo Alto Networks PA-5410",
+              "vendor": "Palo Alto Networks",
+              "throughputGbps": 22.5,
+              "reason": "Preferred (2x HA). Mükemmel (7 Gbps hat + SSL Inspection için tam ideal)"
+            },
+            "alternatives": [
+              {
+                "product": "Fortinet FortiGate 1800F",
+                "vendor": "Fortinet",
+                "throughputGbps": 21.0,
+                "reason": "Derin App-ID granülerliği PA kadar esnek değil."
+              },
+              {
+                "product": "Check Point Quantum 6900",
+                "vendor": "Check Point",
+                "throughputGbps": 15.0,
+                "reason": "SSL Inspection açıkken throughput düşüşü."
+              },
+              {
+                "product": "Cisco Secure Firewall 3130",
+                "vendor": "Cisco",
+                "throughputGbps": 17.0,
+                "reason": "Yönetim arayüzü (FMC) karmaşıklığı."
+              },
+              {
+                "product": "Sophos XGS 5500",
+                "vendor": "Sophos",
+                "throughputGbps": 13.5,
+                "reason": "Veri merkezi ölçeğinde ASIC/donanım hızlandırma sınırı."
+              }
+            ],
+            "rules": [
+              {
+                "action": "deny",
+                "direction": "forward",
+                "from": "UNTRUST",
+                "to": "any",
+                "note": "Student rule 01: Anti-spoofing ve zararli ip engelleme (en ustte)."
+              },
+              {
+                "action": "allow",
+                "direction": "forward",
+                "from": "TRUST-MGMT",
+                "to": "TRUST-DC",
+                "note": "Student rule 02: It & soc ekibi (45 kisi) -> sadece bastion/jump host uzerinden yonetim."
+              },
+              {
+                "action": "allow",
+                "direction": "forward",
+                "from": "TRUST-SWE",
+                "to": "TRUST-DC",
+                "note": "Student rule 03: Yazilim ekibi (180 kisi) -> ic gitlab ve ci/cd erisimi."
+              },
+              {
+                "action": "allow",
+                "direction": "forward",
+                "from": "TRUST-SWE",
+                "to": "UNTRUST",
+                "note": "Student rule 04: Yazilim ekibi -> dis bulut & paket depolari (github, docker, npm, aws)."
+              },
+              {
+                "action": "allow",
+                "direction": "forward",
+                "from": "TRUST-RND",
+                "to": "TRUST-DC",
+                "note": "Student rule 05: Ar-ge ekibi (90 kisi) -> ai/ml hesaplama kumesi erisimi (izole)."
+              },
+              {
+                "action": "deny",
+                "direction": "forward",
+                "from": "TRUST-RND",
+                "to": "TRUST-CORP,TRUST-SWE,VLAN200_GUEST_WIFI",
+                "note": "Student rule 06: Ar-ge ekibi -> yazilim veya idari aga dogrudan erisim yasagi (mikro-segmentasyon)."
+              },
+              {
+                "action": "allow",
+                "direction": "forward",
+                "from": "TRUST-RND",
+                "to": "UNTRUST",
+                "note": "Student rule 07: Ar-ge ekibi -> kontrollu internet erisimi (dlp aktif - veri sizintisi onleme)."
+              },
+              {
+                "action": "allow",
+                "direction": "forward",
+                "from": "TRUST-RND",
+                "to": "VPN-BRANCHES",
+                "note": "Student rule 08: Ankara ar-ge ve istanbul ar-ge arasi sifreli veri paylasimi (ipsec vpn)."
+              },
+              {
+                "action": "allow",
+                "direction": "forward",
+                "from": "TRUST-CORP",
+                "to": "UNTRUST",
+                "note": "Student rule 09: Idari personel (220 kisi) -> kurumsal uygulamalar ve internet."
+              },
+              {
+                "action": "deny",
+                "direction": "forward",
+                "from": "GUEST",
+                "to": "TRUST-CORP,TRUST-SWE,TRUST-RND,TRUST-DC,TRUST-MGMT,VPN-BRANCHES",
+                "note": "Student rule 10: Misafir agi -> sadece http/https ve dns (ic aga erisim kesinlikle yasak)."
+              },
+              {
+                "action": "allow",
+                "direction": "forward",
+                "from": "any",
+                "to": "TRUST-MGMT",
+                "note": "Student rule 12: Tum ag ci̇hazlarindan merkezi siem sunucusuna log akisi."
+              },
+              {
+                "action": "deny",
+                "direction": "forward",
+                "from": "any",
+                "to": "any",
+                "note": "Student rule 99: Implicit deny & log all (varsayilan engelleme ve kayit)."
+              },
+              {
+                "action": "deny",
+                "direction": "forward",
+                "proto": "any",
+                "from": "any",
+                "to": "any",
+                "note": "Explicit cleanup rule: everything not allowed above is dropped and logged."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "ankara-office",
+        "name": "Ankara Office (R&D and Public Sector)",
+        "role": "branch",
+        "location": "Ankara, Turkey",
+        "population": {
+          "staff": 110,
+          "software": 95,
+          "rnd": 110
+        },
+        "network": {
+          "cidr": "10.20.0.0/16",
+          "dmz": false,
+          "vlans": [
+            {
+              "id": 10,
+              "name": "İdari & Kamu İlişkileri Personeli",
+              "cidr": "10.20.10.0/24"
+            },
+            {
+              "id": 20,
+              "name": "Yazılım Geliştirme Ekibi",
+              "cidr": "10.20.20.0/24"
+            },
+            {
+              "id": 30,
+              "name": "Ar-Ge Ekibi",
+              "cidr": "10.20.30.0/24"
+            },
+            {
+              "id": 99,
+              "name": "Teknik / Sistem & Ağ Ekibi",
+              "cidr": "10.20.99.0/24"
+            },
+            {
+              "id": 100,
+              "name": "Felaket Kurtarma Sunucuları",
+              "cidr": "10.20.100.0/24"
+            }
+          ]
+        },
+        "bandwidth": {
+          "downMbps": 3500,
+          "upMbps": 3500,
+          "drivers": [
+            "R&D data transfer",
+            "IPsec VPN",
+            "public-sector G2B"
+          ]
+        },
+        "firewalls": [
+          {
+            "segment": "perimeter",
+            "chosen": {
+              "product": "Fortinet FortiGate 1000F",
+              "vendor": "Fortinet",
+              "throughputGbps": 13.0,
+              "reason": "Preferred (2x HA). Donanımsal ASIC (NP7/CP9) ile rakipsiz VPN & SD-WAN"
+            },
+            "alternatives": [
+              {
+                "product": "Palo Alto Networks PA-3430",
+                "vendor": "Palo Alto Networks",
+                "throughputGbps": 10.5,
+                "reason": "Bu ölçekte lisans maliyeti bütçe üstü."
+              },
+              {
+                "product": "Check Point Quantum 6600",
+                "vendor": "Check Point",
+                "throughputGbps": 9.0,
+                "reason": "SD-WAN yetenekleri ek lisans ve karmaşa yaratıyor."
+              },
+              {
+                "product": "Cisco Secure Firewall 3110",
+                "vendor": "Cisco",
+                "throughputGbps": 9.0,
+                "reason": "Lisanslama ve yönetim maliyeti yüksek."
+              },
+              {
+                "product": "Forcepoint NGFW 1402",
+                "vendor": "Forcepoint",
+                "throughputGbps": 7.5,
+                "reason": "Yerel destek ve ekosistem entegrasyonu daha dar."
+              }
+            ],
+            "rules": [
+              {
+                "action": "allow",
+                "direction": "forward",
+                "from": "ipsec-to-istanbul",
+                "to": "vlan100-dr",
+                "note": "Student rule 1: Istanbul merkez -> ankara dr merkezi repgikasyon (ipsec tunnel)."
+              },
+              {
+                "action": "allow",
+                "direction": "forward",
+                "from": "vlan30-arge",
+                "to": "ipsec-to-istanbul",
+                "note": "Student rule 2: Ankara ar-ge (110 kisi) <-> istanbul ar-ge ortak proje erisimi."
+              },
+              {
+                "action": "deny",
+                "direction": "forward",
+                "from": "vlan30-arge",
+                "to": "vlan10-idari,vlan200-guest",
+                "note": "Student rule 3: Ankara ar-ge -> yerel ag (idari ve misafir) izolasyonu."
+              },
+              {
+                "action": "allow",
+                "direction": "forward",
+                "from": "vlan30-arge",
+                "to": "virtual-wan-link",
+                "note": "Student rule 4: Ankara ar-ge -> kontrollu dis internet (dlp ve ssl deep inspection zorunlu)."
+              },
+              {
+                "action": "allow",
+                "direction": "forward",
+                "from": "vlan20-yazilim",
+                "to": "ipsec-to-istanbul",
+                "note": "Student rule 5: Yazilim ekibi (95 kisi) -> gelistirici araclari ve istanbul gitlab."
+              },
+              {
+                "action": "allow",
+                "direction": "forward",
+                "from": "vlan99-teknik",
+                "to": "vlan100-dr",
+                "note": "Student rule 6: Teknik ekip (25 kisi) -> altyapi yonetimi (mfa zorunlu)."
+              },
+              {
+                "action": "allow",
+                "direction": "forward",
+                "from": "vlan10-idari",
+                "to": "virtual-wan-link",
+                "note": "Student rule 7: Idari personel (85 kisi) -> standart kurumsal internet."
+              },
+              {
+                "action": "deny",
+                "direction": "forward",
+                "from": "any",
+                "to": "any",
+                "note": "Student rule 99: Varsayilan engelleme ve loglama."
+              },
+              {
+                "action": "deny",
+                "direction": "forward",
+                "proto": "any",
+                "from": "any",
+                "to": "any",
+                "note": "Explicit cleanup rule: everything not allowed above is dropped and logged."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "london-office",
+        "name": "London Office (Europe Hub)",
+        "role": "branch",
+        "location": "London, United Kingdom",
+        "population": {
+          "staff": 75,
+          "software": 45,
+          "rnd": 25
+        },
+        "network": {
+          "cidr": "10.30.0.0/16",
+          "dmz": false,
+          "vlans": [
+            {
+              "id": 10,
+              "name": "İdari, Global Satış & Hukuk",
+              "cidr": "10.30.10.0/24"
+            },
+            {
+              "id": 20,
+              "name": "Yazılım Ekibi",
+              "cidr": "10.30.20.0/24"
+            },
+            {
+              "id": 30,
+              "name": "Ar-Ge Ekibi",
+              "cidr": "10.30.30.0/24"
+            },
+            {
+              "id": 99,
+              "name": "Teknik / CloudOps & DevSecOps Ekibi",
+              "cidr": "10.30.99.0/24"
+            }
+          ]
+        },
+        "bandwidth": {
+          "downMbps": 2000,
+          "upMbps": 2000,
+          "drivers": [
+            "SD-WAN",
+            "cloud access AWS/Azure",
+            "video conferencing"
+          ]
+        },
+        "firewalls": [
+          {
+            "segment": "perimeter",
+            "chosen": {
+              "product": "Palo Alto Networks PA-1410",
+              "vendor": "Palo Alto Networks",
+              "throughputGbps": 4.6,
+              "reason": "Preferred (2x HA). İstanbul HQ (Panorama) ile %100 Merkezi Yönetim & ZTNA"
+            },
+            "alternatives": [
+              {
+                "product": "Fortinet FortiGate 400F",
+                "vendor": "Fortinet",
+                "throughputGbps": 9.0,
+                "reason": "Merkezdeki Panorama ile tek ekrandan (Single Pane of Glass) yönetilememesi."
+              },
+              {
+                "product": "Check Point Quantum 6200",
+                "vendor": "Check Point",
+                "throughputGbps": 3.6,
+                "reason": "Küçük-orta şubede yönetim yükü."
+              },
+              {
+                "product": "Cisco Meraki MX250",
+                "vendor": "Cisco",
+                "throughputGbps": 2.0,
+                "reason": "Derin paket inceleme (DPI) ve özel kural yazımında kısıtlı."
+              },
+              {
+                "product": "SonicWall NSa 4700",
+                "vendor": "SonicWall",
+                "throughputGbps": 5.2,
+                "reason": "Kurumsal SOC/SIEM entegrasyon derinliği yetersiz."
+              }
+            ],
+            "rules": [
+              {
+                "action": "allow",
+                "direction": "forward",
+                "from": "LON-CORP,LON-SWE,LON-RND",
+                "to": "VPN-ISTANBUL",
+                "note": "Student rule 01: Uk-gdpr veri egemenligi kurali (pii verisinin uluslararasi vpn'e cikisini denetle)."
+              },
+              {
+                "action": "allow",
+                "direction": "forward",
+                "from": "LON-SWE,LON-MGMT",
+                "to": "CLOUD-AWS-UK",
+                "note": "Student rule 02: Londra yazilim & cloudops (60 kisi) -> aws uk (eu-west-2) direct connect / vpn."
+              },
+              {
+                "action": "allow",
+                "direction": "forward",
+                "from": "LON-SWE,LON-RND",
+                "to": "VPN-ISTANBUL",
+                "note": "Student rule 03: Londra yazilim & ar-ge -> istanbul merkez gitlab repo erisimi."
+              },
+              {
+                "action": "deny",
+                "direction": "forward",
+                "from": "LON-RND",
+                "to": "LON-CORP",
+                "note": "Student rule 04: Londra ar-ge (25 kisi) -> ic ag izolasyonu (zero-trust)."
+              },
+              {
+                "action": "allow",
+                "direction": "forward",
+                "from": "VPN-GLOBALPROTECT",
+                "to": "LON-SWE,LON-CORP,CLOUD-AWS-UK",
+                "note": "Student rule 05: Uzaktan calisanlar (globalprotect ztna) -> sadece hip check gecen cihazlar."
+              },
+              {
+                "action": "allow",
+                "direction": "forward",
+                "from": "LON-CORP,LON-SWE,LON-RND",
+                "to": "UNTRUST",
+                "note": "Student rule 06: Standart kurumsal internet cikisi."
+              },
+              {
+                "action": "deny",
+                "direction": "forward",
+                "from": "any",
+                "to": "any",
+                "note": "Student rule 99: Implicit deny & log all."
+              },
+              {
+                "action": "deny",
+                "direction": "forward",
+                "proto": "any",
+                "from": "any",
+                "to": "any",
+                "note": "Explicit cleanup rule: everything not allowed above is dropped and logged."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "academic-campus",
+        "name": "Academic Campus (10,000 students)",
+        "role": "campus",
+        "location": "Istanbul, Turkey",
+        "population": {
+          "staff": 850,
+          "students": 10000,
+          "software": 40,
+          "rnd": 60
+        },
+        "network": {
+          "cidr": "10.40.0.0/14",
+          "dmz": false,
+          "vlans": [
+            {
+              "id": 400,
+              "name": "Öğrenciler",
+              "cidr": "10.40.0.0/16"
+            },
+            {
+              "id": 420,
+              "name": "Bilgisayar Laboratuvarları",
+              "cidr": "10.42.0.0/22"
+            },
+            {
+              "id": 430,
+              "name": "Akademisyenler",
+              "cidr": "10.43.0.0/22"
+            },
+            {
+              "id": 440,
+              "name": "Kampüs İdari Personeli",
+              "cidr": "10.44.0.0/23"
+            },
+            {
+              "id": 450,
+              "name": "Akademik Ar-Ge & Teknokent Ekibi",
+              "cidr": "10.45.0.0/24"
+            },
+            {
+              "id": 460,
+              "name": "Kampüs Yazılım Ekibi",
+              "cidr": "10.46.0.0/24"
+            },
+            {
+              "id": 499,
+              "name": "Teknik / Kampüs IT & Network Ekibi",
+              "cidr": "10.49.99.0/24"
+            },
+            {
+              "id": 500,
+              "name": "Kampüs Veri Merkezi",
+              "cidr": "10.50.0.0/24"
+            }
+          ]
+        },
+        "bandwidth": {
+          "downMbps": 30000,
+          "upMbps": 30000,
+          "drivers": [
+            "academic research 25%",
+            "LMS/exams 25%",
+            "student Wi-Fi 35%",
+            "admin 15%"
+          ]
+        },
+        "firewalls": [
+          {
+            "segment": "perimeter",
+            "chosen": {
+              "product": "Fortinet FortiGate 2600F",
+              "vendor": "Fortinet",
+              "throughputGbps": 28.0,
+              "reason": "Preferred (2x HA). 1.000.000 / sn"
+            },
+            "alternatives": [
+              {
+                "product": "Palo Alto Networks PA-5430",
+                "vendor": "Palo Alto Networks",
+                "throughputGbps": 38.0,
+                "reason": "30 Gbps Threat Prevention kapasiteli modellerin (PA-5440+) eğitim bütçesini aşması."
+              },
+              {
+                "product": "Check Point Quantum 16200",
+                "vendor": "Check Point",
+                "throughputGbps": 25.0,
+                "reason": "Yüksek NAT/Session sayısında CPU darboğazı."
+              },
+              {
+                "product": "Cisco Secure Firewall 4125",
+                "vendor": "Cisco",
+                "throughputGbps": 26.0,
+                "reason": "Kampüs BYOD trafiğinde lisans maliyeti."
+              },
+              {
+                "product": "Juniper SRX4600",
+                "vendor": "Juniper",
+                "throughputGbps": 22.0,
+                "reason": "450.000 / sn"
+              }
+            ],
+            "rules": [
+              {
+                "action": "deny",
+                "direction": "forward",
+                "from": "vlan400-student-wifi",
+                "to": "vlan430-faculty,vlan440-admin,vlan450-arge,vlan460-swe,vlan499-it",
+                "note": "Student rule 1: Ogrencilerin (10.000 kisi) veritabani, idari ag ve hocalarin agina erisim yasagi."
+              },
+              {
+                "action": "allow",
+                "direction": "forward",
+                "from": "vlan400-student-wifi",
+                "to": "vlan500-datacenter",
+                "note": "Student rule 2: Ogrencilerin sadece https (443) ile obs ve sinav sistemine erisimi (waf + ips aktif)."
+              },
+              {
+                "action": "deny",
+                "direction": "forward",
+                "from": "vlan400-student-wifi",
+                "to": "vlan500-datacenter",
+                "note": "Student rule 3: Ogrencilerin veritabani sunucusuna dogrudan erisim yasagi."
+              },
+              {
+                "action": "allow",
+                "direction": "forward",
+                "from": "vlan400-student-wifi",
+                "to": "wan-ulakbim-20g,wan-isp-10g",
+                "note": "Student rule 4: 10.000 ogrenci -> internet cikisi (qos 15 mbps/kisi + 5651 cgnat loglama + p2p engel)."
+              },
+              {
+                "action": "allow",
+                "direction": "forward",
+                "from": "vlan430-faculty",
+                "to": "wan-ulakbim-20g",
+                "note": "Student rule 5: Akademisyenler (450 hoca) -> akademik veritabanlari ve internet (yuksek oncelik)."
+              },
+              {
+                "action": "allow",
+                "direction": "forward",
+                "from": "vlan430-faculty",
+                "to": "vlan500-datacenter",
+                "note": "Student rule 6: Akademisyenler -> obs not giris sistemi (mfa zorunlu)."
+              },
+              {
+                "action": "allow",
+                "direction": "forward",
+                "from": "vlan450-arge",
+                "to": "ipsec-to-istanbul-hq",
+                "note": "Student rule 7: Kampus yazilim ekibi (40 kisi) & ar-ge (60 kisi) -> istanbul merkez git/ar-ge tuneli."
+              },
+              {
+                "action": "allow",
+                "direction": "forward",
+                "from": "vlan499-it",
+                "to": "vlan500-datacenter",
+                "note": "Student rule 8: Kampus teknik/it ekibi (50 kisi) -> veri merkezi yonetimi."
+              },
+              {
+                "action": "deny",
+                "direction": "forward",
+                "from": "any",
+                "to": "any",
+                "note": "Student rule 99: Implicit deny & log all."
+              },
+              {
+                "action": "deny",
+                "direction": "forward",
+                "proto": "any",
+                "from": "any",
+                "to": "any",
+                "note": "Explicit cleanup rule: everything not allowed above is dropped and logged."
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "remoteAccess": {
+      "type": "role-based-vpn",
+      "note": "Site-to-site IPsec/SD-WAN between branches; GlobalProtect ZTNA for remote workers who pass HIP checks (disk encryption, active EDR); IT and SOC reach servers only through a bastion/jump host."
+    },
+    "monitoring": {
+      "siem": "IBM QRadar / Splunk ES / Microsoft Sentinel or Wazuh-ELK with SOAR; firewall logs over TLS syslog (6514) to Istanbul collectors with Ankara DR as backup; NetFlow/IPFIX, SNMPv3 and Zabbix/Grafana; NDR (Darktrace/Vectra) on SPAN ports.",
+      "owner": "24/7 SOC in Istanbul with backup SOC in Ankara: 6 L1 (2 per shift), 4 L2, 2 L3 threat hunters, 4 NOC/network security engineers, one SOC manager/CISO.",
+      "alertSink": "SIEM consoles; SOAR automatically pushes block commands to the firewalls (e.g. FortiGate 2600F API).",
+      "appVsSecurity": "NOC (availability: HA, ISP lines, bandwidth) and SOC (security events) are separate teams with separate SLAs (NOC under 15 min, L1 triage 15 min, L2 under 30 min)."
+    },
+    "slug": "kurumsal-cok-subeli-ngfw"
+  },
+  {
+    "schemaVersion": 1,
     "name": "Multi-Branch nftables + QoS Lab",
     "sector": "Education / Software",
     "author": {
