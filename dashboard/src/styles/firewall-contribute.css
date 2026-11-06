@@ -46,3 +46,38 @@
 @keyframes cm-shine { to { background-position: 200% 0; } }
 @media (max-width: 520px) { .cm { padding: 24px 18px; } .cm-steps { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { .cm-backdrop, .cm, .cm::before, .cm li, .fw-cta::after { animation: none !important; } .fw-cta, .cm a, .cm-x { transition: none; } }
+
+/* gap impact modal */
+.gm { width: min(620px, 100%); }
+.gm-title { margin: 8px 0 22px; font-size: clamp(22px, 3.6vw, 28px); font-weight: 650; letter-spacing: -.04em; line-height: 1.15; padding-right: 30px; }
+.gm-flow { position: relative; display: grid; grid-template-columns: repeat(var(--n), 1fr); gap: 0; padding: 6px 0 22px; }
+.gm-flow::before { content: ""; position: absolute; left: calc(50% / var(--n)); right: calc(50% / var(--n)); top: 14px; height: 2px; background: var(--iux-border); }
+.gm-node { position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; font-size: 11px; line-height: 1.3; animation: cm-up .5s both; }
+.gm-node i { position: relative; z-index: 1; width: 18px; height: 18px; border: 2px solid var(--iux-border); border-radius: 99px; background: var(--iux-background); }
+.gm-node[data-state="ok"] i { border-color: #1f9d60; background: #1f9d60; }
+.gm-node[data-state="gap"] i { border-color: #f36c21; background: #f36c21; animation: gm-throb 1.4s infinite; }
+.gm-node[data-state="gap"] span { color: #f36c21; font-weight: 700; }
+.gm-node[data-state="hit"] i { border-color: #d6362f; background: var(--iux-background); animation: gm-hit .5s both; animation-delay: calc(var(--d, 1.2s)); }
+.gm-node[data-state="hit"]:nth-child(n) i { animation-delay: 1.5s; }
+.gm-node[data-state="hit"] span { color: #d6362f; }
+.gm-dot { position: absolute; top: 9px; left: calc(50% / var(--n)); width: 12px; height: 12px; margin-left: -6px; border-radius: 99px; background: #f36c21; box-shadow: 0 0 12px #f36c21; animation: gm-run 2.6s .5s ease-in-out infinite; }
+.gm-scn { margin: 4px 0 18px; font-size: 14px; line-height: 1.65; }
+.gm-meters { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.gm-meter { padding: 10px 12px; border: 1px solid var(--iux-border); border-radius: 12px; background: var(--iux-card); }
+.gm-meter span { display: block; margin-bottom: 8px; color: var(--iux-muted-foreground); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
+.gm-meter div { display: flex; gap: 3px; }
+.gm-meter i { flex: 1; height: 6px; border-radius: 3px; background: var(--iux-border); }
+.gm-meter i[data-on="true"] { background: #f36c21; animation: gm-fill .45s both; }
+.gm-meter:nth-child(1) i[data-on="true"] { background: #d6362f; }
+.gm-price { margin: 14px 0 0; color: var(--iux-muted-foreground); font-size: 12.5px; }
+.gm-fix { display: flex; gap: 8px; margin: 18px 0 0; padding: 12px 14px; border-radius: 10px; background: rgba(243,108,33,.09); font-size: 12.5px; font-weight: 600; line-height: 1.55; }
+.gm-fix svg { flex: none; margin-top: 3px; color: #f36c21; }
+.fwg-impact { align-self: flex-start; margin-top: 10px; padding: 6px 12px; border: 1px solid #f36c21; border-radius: 99px; background: transparent; color: #f36c21; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; transition: background .2s, color .2s; }
+.fwg-impact:hover { background: #f36c21; color: #fff; }
+.fwg-impact + .fwg-more { margin-top: 6px; }
+@keyframes gm-run { 0% { left: calc(50% / var(--n)); opacity: 0; } 8% { opacity: 1; } 88% { opacity: 1; } 100% { left: calc(100% - 50% / var(--n)); opacity: 0; } }
+@keyframes gm-fill { from { transform: scaleY(.5); background: var(--iux-border); } }
+@keyframes gm-throb { 0%, 100% { box-shadow: 0 0 0 0 rgba(243,108,33,.55); } 50% { box-shadow: 0 0 0 9px rgba(243,108,33,0); } }
+@keyframes gm-hit { from { background: var(--iux-background); } to { background: #d6362f; } }
+@media (max-width: 520px) { .gm-meters { grid-template-columns: 1fr; } .gm-node { font-size: 10px; } }
+@media (prefers-reduced-motion: reduce) { .gm-dot, .gm-node i, .gm-node { animation: none !important; } .gm-node[data-state="hit"] i { background: #d6362f; } .gm-meter i { animation: none !important; } }

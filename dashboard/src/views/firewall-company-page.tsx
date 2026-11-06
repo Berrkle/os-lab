@@ -81,7 +81,7 @@ function BranchDetail({ branch }: { branch: Branch }) {
 
 export function FirewallCompanyPage({ company }: { company: Company }) {
   const [selectedId, setSelectedId] = useState(company.branches[0]?.id ?? "");
-  const [tab, setTab] = useState<"network" | "gaps">(() => (typeof location !== "undefined" && location.hash === "#gaps" ? "gaps" : "network"));
+  const [tab, setTab] = useState<"network" | "gaps">(() => (typeof location !== "undefined" && location.hash.startsWith("#gap") ? "gaps" : "network"));
   const gaps = auditCompany(company).total;
   const pick = (t: "network" | "gaps") => { setTab(t); history.replaceState(null, "", t === "gaps" ? "#gaps" : location.pathname + location.search); };
   const selected = company.branches.find((branch) => branch.id === selectedId) ?? company.branches[0];
