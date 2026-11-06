@@ -1,485 +1,281 @@
 # Çok Siteli Kurumsal Güvenlik Duvarı Projesi
 
-> Contributed by `A*** M*** K***` ([@RedRiveRR](https://github.com/RedRiveRR)) · BGT207 Güvenlik Duvarı Çözümleri · 2026-2027 Güz midterm project.
-> Student names are masked on purpose. Converted from the student's documentation-phase repository (Turkish); the eight most relevant documents are kept in full below.
+> `A*** M*** K***` ([@RedRiveRR](https://github.com/RedRiveRR)) · BGT207 Güvenlik Duvarı Çözümleri · 2026-2027 Güz.
+> Bu bölüm, öğrencinin dokümantasyon deposunun (araştırma, envanter, IP planı, politika matrisi, izleme planı)
+> firewall-lab kurallarına göre yeniden yazılmış hâlidir. Yapılandırılmış veri `company.json`'da, gerekçeler burada.
 
-# Genel bakış
+## 1. Şirket
 
+Hayali bir eğitim ve yazılım şirketi. Ödevin verdiği iskelet: Ankara, İstanbul ve Londra'da ofisler, 10.000 öğrencili
+bir akademik kampüs, ayrıca yazılım ve Ar-Ge ekipleri. Ödevin vermediği her sayı bizim varsayımımızdır ve
+dokümantasyon deposundaki envanterden alınmıştır.
 
-"Güvenlik Duvarı Çözümleri" dersi ödevi. Hayali çok uluslu bir kurumun güvenlik
-duvarı ve ağ mimarisi burada planlanır; henüz hiçbir yazılım kurulmadı, hiçbir
-test çalıştırılmadı — bu şekilde **yazılı dokümantasyon fazı**dır.
+| Site | Rol | Personel | Yazılım | Ar-Ge | Öğrenci | Toplam |
+|---|---|---:|---:|---:|---:|---:|
+| Ankara Genel Merkez | headquarters | 46 (40 + 6 teknik) | 10 | 4 | — | 60 |
+| İstanbul Ofisi | branch, **VPN hub + DMZ** | 92 (80 + 12 teknik) | 25 | 6 | — | 123 |
+| Londra Ofisi | branch | 35 (30 + 5 teknik) | 8 | 5 | — | 48 |
+| Akademik Kampüs | campus | 570 (400 hoca + 150 idari + 20 teknik) | — | — | 10.000 | 10.570 |
+| İstanbul Veri Merkezi | datacenter | — (BT Ops uzaktan yönetir) | — | — | — | — |
 
-## Bir Şirket Hayal Ediyoruz
+İlk taslakta yazılım ve Ar-Ge ekipleri "yeri belirsiz mantıksal bölge" olarak `10.50.0.0/16`'da duruyordu. Envanter
+ekipleri zaten ofislere dağıtmıştı (Ankara 10/4, İstanbul 25/6, Londra 8/5). Bu yüzden insanlar bulundukları ofiste
+kendi DEV ve RND VLAN'larına alındı. `10.50.0.0/16` ise ekiplerin **sunucularını** (git/CI, araştırma verisi, ERP, SIEM)
+barındıran İstanbul veri merkezi oldu. Bir kişinin dizüstü bilgisayarı ile ekibin kaynak kodu artık aynı ağda durmuyor.
 
-Farklı ofislerimiz ve şubelerimiz var:
+## 2. Ağ gerekçesi
 
-- **Ankara Ofisi**
-- **İstanbul Ofisi**
-- **Londra Ofisi**
-- **Akademik Şube** (öğrenciler var / hocalar var / personel var)
+### Adres planı: site başına bir blok
 
-**Yazılım ekibimiz** var, bir de **Ar-Ge ekibimiz.**
-
-Akademik Şube'de **10.000 öğrencimiz** var.
-
-İstekler:
-
-- Şubelere bant genişliği tanımlama
-- Adım adım tüm şubelerimize güvenlik duvarı kurma
-- Her şube için bir klasörde personel sayısı, öğrenci sayısı, yazılım ve teknik sayısı
-
-## Durum
-
-- **Tamamlanan:** Araştırma, gereksinim tanımı, envanter, IP planı, VLAN/güvenlik bölgeleri, politika matrisi, test planı, top 5 ürün önerisi ve izleme planı.
-- **Yapılmayan:** Yazılım kurulumu, konfigürasyon, gerçek test çalıştırması — öğretim elemanı onayı sonrası faz.
-
-## Tüm Dokümanlar
-
-Her klasörde işin hangi parçası varsa o lazım; README'den o dokümana tek tıkla gidilebilir.
-
-### Araştırma (`arastirma/`)
-
-| Doküman | Ne anlatıyor |
-|---|---|
-| [Araştırma Genel Bakış](arastirma/arastirma-genel-bakis.md) | Yöntem, kapsam ve ana bulgular tek sayfada |
-| [Kaynaklar ve Referanslar](arastirma/kaynaklar-ve-referanslar.md) | K1–K21 numaralı kaynak listesi (resmi dokümanlar + RFC'ler) |
-| [Bant Genişliği Planlaması](arastirma/bant-genisligi-planlamasi.md) | "Limit ≠ kapasite" kavramı ve Akademik Şube için S1/S2/S3 senaryoları |
-| [Güvenlik Mimarisi](arastirma/guvenlik-mimarisi.md) | Hangi yetenek zorunlu, hangisi isteğe bağlı |
-| [Güvenlik Duvarı Teknolojileri](arastirma/guvenlik-duvari-teknoloji-karsilastirmasi.md) | pfSense, OPNsense, FortiGate, Palo Alto, nftables karşılaştırması |
-| [Simülasyon Platformları](arastirma/simulasyon-platformu-karsilastirmasi.md) | GNS3 vs EVE-NG vs Packet Tracer vs hipervizörler |
-
-### Gereksinimler (`gereksinimler/`)
-
-| Doküman | Ne anlatıyor |
-|---|---|
-| [Fonksiyonel Gereksinimler](gereksinimler/fonksiyonel-gereksinimler.md) | Ağın ne yapması gerekiyor (FR-01..17) |
-| [Fonksiyonel Olmayan Gereksinimler](gereksinimler/fonksiyonel-olmayan-gereksinimler.md) | Güvenlik, erişilebilirlik, ölçeklenebilirlik (NFR-01..10) |
-| [Varsayımlar ve Açık Sorular](gereksinimler/varsayimlar-ve-acik-sorular.md) | Ödevin verdiği bilgi vs varsayımlar; hocaya sorulacaklar |
-
-### Envanter (`envanter/`) — her birim için kendi klasörü
-
-- [Akademik Şube](envanter/akademik-sube/envanter.md) — 10.000 öğrenci; hoca 400, personel 150, teknik 20 [VARSAYIM]
-- [Ankara Ofisi](envanter/ankara-ofisi/envanter.md) — personel 40, yazılım 10, teknik 6, Ar-Ge 4 [VARSAYIM]
-- [İstanbul Ofisi](envanter/istanbul-ofisi/envanter.md) — personel 80, yazılım 25, teknik 12, Ar-Ge 6 [VARSAYIM]
-- [Londra Ofisi](envanter/londra-ofisi/envanter.md) — personel 30, yazılım 8, teknik 5, Ar-Ge 5 [VARSAYIM]
-- [Yazılım Ekibi](envanter/yazilim-ekibi/envanter.md) — toplam 43 (Ankara 10 / İstanbul 25 / Londra 8) [VARSAYIM]
-- [Ar-Ge Ekibi](envanter/arge-ekibi/envanter.md) — toplam 15 (Ankara 4 / İstanbul 6 / Londra 5) [VARSAYIM]
-- [BT ve Ağ Operasyonları](envanter/bt-ve-ag-operasyonlari/envanter.md) — sayı verilmedi [HOCAYA SORULACAK]
-
-### Mimari (`mimari/`)
-
-| Doküman | Ne anlatıyor |
-|---|---|
-| [Kavramsal Topoloji](mimari/kavramsal-topoloji.md) | Mermaid diyagramı; siteler, firewall'lar, bölgeler |
-| [Önerilen IP Planı](mimari/onerilen-ip-plani.md) | 10.0.0.0/8 planı: site blokları, VLAN'lar, tüneller |
-| [VLAN ve Güvenlik Bölgeleri](mimari/vlan-ve-guvenlik-bolgeleri.md) | Zone kodları (STU, MGMT, DMZ...) ve izolasyon ilkeleri |
-| [Siteler Arası Bağlantı](mimari/siteler-arasi-baglanti.md) | IPsec VPN tasarım ilkeleri |
-
-### Politikalar (`politikalar/`)
-
-| Doküman | Ne anlatıyor |
-|---|---|
-| [Bant Genişliği Politikası](politikalar/bant-genisligi-politikasi.md) | Sınıf bazlı öncelik + limit matrisi (C1–C10) |
-| [Site Bazlı Bant Genişliği Tanımları](politikalar/site-bant-genisligi-tanimlari.md) | Ankara/İstanbul/Londra/Akademik için hattan beklentisi ve VPN tünel kapasiteleri |
-| [Güvenlik Duvarı Politika Matrisi](politikalar/guvenlik-duvari-politika-matrisi.md) | Bölge↔bölge izin kural özet tablosu (default-deny) |
-
-### Kararlar (`kararlar/`)
-
-| Doküman | Ne anlatıyor |
-|---|---|
-| [Karar Günlüğü](kararlar/karar-gunlugu.md) | Alınan kararlar (KARAR-001..) ve gerekçeleri |
-| [Teknoloji Önerisi](kararlar/teknoloji-onerisi.md) | GNS3 + OPNsense önerisi, gerekçeler, sınırlar |
-| [Top 5 Güvenlik Duvarı Önerisi](kararlar/top5-guvenlik-duvari-onerisi.md) | Her site/parça için sıralı top-5 öneri + hat tahmini |
-
-### İzleme (`izleme/`)
-
-| Doküman | Ne anlatıyor |
-|---|---|
-| [İzleme Planı](izleme/izleme-plani.md) | Log + metrik + akış üçlüsü; roller ve süreç; lab topolojisi |
-
-### Doğrulama (`dogrulama/`)
-
-| Doküman | Ne anlatıyor |
-|---|---|
-| [Test Planı](dogrulama/test-plani.md) | T-01..T-16; **hepsi "Çalıştırılmadı"** durumunda |
-
-### Arşiv (`onceki-taslak/`)
-
-İlk kısa taslak — içindeki sayılar ve komutlar **hükümsüz** kabul edilir; referans için saklandı (bkz. `onceki-taslak/NOT.md`).
-
-## Okuma Sırası
-
-1. Bu README (senaryo)
-2. `gereksinimler/varsayimlar-ve-acik-sorular.md` — hangi bilgi gerçek, hangi varsayım
-3. `envanter/` klasörleri
-4. `kararlar/top5-guvenlik-duvari-onerisi.md` ve `politikalar/site-bant-genisligi-tanimlari.md` — hangi yerde hangi ürün ve hangi hat
-5. `mimari/` + `politikalar/bant-genisligi-politikasi.md`
-6. `izleme/izleme-plani.md` — izleme nasıl olacak
-7. `dogrulama/test-plani.md` — simülasyon kurulunca ne test edilecek
-
-## Not
-
-Sayısal değerler ölçülmüş gereksinim değildir; varsayım veya örnektir. Etiket sistemi:
-`[GERÇEK]`, `[VARSAYIM]`, `[İLUSTRATİF]`, `[ARAŞTIRILACAK]`, `[HOCAYA SORULACAK]`, `[DOĞRULANMADI]` — anlamları `OKUBENI.md` §3'te.
-
-
----
-
-# Önerilen IP planı
-
-
-**Amaç:** Çakışmasız, büyümeye açık, özetlenebilir (summarizable) bir adres stratejisi önermek.
-**Durum:** **ÖNERİLEN / geçici.** Hiçbir cihaza uygulanmadı. Alt ağ boyutları varsayımlara (A-01..A-07) dayanır.
-
-## 1. İlkeler
-1. **RFC 1918** özel blok `10.0.0.0/8` kullanılır (K20): büyük, çok siteli kurumlar için en uygun (172.16/12 ve 192.168/16 daha küçük; 192.168.x ev ağlarıyla ve VPN istemcileriyle çakışma riski yüksektir).
-2. Her site kendi `/16` bloğunu (Akademik: `/15`) alır → site başına tek özet rota (route summarization).
-3. Alt ağın 3. okteti **VLAN ID** ile eşleşir (ofis siteleri) → okunabilirlik. Akademik öğrenci ağı istisnadır.
-4. Siteler arası hiçbir blok çakışmaz; kullanılmayan bloklar rezervdir (büyüme).
-5. Yönetim (Mgmt) ağı her sitede ayrı ve kullanıcı ağlarından yönlendirilmez.
-
-## 2. Site Blokları
-| Site | Blok | Not |
+| Site | Blok | Neden bu boyut |
 |---|---|---|
-| Ankara | 10.10.0.0/16 | |
-| İstanbul | 10.20.0.0/16 | Varsayılan VPN hub |
-| Londra | 10.30.0.0/16 | |
-| Akademik | 10.40.0.0/15 (10.40.0.0–10.41.255.255) | Öğrenci için 10.41.0.0/17 |
-| Siteden bağımsız ekipler (Dev/R&D/IT Ops ortak) | 10.50.0.0/16 | Fiziksel yer belirlenince site bloğuna taşınabilir [HOCAYA SORULACAK] |
-| Siteler arası tünel (transit) | 10.255.0.0/24 (/30'lar) | |
-| Rezerv | 10.60.0.0/14 ve diğerleri | Yeni site/büyüme |
+| Ankara | `10.10.0.0/16` | Tek özet rota; ~180 cihaz için bol pay, büyümeye açık |
+| İstanbul | `10.20.0.0/16` | Ofis + DMZ + VPN rol havuzları (`10.20.200.0/21`) |
+| Londra | `10.30.0.0/16` | Aynı şablon, çakışma yok |
+| Akademik | `10.40.0.0/15` | Öğrenci bloğu tek başına `10.41.0.0/17` |
+| Veri merkezi | `10.50.0.0/16` | Ortak servisler |
 
-## 3. Ofis Sitelerinde Alt Ağlar (Ankara 10.10.x / İstanbul 10.20.x / Londra 10.30.x; x = VLAN)
-| VLAN | Ad | Alt ağ (x = site) | Boyut gerekçesi |
+Her site kendi bloğunu aldığı için site-to-site VPN'de çakışma olmaz ve her tünel tek bir özet rotayla tanımlanır.
+Ofislerde üçüncü oktet VLAN numarasına eşittir (`10.x.30.0` = VLAN 30 OFFICE). Bu sayede log okuyan herkes adresten
+segmenti tanır.
+
+### Alt ağları insana göre değil cihaza göre boyutlandırmak
+
+- **Ofisler:** Kişi başı ~3 cihaz hesapladık (dizüstü, telefon, IP telefon veya tablet). İstanbul OFFICE 92 × 3 ≈ 280
+  adres eder; bu `/24`'e sığmadığı için `/23` verildi. Ankara (~140) ve Londra (~105) için `/24` yeterli ve %80 civarı pay bırakıyor.
+- **Kampüs öğrencileri:** 10.000 öğrenci × 2-3 cihaz = 20.000-30.000 adres. Tek bir `/17` (32.766) ayırdık ama onu tek
+  VLAN yapmadık: **32 adet `/22`** (VLAN 500-531), her bina veya kat için bir tane. 30.000 cihazlık tek bir yayın alanında
+  ARP/mDNS fırtınası ve DHCP darboğazı çıkar. `/22` başına ~1.000 cihaz yönetilebilir bir boyut. Kira süresi 1-4 saat; böylece
+  kampüsten ayrılan telefonların adresleri birikmez.
+- **Personel (kampüs):** 420 kişi × 2,5 ≈ 1.050 adres, `/22`.
+
+### VLAN sınırları: role göre bölmek
+
+Her ofiste aynı yedi segment var: **MGMT, SRV, OFFICE, PRINT-IOT, GUEST, DEV, RND**. Kampüste bunlara **ADM, STAFF, LAB,
+STU ve DMZ** ekleniyor.
+
+- **RND'nin doğrudan interneti yok.** Ar-Ge yalnız kimlik doğrulamalı bir proxy'ye (3128) çıkıyor ve proxy alan adı izin
+  listesi uyguluyor. Proxy dışındaki her çıkış loglanıp düşürülüyor. Fikri mülkiyet sızıntısı en çok buradan olur.
+- **DEV**, git (SSH/HTTPS) ve paket depolarına yalnız giden yönde çıkabiliyor. Kodu dışarıya değil iç Gitea/CI'a (`10.50.80.0/23`) itiyor.
+- **DEV ↔ RND doğrudan konuşmuyor**; veri yalnız onaylı aktarım servisiyle geçiyor (veri merkezi kuralı).
+- **PRINT-IOT / IOT:** Kameralar yalnız NVR'a konuşabiliyor. Ele geçirilmiş bir kamera ofisi göremiyor.
+- **GUEST:** Yalnız 80/443 açık, kişi başı 5 Mbps. Kurumsal `10/8` bloğuna giden trafik `reject` ile kesiliyor. Bu iç
+  taraf olduğundan hızlı ret, zaman aşımı beklemekten iyi.
+- **MGMT:** Firewall, switch, AP ve iDRAC arayüzleri burada. **Yalnız BT Ops bastion ağından (`10.50.15.0/24`)**
+  erişilebiliyor; LAN'dan ya da internetten erişim yok. Bastion dışından MGMT'ye gelen her paket SOC'a uyarı üretiyor,
+  çünkü bu yanal hareket işaretidir.
+- **Öğrenciler** LMS/SIS'e yalnız 443 ile ulaşabiliyor. İdari, personel ve yönetim ağlarına giden her şey reddediliyor.
+  Öğrenciler arası trafiği de AP üzerindeki client isolation kesiyor.
+
+### DMZ'de neler var
+
+| DMZ | İçerik | İçeri giden tek yol |
+|---|---|---|
+| İstanbul `10.20.70.0/24` | Kurumsal web sitesi ve **mobil uygulama API'si** için ters proxy + ModSecurity; posta ağ geçidi | proxy → `10.50.25.30:8443`, posta GW → `10.50.25.25:25` |
+| Kampüs `10.40.70.0/24` | LMS (Moodle) + SIS ters proxy | proxy → `10.40.20.30:8443` |
+
+Web trafiği **yalnız Cloudflare IP aralıklarından** kabul ediliyor. Orijine doğrudan gelen 80/443 düşürülüyor, böylece WAF
+atlatılamıyor. 80 portu yalnız 443'e yönlendirme için açık. DMZ'den kurumsal ağa giden geri kalan her şey ve DMZ'den
+internete doğrudan çıkış düşürülüyor (ters kabuk önlemi); tek istisna, posta ağ geçidinin dışarıya SMTP 25 teslimi. Yamalar iç apt yansısından geliyor.
+
+### Neden her kural böyle sıralandı
+
+İlk eşleşme kazanır. Bu yüzden her kural setinin sırası şu:
+
+1. Sıcak yollar ve kenar: VPN el sıkışması `limit`, Cloudflare'den gelen web.
+2. **Temel servisler:** DHCP 67/68, DNS 53 (yalnız iç çözümleyiciye; istemcilerden dış DNS'e çıkış engelli), NTP 123.
+3. Segment izinleri.
+4. Yönetim.
+5. Son kural olarak **varsayılan reddet**.
+
+Kenarda `deny` (sessiz) kullanıldı, iç tarafta `reject`. Hiçbir `allow` kuralı portsuz değil. Her kuralın `note` alanı
+o kuralın neden var olduğunu ve kaldırılırsa neyin bozulacağını söylüyor (toplam 127 kural, 6 firewall).
+
+## 3. Bant genişliği
+
+Yöntem dokümantasyon deposundaki ile aynı: **tepe talep ≈ kullanıcı × eşzamanlılık × aktif kullanıcı başı hız**, hat
+ise bunun %70 doluluğa göre büyütülmüş hâli. Kişi başı tavan bir kapasite değildir: 10.000 × 20 Mbps = 200 Gbps hesabı yanlıştır.
+
+| Site | Hat (↓/↑) | Neyin tükettiği | Yedek |
 |---|---|---|---|
-| 10 | MGMT | 10.x.10.0/24 | Cihaz yönetimi (254 > ihtiyaç) |
-| 20 | SRV | 10.x.20.0/24 | Sunucu sayısı < 50 |
-| 30 | OFFICE (kullanıcılar) | 10.x.30.0/24 (İstanbul: /23) | ~80 çalışan×2 cihaz [VARSAYIM] |
-| 60 | GUEST | 10.x.60.0/24 | Misafir cihazlar |
-| 70 | DMZ | 10.x.70.0/24 | Yalnız İstanbul'da gerekli olabilir |
-| 80 | DEV | 10.x.80.0/24 | Yazılım ekibi ofisteyse |
-| 90 | RND | 10.x.90.0/24 | Ar-Ge ofisteyse |
+| Ankara | 300 / 150 Mbps | ~30 eşzamanlı toplantı × 2,5 Mbps ≈ 75; SaaS/web ~60; git/paket patlamaları ~50; hub tüneli ~50 → ~235 Mbps tepe | 4G/LTE 50 Mbps, SD-WAN failover |
+| İstanbul | 1000 / 500 Mbps | Tüm tüneller hub'dan geçiyor (ANK 100, LON 100, AKD 500 Mbps hedef), uzaktan erişim VPN'i, DMZ (Cloudflare önbelleği yükü azaltıyor) | İkinci fiber ISP 500 Mbps |
+| Londra | 200 / 100 Mbps | TR↔UK toplantıları, SaaS, ERP tüneli | 4G/5G 50 Mbps |
+| Kampüs | 10 / 10 Gbps | S1 normal gün ≈ 1,5 Gbps; **S2 sınav haftası ≈ 7,5 Gbps ham tepe**; S3 (toplu güncelleme) ≈ 20 Gbps ve politikayla sınırlanıyor | ULAKNET 10 Gbps + ticari 2 Gbps |
+| Veri merkezi | 5 / 5 Gbps (iç) | IPS'ten geçen doğu-batı trafiği; yedekleme akışı ayrı depolama VLAN'ında L2'de kalıyor | İnternet hub'ın çift hattından |
 
-## 4. Akademik Şube Alt Ağları
-| VLAN | Ad | Alt ağ | Gerekçe |
+Kampüste S3 senaryosu için hat büyütülmüyor; trafik yönetiliyor. Öğrenci web çıkışı bir `limit` kuralı: IP başına
+20 Mbps ve C7/C8 kuyrukları. Oyun ve işletim sistemi güncelleme CDN'leri düşük öncelikli C8 sınıfında. Personel (C4) ve
+LMS/sınav (C3) trafiği için garantili minimum tanımlı, öğrenci yoğunluğu bunları ezemiyor. Sınıfların tamamı
+[bant genişliği politikası](https://github.com/RedRiveRR/guvenlik-duvari-projesi/blob/main/politikalar/bant-genisligi-politikasi.md) belgesinde (C1-C10).
+
+## 4. Ürün seçimi: her segment için en iyi beş
+
+**Ölçüt:** UTM/IPS açıkken ölçülen throughput (Fortinet'te "Threat Protection", Palo Alto'da "Threat Prevention").
+Bu değer hattın üstünde olmalı ve tepe için pay bırakmalı. Fiyatlar **HA çifti + 1 yıl güvenlik aboneliği** için
+**yaklaşık** USD değerleridir. Bayi listelerinden derlendi ve satın almadan önce distribütör teklifiyle doğrulanmalı.
+Kaynağı bayi sayfası olan veya değeri bizim tahminimiz olan rakamlar tabloda işaretli.
+
+### Filo kararı: neden her kenarda FortiGate
+
+Dokümantasyon fazında birinci tercih OPNsense'ti. O sıralama **lab lisansına** göreydi: ücretsiz, GNS3'te çalışıyor.
+Gerçek bir şirket için fiyat ve IPS açık throughput eklenince sonuç değişiyor:
+
+1. **Tek yönetim düzlemi.** Beş site, altı firewall ve SD-WAN tek FortiManager'dan yönetiliyor; aynı IPsec şablonu ve aynı
+   kural modeli her yerde geçerli. Beş farklı kutu, kutu başına daha ucuz olsa da işletmesi daha pahalıdır.
+2. **Kanıtlanabilir IPS throughput.** Açık kaynak seçenekler (OPNsense/pfSense + Suricata) için satıcıların yayımladığı
+   IPS açık rakam yok. 10 Gbps kampüs kenarını kanıtlayamadığımız bir sayıya emanet etmiyoruz.
+3. **HA, SD-WAN çift ISP ve ZTNA** aynı lisansta geliyor.
+
+OPNsense/pfSense listeden çıkmadı: her segmentte en güçlü ucuz alternatif olarak duruyorlar. Lab prototipi de
+(`vm/`, nftables) onlarla yapılıyor.
+
+### Ankara: perimeter (300 Mbps)
+
+| # | Ürün | TP (Gbps) | ~USD | Karar |
+|---|---|---:|---:|---|
+| ✔ | **FortiGate 80F** HA | 0,9 ᵇ | 4.600 | Hattın 3 katı, filo standardı |
+| 2 | Sophos XGS 2300 | 1,4 ᵇ | 7.000 | İkinci satıcı, filo SD-WAN'ı zayıf |
+| 3 | Palo Alto PA-450 | 1,6 ᵇ | 9.000 | En iyi App-ID ama 2 kat fiyat ve ayrıca Panorama gerekiyor |
+| 4 | Netgate 8200 (pfSense Plus) | 18,5 (IPS kapalı) | 3.300 | IPS açık değeri yayımlanmamış |
+| 5 | OPNsense DEC2752 | ~0,8 ᵗ | 3.000 | Destek ve filo yönetimi zayıf; lab'da kullanılıyor |
+
+### İstanbul: hub perimeter (1 Gbps + tüm tüneller)
+
+| # | Ürün | TP (Gbps) | ~USD | Karar |
+|---|---|---:|---:|---|
+| ✔ | **FortiGate 200G** HA | 6 ᵇ | 30.000 | IPsec 36 Gbps; 200F'nin siparişi 2026-03-01'de kapandığı için halefi seçildi |
+| 2 | Check Point Quantum Force 9300 | 10,5 ᶜ | 60.000 | Pahalı; ekipte deneyim yok |
+| 3 | Palo Alto PA-3440 | 11 ᵇ | 70.000 | 1 Gbps hat için 2,3 kat fiyat |
+| 4 | Sophos XGS 2300 | 1,4 ᵇ | 7.000 | Hub için dar, tepeye pay bırakmıyor |
+| 5 | Netgate 8200 | IPsec 3,24 | 3.300 | IPS değeri yok, ZTNA yok |
+
+### İstanbul: DMZ / WAF
+
+Normal bir firewall uygulama katmanındaki bir hatayı durduramaz. Derste canlı izlediğimiz PHP RCE, izinli 443 portu
+üzerinden geliyordu. Bu yüzden DMZ'nin "firewall"ı bir WAF.
+
+| # | Ürün | ~USD/yıl | Karar |
+|---|---|---:|---|
+| ✔ | **Cloudflare Business** (3 alan adı: web, mobil API, LMS) | 7.200 | Uçta WAF, L7 DDoS, bot koruması ve rate limit; saldırı trafiği hattımıza girmeden düşüyor |
+| 2 | ModSecurity v3 + OWASP CRS | 0 (lisans) | **Orijinde ikinci katman olarak kullanılıyor**; tek başına DDoS koruması yok |
+| 3 | FortiWeb 400F | ~20.200 | Cihaz; volümetrik saldırıyı hatta girmeden durduramaz |
+| 4 | Imperva Cloud WAF | ~12.000 | Benzer yetenek, daha pahalı |
+| 5 | F5 BIG-IP Advanced WAF VE | ~15.000 | Güçlü ama pahalı ve öğrenmesi zor |
+
+### Londra: perimeter (200 Mbps)
+
+| # | Ürün | TP (Gbps) | ~USD | Karar |
+|---|---|---:|---:|---|
+| ✔ | **FortiGate 60F** HA | 0,7 ᵇ | 2.600 | Hattın 3,5 katı, filo standardı |
+| 2 | Sophos XGS 136 | 1,0 ᵇ | 3.400 | İkinci konsol |
+| 3 | Netgate 4200 | ~1,0 ᵗ | 1.400 | IPS değeri yok, UK'de yerinde destek yok |
+| 4 | WatchGuard Firebox T85 | ~1,1 ᵗ | 3.800 | Yıllık lisansı yüksek |
+| 5 | Palo Alto PA-440 | ~1,0 ᵗ | 5.800 | 48 kişi için pahalı |
+
+### Akademik kampüs: perimeter (10 Gbps)
+
+| # | Ürün | TP (Gbps) | ~USD | Karar |
+|---|---|---:|---:|---|
+| ✔ | **FortiGate 900G** HA | 20 ᵇ | 120.000 | Hattın 2 katı; S2 tepesinde IPS kapatılmıyor; 16 milyon oturum |
+| 2 | Sophos XGS 6500 | 17 ᵇ | 70.000 | Yakın ve ucuz ama 10 bin kullanıcılık referansımız yok |
+| 3 | Check Point Quantum Force 9300 | 10,5 ᶜ | 60.000 | Hattın tam eşiğinde; tepe yükte IPS kapatılmak zorunda kalınır |
+| 4 | Palo Alto PA-5410 | ~35 ᵇ | 250.000 | Fazla kapasite, 2 kattan fazla fiyat |
+| 5 | OPNsense DEC4200 serisi | ~5 ᵗ | 10.000 | 10 Gbps'te IPS kanıtı yok |
+
+### Veri merkezi: iç segmentasyon (doğu-batı, 5 Gbps)
+
+| # | Ürün | TP (Gbps) | ~USD | Karar |
+|---|---|---:|---:|---|
+| ✔ | **FortiGate 200G** HA | 6 ᵇ | 30.000 | Hub ile aynı model: yedek parça ve bilgi ortak |
+| 2 | Palo Alto PA-3440 | 11 ᵇ | 70.000 | Pahalı |
+| 3 | Check Point Quantum Force 9300 | 10,5 ᶜ | 60.000 | Pahalı, deneyim yok |
+| 4 | Netgate 8200 | 18,5 (IPS kapalı) | 3.300 | İç segmentte de IPS istiyoruz |
+| 5 | OPNsense DEC4200 serisi | ~5 ᵗ | 10.000 | HA ve destek zayıf |
+
+ᵇ bayi veya distribütör sayfası (resmi datasheet ile doğrulanmalı) · ᶜ Check Point resmi karşılaştırma sayfası ·
+ᵗ bizim tahminimiz, satıcı değeri yok
+
+**Toplam donanım + 1. yıl:** ≈ 194.000 USD. Bunun %62'si kampüs kenarı; firewall bütçesinin büyük kısmı 10.000 öğrenciye gidiyor.
+
+## 5. Uzaktan erişim ve izleme
+
+### Neden public SSH yok
+
+İnternete açık bir 22 portu dakikalar içinde taranır ve kaba kuvvet saldırısı alır. Bizde **hiçbir kenarda 22 dışarıya açık
+değil.** Yönetim yolu şöyle:
+
+> Yönetici → FortiClient IPsec IKEv2 (İstanbul hub, Ankara yedek) → **MFA** (Entra ID/AD grubu, RADIUS üzerinden) →
+> ADMIN rol havuzu `10.20.200.0/24` → yalnız **bastion** (`10.50.15.0/24`, oturum kaydı) → SSH/HTTPS ile MGMT VLAN'ları.
+
+Roller ayrı adres havuzlarına düşer ve her havuz yalnız kendi hedefine gidebilir:
+
+| VPN rolü | Havuz | Gidebildiği yer |
+|---|---|---|
+| ADMIN | `10.20.200.0/24` | Bastion |
+| DEV | `10.20.201.0/24` | git/CI/artefakt |
+| RND | `10.20.202.0/24` | Araştırma veri deposu |
+| STAFF | `10.20.204.0/22` | ERP, posta, intranet |
+
+VPN profillerini Ağ Yöneticisi dağıtır ve yönetir. İşten ayrılan birinin erişimi, AD grubundan çıkarılmasıyla anında kapanır.
+SSL-VPN kapalı, çünkü FortiOS SSL-VPN'in istismar edilmiş CVE geçmişi var. Yönetici girişinde FortiCloud SSO da kapalı (bkz. §6).
+
+### Kim izliyor, kim sorumlu
+
+| Konu | Araç | Sahibi | Kanal |
 |---|---|---|---|
-| 10 | MGMT | 10.40.10.0/24 | |
-| 20 | SRV/INFRA | 10.40.20.0/24 | LMS, SIS, DNS, DHCP, AD |
-| 30 | ADM | 10.40.30.0/24 | İdari personel + yazıcılar |
-| 40 | STAFF | 10.40.40.0/22 | ~400 hoca × 2 cihaz [VARSAYIM] |
-| 60 | GUEST | 10.40.60.0/22 | Ziyaretçi |
-| 65 | LAB | 10.40.64.0/22 | Bilgisayar sınıfları |
-| 70 | DMZ | 10.40.70.0/24 | Dışa açık servisler |
-| 500–531 | STU-01…32 | 10.41.0.0/17 → 32 adet /22 | 10.000 öğr. × 2 cihaz = 20.000 [VARSAYIM A-02]; tek VLAN büyük yayın alanı oluşturacağından bina/kat başına /22 |
-
-Not: /22 = 1.022 kullanılabilir adres. Toplam öğrenci bloğu 32.766 adres → A-02'ye göre yaklaşık 1,6× büyüme payı.
-
-## 5. Siteden Bağımsız Ekip Blokları (10.50.0.0/16)
-| Ad | Alt ağ | Not |
-|---|---|---|
-| IT-OPS (jump host) | 10.50.10.0/24 | Yönetim istasyonları |
-| SHARED-SVC (syslog, izleme, yedek) | 10.50.20.0/24 | |
-| DEV | 10.50.80.0/23 | Git, CI/CD, artefakt |
-| RND | 10.50.90.0/24 | Araştırma |
-
-## 6. Siteler Arası ve WAN
-| Bağlantı | Alt ağ | Not |
-|---|---|---|
-| Ankara – İstanbul tüneli | 10.255.0.0/30 | |
-| Londra – İstanbul tüneli | 10.255.0.4/30 | |
-| Akademik – İstanbul tüneli | 10.255.0.8/30 | |
-| Simüle WAN/internet | 198.51.100.0/24 (dokümantasyon amaçlı TEST-NET-2 aralığı; RFC 5737 **[DOĞRULANMADI – RFC metni okunmadı]**) | Gerçek IP kullanılmaz |
-
-## 7. DHCP / DNS / IPv6
-- **DHCP:** Küçük sitelerde güvenlik duvarında; Akademikte sunucu bölgesinde merkezi DHCP + relay (L3 arayüzde). Öğrenci /22'lerinde kira süresi kısa (örn. 1–4 saat) [İLUSTRATİF] adres tükenmesine karşı.
-- **DNS:** Her sitede önbellekli çözümleyici (resolver), kurumsal alan adı için merkezi yetkili sunucu (SRV); kullanıcılar yalnızca iç resolver'ı kullanır (dışarıya 53 engelli) – DNS güvenliği için.
-- **IPv6 (isteğe bağlı):** ULA `fc00::/7` (RFC 4193, K21): rastgele 40-bit global ID ile `fdXX:XXXX:XXXX::/48`; site başına /48, VLAN başına /64. Gerçek prefiks üretimi uygulama fazında yapılır. Küresel IPv6 için sağlayıcıdan alınan prefiks gerekir [ARAŞTIRILACAK].
-
-
----
-
-# VLAN ve güvenlik bölgeleri
-
-
-**Amaç:** VLAN adlandırma standardı ve bölgeler arası iletişim ilkelerini belirlemek.
-**Durum:** Önerilen mantıksal model. Bölgeler onaylanmış fiziksel ağlar değildir.
-
-## 1. İsimlendirme Standardı
-`<SITE>-<ZONE>-<VLANID>` örn. `IST-OFFICE-30`, `AKD-STU-501`. Site kodları: ANK, IST, LON, AKD. Bölge kodları: MGMT, SRV, OFFICE, ADM, STAFF, STU, GST, LAB, DMZ, DEV, RND.
-
-## 2. VLAN Tablosu
-Bkz. `onerilen-ip-plani.md` §3–5 (tek kaynak). Aynı VLAN ID'si aynı bölgeyi temsil eder (ör. 60 = GUEST).
-
-## 3. Bölgeler Arası Trafik İlkeleri (özet; tam matris: `politikalar/guvenlik-duvari-politika-matrisi.md`)
-**İletişim kurabilir (kısıtlı):**
-- STU/STAFF/ADM/LAB → SRV: yalnızca uygulama portları (LMS HTTPS, DNS, DHCP, kimlik).
-- ADM → SRV: SIS/ERP için ek portlar.
-- DEV → SRV(artefakt): build/deploy portları. RND → DEV: yalnızca belirli veri aktarımı.
-- MGMT → tüm bölgeler: yalnızca yönetim protokolleri (SSH, HTTPS, SNMP); tersi sadece log/SNMP yanıtı.
-
-**İzole olmalı:**
-- STU ↔ ADM, STU ↔ MGMT, STU ↔ DEV, STU ↔ RND, STU ↔ STU (client isolation).
-- GST ↔ tüm iç bölgeler.
-- DEV ↔ RND doğrudan (ara servis aracılığıyla).
-- Kullanıcı bölgeleri → MGMT (hiçbiri).
-
-## 4. Bölge Sahipliği ve Kontrol
-Her bölge için bir sahip (İş sahibi), bir teknik sorumlu (BT Ops) ve kural gerekçe kaydı gerekir (`karar-gunlugu`).
-
-## 5. Açık Noktalar
-Wi-Fi VLAN ataması (SSID→VLAN, 802.1X dinamik VLAN) [ARAŞTIRILACAK]; Dev/RND/IT-Ops'un site yerleşimi [HOCAYA SORULACAK].
-
-
----
-
-# Politika matrisi
-
-
-**Amaç:** Hangi bölgeden hangisine hangi tür trafiğin izinli olduğunu tanımlamak.
-**Durum:** Taslak; **varsayılan: hepsi REDDET.** Aşağıdaki "izin" yalnızca ilke düzeyidir, kural/port listesi uygulama fazında kesinleştirilir.
-Lejant: `—` reddet | `P` portla sınırlı izin | `F` filtreli internet | `R` yalnız dönüş (established) | `✔` geniş izin
-
-| Kaynak \ Hedef | STU | STAFF | ADM | GST | LAB | SRV | DEV | RND | MGMT | INTERNET |
-|---|---|---|---|---|---|---|---|---|---|---|
-| **STU** | — (izolasyon) | — | — | — | — | P (LMS, DNS, DHCP) | — | — | — | F |
-| **STAFF** | R | — | P | — | P | P (LMS yönetim) | — | — | — | F |
-| **ADM** | — | P | — | — | — | P (SIS/ERP) | — | — | — | F |
-| **GST** | — | — | — | — | — | — (yalnız DNS dış) | — | — | — | F (kısıtlı, düşük bant) |
-| **LAB** | — | — | — | — | — | P | — | — | — | F (sınav modunda kısıtlı) |
-| **SRV** | R | R | R | — | R | P (servisler arası) | — | — | R | P (güncelleme) |
-| **DEV** | — | — | — | — | — | P (artefakt/deploy) | — | P (veri aktarımı) | — | ✔ (80/443/22/9418…) izlenir |
-| **RND** | — | — | — | — | — | P | P | — | — | P (izlenen çıkış) |
-| **MGMT** | — | — | — | — | — | P (SSH/HTTPS/SNMP) | P | P | — | P (güncelleme) |
-
-## İlkeler
-1. Satırdaki bölge, sütundaki bölgeye *yeni bağlantı başlatamaz* (`—`), `R` ise yalnızca kendi başlattığı bağlantının yanıtı.
-2. MGMT'e hiçbir kullanıcı bölgesi bağlantı başlatamaz; MGMT bu ağları yönetir.
-3. INTERNET → iç bölgeler: yalnız DMZ'ye (yayınlanan servis, portla sınırlı); diğerleri reddedilir.
-4. Her kural: sahibi, gerekçe, log seviyesi, gözden geçirme tarihi.
-5. Reddedilen trafik loglanır (oran sınırı ile).
-6. Siteler arası: yalnızca onaylı ağ çiftleri (örn. Londra OFFICE→İstanbul SRV); RND/MGMT siteler arası yalnızca BT Ops'tan.
-
-## Siteye Özgü Notlar
-- **Ankara/Londra:** küçük politika: OFFICE→SRV(P), OFFICE→INTERNET(F), GUEST→INTERNET.
-- **İstanbul:** hub; DMZ ve siteler arası geçişler burada politika ile.
-- **Akademik:** tablo tam geçerli; STU çok sayıda VLAN'a bölünür ve her biri aynı politikayı alır.
-
-
----
-
-# Site bant genişliği tanımları
-
-
-**Amaç:** Her site için ilüstratif dış hat (WAN) tanımı ve gerekçesi sunmak.
-**Durum:** Taslak. **Tüm mutlak Mbps/Gbps değerleri [İLUSTRATİF]'tir**; ölçüm yok. Kesin değerler gerçek hat kapasitesi belirlenince güncellenir [ARAŞTIRILACAK].
-Sınıf tanımları ve öncelikler için: `politikalar/bant-genisligi-politikasi.md` (C1–C10). Akademik Şube senaryoları için: `arastirma/bant-genisligi-planlamasi.md` (S1–S3).
-
-## 1. Tanım Matrisi
-
-| Site | Roller | Kullanıcı sayısı | Önerilen hat [İLUSTRATİF] | Kaygı | Not |
-|---|---|---|---|---|---|
-| **Ankara Ofisi (ANK)** | Merkez ofis; olası BT-Ops konumu (A-03) | ~40 [VARSAYIM] | 100–200 Mbps ↓ / 50–100 ↑ | VPN tünel trafiği az; yerel internet çıkışı | Yedekli hat [VARSAYIM] |
-| **İstanbul Ofisi (IST)** | En büyük ofis; **VPN hub** (KARAR-004); log merkezi; DMZ | ~80 [VARSAYIM] | 300–500 Mbps ↓ / 200 ↑ (1 Gbps değerlendirilir) | Tüm tüneller buradan geçer: siteden bağımsız Dev/R&D bölgesi (10.50.0.0/16) trafiği de bu hattı kullanır | Hat arızalanırsa siteler arası trafik durur — tek hub riski [VARSAYIM] |
-| **Londra Ofisi (LON)** | Küçük ofis; yerel internet çıkışı | ~30 [VARSAYIM] | 100 Mbps ↓ / 50 ↑ | TR↔UK RTT yüksek; merkezi uygulamalar VPN üzerinden | Yerel internet maliyeti [VARSAYIM] |
-| **Akademik Şube (AKD)** | 10.000 öğrenci + personel; lab; Wi-Fi | 10.000 [GERÇEK] | 10 Gbps (S2 senaryosuna göre) | S3 stres senaryosunda tıkanır → hat büyütmek yerine C3→C9 limiter + önbellek | Senaryolar: S1 ≈1,5 / S2 ≈10,7 / S3 ≈28 Gbps |
-
-**Okuma:** Hat değerleri ölçüm değil, büyüklük sırası verir. Site bazlı istekler hoca/ISP bilgisi olmadan kesinleşemez.
-
-## 2. VPN Tüneli Bant Genişliği [İLUSTRATİF]
-
-| Tünel | Hedef kapasite | Amaç |
-|---|---|---|
-| ANK–IST | 100 Mbps | Kurumsal trafik + geçiş trafiği |
-| IST–LON | 100 Mbps | Kurumsal trafik (UK veri koruma sorusu açık) |
-| ANK–AKD, IST–AKD | 500 Mbps | Ar-Ge / BT-Ops ↔ akademik etkileşim; toplu veri aktarımı (C6) |
-
-**Kural:** Tünel hedefi, uç sitenin dış hattının **toplamından küçük** tutulur; tünel + yerel internet aynı hattı paylaştığından tek tünel hattı tüketmemelidir. Değerler uygulama fazında kesinleşir; lab ölçeğinde küçültülerek test edilir.
-
-## 3. Açık Sorular
-- Gerçek hat kapasiteleri ve sağlayıcı teklifleri → [ARAŞTIRILACAK] / [HOCAYA SORULACAK]
-- Yedek hat gereksinimi (özellikle İstanbul hub) → [HOCAYA SORULACAK]
-- Lab ölçek çarpanı → `dogrulama/test-plani.md` bağdaştırılır
-
-
----
-
-# Bant genişliği planlaması
-
-
-**Amaç:** Çok uluslu bir kurumda bant genişliğinin nasıl planlanıp yönetileceğini açıklamak ve akademik bölüm için senaryolar üretmek.
-**Durum:** Taslak. **Tüm sayısal değerler [İLUSTRATİF]'tir; ölçülmüş gereksinim değildir.**
-
-## 1. Temel Kavramlar (dört farklı büyüklük)
-| Kavram | Tanım | Örnek yanılgı |
-|---|---|---|
-| Yapılandırılmış kişi başı limit | Politikada kullanıcıya tanınan **tavan** (cap) | "10.000 × 20 Mbps = 200 Gbps gerekir" ✗ |
-| Eşzamanlı talep | Aynı anda gerçekten trafik üreten kullanıcı sayısı × ortalama hız | Limit, talebin göstergesi değildir |
-| Toplam (aggregate) kapasite | Dış hat(lar)ın toplam hızı (ör. 2×N Gbps) | Kiralanan kapasite ≠ kullanılan |
-| Tepe kullanım | Belirli bir zaman dilimindeki (ör. 5 dk) en yüksek talep | Ortalama ile tasarım yapmak tepede kalitesizlik yaratır |
-
-**Oversubscription (aşırı abonelik):** Dışarıya toplam limitlerin toplamından çok daha az kapasite kiralanır, çünkü kullanıcılar aynı anda tavan hızlarında kullanmaz. Oran sabit değildir; ölçümle (utilization %, p95) ayarlanır **[ARAŞTIRILACAK: üniversite ağı için tipik oranlar, kaynak bulunamadı]**.
-
-## 2. Tahmin Yöntemi
-`Tepe talep ≈ (Toplam kullanıcı × eşzamanlılık oranı) × aktif kullanıcı başına ortalama hız × (1 + güvenlik payı)`
-Kapasite = tepe talep ÷ hedef azami doluluk (örn. %70). Önbellek/CDN/yerel yansı (mirror) talebi azaltır.
-Ayrıca öğrenci ağı ile personel/yönetim trafiği **ayrı** hesaplanır ve ayrı korunur (bkz. §4).
-
-## 3. Akademik Bölüm için Üç Hipotetik Senaryo ([İLUSTRATİF])
-Toplam öğrenci: 10.000 **[GERÇEK]**. Diğer parametreler **[VARSAYIM]**.
-
-| Senaryo | Varsayım | Eşzamanlı kullanıcı | Aktif kul. başı ort. hız | Ham tepe talep | %70 hedef doluluk ile hat |
-|---|---|---|---|---|---|
-| S1 – Normal ders günü | Öğlen; ders materyali, web, e-posta | %10 = 1.000 | 1 Mbps | 1 Gbps | ≈ 1,5 Gbps |
-| S2 – Yoğun dönem (vize/online sınav, canlı ders) | Video ders + LMS sınav; birçok akış | %25 = 2.500 | 3 Mbps | 7,5 Gbps | ≈ 10,7 Gbps |
-| S3 – Stres (büyük işletim sistemi/oyun güncellemesi + yurt akşamı) | Streaming + toplu indirme; %40 | %40 = 4.000 | 5 Mbps | 20 Gbps | ≈ 28 Gbps; politika ile S3 sınırlanmalı |
-
-Okuma: Kişi başı 20 Mbps tavan koyulsa bile S1'de toplam talep 1 Gbps, tavanların toplamı 200 Gbps değildir. S3 gibi durumlarda hat artırmak yerine **trafik sınıflandırma + adil paylaşım + önbellek** tercih edilir.
-Simülasyon labında değerler ölçeklenir (ör. 1:100, iperf3 ile) **[VARSAYIM]**.
-
-## 4. Departman Bazlı Ayırma (kavramsal)
-- Akademik öğrenci ağı, personel/yönetim ve kritik servislerden **mantıksal olarak ayrılır**; öğrenci yoğunluğu personel erişimini bozmasın diye personel/yönetim için **garantili minimum** tanımlanır.
-- Yazılım/Ar-Ge: büyük indirme (paket, imaj, Git, CI/CD, artefakt) ve transfer ihtiyacı; **yüksek tavan ama düşük öncelik** (toplu iş) ya da zaman çizelgeli (gece) yaklaşımı.
-- Kritik servisler (VoIP, kimlik doğrulama, DNS, LMS, sınav): düşük gecikme için öncelikli kuyruk/garantili oran.
-- Misafir Wi-Fi: düşük tavan, sınırlı portlar, iç ağa erişim yok, client isolation.
-
-## 5. Mekanizmalar
-| Mekanizma | Ne yapar | Not |
-|---|---|---|
-| QoS / sınıflandırma (DSCP) | Paketleri sınıflandırıp işaretler | İşaretler yalnızca *güvenilir* sınırda geçerli sayılmalı |
-| Traffic shaping | Hızı tamponlayarak sınırlar (gecikme artar, paket kaybı azalır) | Çıkış (egress) yönünde etkilidir |
-| Policing | Hız aşıldığında paketi atar/yeniden işaretler | Daha ucuz, TCP için sert |
-| Application-aware yönetim | Port değil uygulama kimliğine göre | Genelde NGFW özelliği; açık kaynakta sınırlı **[doğrulanmadı]** |
-| Adil paylaşım (fair-use) | Kişi başı eşitleme, kota/yavaşlatma | OPNsense'te "Share bandwidth evenly" senaryosu belgelenmiş (K7) |
-| Bufferbloat azaltma | FQ-CoDel gibi aktif kuyruk yönetimi | OPNsense "Fighting Bufferbloat with FQ_CoDel" (K7) |
-| İzleme / kapasite planlama | NetFlow/sFlow, SNMP, p95, trend | **[ARAŞTIRILACAK]** hangi araç simülasyonda kullanılacak |
-
-Platforma özgü notlar: OPNsense'te kuyruk **ağırlığı öncelik değildir** (K6); pfSense'te ALTQ verimsiz olduğu belirtilir, Limiters sert tavan için (K3).
-
-## 6. Açık Sorular
-Dış hat sayısı/tipi (yedekli mi?), üniversite eşzamanlılık verisi, VoIP var mı, Londra–Türkiye arası gecikme beklentisi → `gereksinimler/varsayimlar-ve-acik-sorular.md`.
-Politika matrisi: `politikalar/bant-genisligi-politikasi.md`.
-
-
----
-
-# Top 5 güvenlik duvarı önerisi
-
-
-**Amaç:** Her bir siteye ve parçaya (hub, DMZ, Dev/R&D bölgesi, öğrenci ağı, dış hat) kurulabilecek en iyi güvenlik duvarı önerilerini sıralı sunmak.
-**Durum:** Öneri – öğretim elemanı onayı bekliyor. Fiyat bilgisi yok; lisans kısıtları kaynaklarla işaretli.
-Kaynaklar: `arastirma/guvenlik-duvari-teknoloji-karsilastirmasi.md`, `arastirma/kaynaklar-ve-referanslar.md` (K1–K21). Site hattı tahminleri: `politikalar/site-bant-genisligi-tanimlari.md`.
-
-## 1. Genel Sıralama (ödev gereksinimlerine göre)
-
-| Sıra | Ürün | Lisans | Ödev uygunluğu | Kaynak |
-|---|---|---|---|---|
-| 1 | **OPNsense** | Ücretsiz (lisans metni doğrulanacak [ARAŞTIRILACAK]) | Çok yüksek: stateful, NAT, VLAN, pipe/queue QoS, S2S VPN, log | K5–K7 |
-| 2 | **pfSense CE** | Ücretsiz | Çok yüksek: resmi dokümanlı IPsec (K4), Limiters (K3), 1 GB RAM min (K1) | K1–K4 |
-| 3 | **FortiGate-VM** | Kalıcı değerlendirme lisansı (hesap başına 1 kopya) | Orta: eval sınırı 1 vCPU / 2 GB / 3 arayüz / düşük şifreleme [kısmen doğrulandı] | K8–K9 |
-| 4 | **Palo Alto VM-Series** | 30 gün deneme, portal hesabı | Orta: ağır (VM-50: 2 vCPU, ~5,5 GB RAM, 60 GB disk); güncel şartlar doğrulanmadı | K10–K12 |
-| 5 | **Linux nftables** | Ücretsiz | Öğretici yedek plan: tam kontrol, arayüz yok; lab ölçeğinde sunucu/istemci düğümleri için | K19 |
-
-**Not:** Packet Tracer bir güvenlik duvarı *değil*, simülatördür; listeye girmez (K17). GNS3/EVE-NG ise güvenlik duvarının *çalıştırıldığı ortamdır*, ürün değildir.
-
-## 2. Site ve Parça Başına Öneri + Bant Genişliği Tahmini
-
-**Tüm hat değerleri [İLUSTRATİF]'tir** ve `politikalar/site-bant-genisligi-tanimlari.md` §1–2 ile tutarlıdır.
-
-| Yer / Parça | Rol | 1. tercih | 2. tercih | Yedek | Hat tahmini | Gerekçe |
-|---|---|---|---|---|---|---|
-| **Ankara Ofisi (ANK)** | Merkez ofis firewall | OPNsense | pfSense CE | nftables | 100–200 Mbps ↓ / 50–100 ↑ | Küçük ofis; tek cihazda VLAN + NAT + spoke VPN |
-| **İstanbul Ofisi (IST)** — VPN hub + log merkezi + DMZ | Projenin kalbi | **OPNsense** | pfSense CE | nftables | **300–500 Mbps ↓ / 200 ↑** (1 Gbps değerlendirilir) | Pipe/queue QoS (K6–K7) + syslog + S2S tünelleri tek kutuda; log merkezi ayrık VM |
-| **İstanbul — Dev/R&D bölgesi (10.50.0.0/16)** | Geliştirici/araştırma izolasyonu | pfSense CE | OPNsense | nftables | 100 Mbps geçiş (toplam içinde) | Sınır cihazı basit tutulur; izolasyon kural matrisinde |
-| **Londra Ofisi (LON)** | UK ofis + veri koruma sınırı | pfSense CE | OPNsense | FortiGate-VM eval (kısıtlı) | 100 Mbps ↓ / 50 ↑ | Yerel internet çıkışı; küçük ölçek; eval tek kopya merkeze ayrılır [VARSAYIM] |
-| **Akademik Şube (AKD) — kenar firewall** | 10.000 kullanıcı | **OPNsense** (FQ_CoDel + adil paylaşım senaryoları, K7) | pfSense CE | nftables | **10 Gbps** (S2'ye göre) | Per-IP limiter + C1–C9 sınıf kuyruğu; adil kullanım kritik |
-| **Akademik Şube — lab alt bölgesi (LAB)** | Öğrenci lab izolasyonu | pfSense CE | OPNsense | nftables | Hat içinde sınırlı | Basit varyant, VLAN altı |
-| **Tüm siteler — istemci/sunucu düğümleri** | Host/Bilgisayar | FreeBSD/Linux (+ nftables, K19) | — | — | Uygulanmaz | GNS3 topolojisinin dolgu düğümleri |
-
-**Okuma:** Tercihler keyfi değil; kayıtlı kaynak + özellik eşleşmesinden gelir. 1. ve 2. tercihler birbirinin yerine geçebilir; hoca pfSense'i işaret ederse pfSense CE birincil yapılarak önceki öneri (KARAR-003) güncellenir.
-
-## 3. Hocaya Bağımlı Sorular
-- Tamamen açık kaynak mı? (Q-01) → 1–2. sıradan biri zorunlu olur.
-- Ticari deneyim isteniyor mu? (Q-04) → FortiGate-VM eval kısıtlarıyla birlikte eklenebilir.
-- Hoca kendi bilgisayarında pfSense kullanıyor mu? → pfSense CE birincil seçilir, OPNsense alternatif yazılır.
-
-
----
-
-# İzleme planı
-
-
-**Amaç:** Güvenlik duvarları ve ağ altyapısının nasıl izleneceğini tanımlamak.
-**Durum:** Taslak. Lab karşılıkları uygulama fazında kesinleşir.
-
-## 1. Profesyonel Dünyada İzleme
-
-Profesyonel ağ izleme üç veri türüne dayanır. Sektörde bu üçlüye "observability" denir:
-
-| Veri türü | Ne söyler | Tipik araçlar |
-|---|---|---|
-| Log | Firewall izin/reddi, VPN olayları, sistem olayları | syslog; SIEM: Elastic, Splunk, Graylog, Wazuh |
-| Metrik | CPU, RAM, arayüz hızı, paket kaybı, oturum sayısı | SNMP; Prometheus, Zabbix, Grafana |
-| Akış | Kim, nereye, hangi port, ne kadar veri | NetFlow/sFlow; nfdump, ntopng |
-
-Yaygın ilke: tek veri kaynağına güvenilmez. Log, metrik ve akış birlikte doğrulanır.
-
-## 2. Sistematik Kısım: Yapımızda Nasıl Olacak
-
-| Bileşen | Kaynak | Lab karşılığı | Durum |
-|---|---|---|---|
-| Firewall logları | OPNsense/pfSense syslog çıktısı | Tek syslog VM (rsyslog), İST MGMT ağı | Planlı |
-| Trafik akışı | NetFlow export | Aynı izleme VM'de nfdump/ntopng | Planlı [ARAŞTIRILACAK] |
-| Cihaz metrikleri | SNMP | Aynı izleme VM'de Prometheus veya Zabbix | Planlı [ARAŞTIRILACAK] |
-| Uyarı | p95 hat kullanımı > %70 [İLUSTRATİF] | Basit kontrol scripti | Planlı |
-| Pano | Toplanan metrikler | Grafana veya terminal raporu | Planlı |
-
-Bant genişliği bağlantıları:
-- Sınıf kullanımı ve p95 tetiği: `politikalar/bant-genisligi-politikasi.md`
-- Site hat hedefleri: `politikalar/site-bant-genisligi-tanimlari.md` §1 ve §2
-
-Kural: İzleme verisi kullanıcı ağından ayrık MGMT ağını kullanır. Kullanıcı bölgesinden yönetim ağına erişim yoktur (bkz. `mimari/vlan-ve-guvenlik-bolgeleri.md`).
-
-## 3. İnsan Kısımı: Roller ve Süreç
-
-Profesyonel dünyada izleme yalnız araç değildir; süreç işin diğer yarısıdır.
-
-Roller (BT ve Ağ Operasyonları):
-
-| Rol | Sorumluluk |
-|---|---|
-| Ağ yöneticisi | Firewall kural onayı, VLAN ve VPN yönetimi |
-| Sistem yöneticisi | Sunucu metrikleri, yedekleme, saklama |
-| Güvenlik analisti | Log triyajı, saldırı işareti taraması |
-| Helpdesk | Kullanıcı şikayetini ekiplere doğru yönlendirme |
-| Nöbet (on-call) | Acil durumlarda mesai dışı müdahale [VARSAYIM] |
-
-Süreç akışı (profesyonel standart):
-
-1. Alarm gelir
-2. Triyaj: hangi site, hangi sınıf (C1–C9), hangi bölge
-3. Runbook: önceden yazılmış müdahale adımları
-4. Eskalasyon: sorun çözülmezse üst kişiye aktarım
-5. Olay kaydı: ne oldu, ne yapıldı
-6. Postmortem: kök neden ve tekrar etmeme adımı
-
-## 4. Lab Ölçeği
-
-Projede tek kişi (öğrenci) tüm rolleri üstlenir. Süreç adımları basit checklist olarak uygulanır. Her test ve olay için çıktı ve zaman damgası toplanır; test bağlantıları `dogrulama/test-plani.md`'dedir.
-
-## 5. Lab Topolojisi
-
-```
-              İzleme VM (syslog + NetFlow + SNMP + pano)
-                             ↑
-  ANK ──── IPsec ────→ IST (hub) ←──── IPsec ──── LON
-                             ↑↓
-                        AKD (akademik)
-```
-
-Tüm izleme verisi MGMT ağı üzerinden İST'teki izleme VM'sine akar. İzleme trafiği kullanıcı trafiği ile aynı VLAN'ı paylaşmaz.
-
-## 6. Açık Sorular [HOCAYA SORULACAK]
-1. Log saklama süresi ne olsun? (NFR-06)
-2. Ücretsiz araç seti yeterli mi, yoksa ticari çözüm mü isteniyor?
-3. Alarm eşikleri (p95 %70) uygun mu?
+| **Güvenlik:** blok, auth hatası, IPS/WAF isabeti, yeni dinleyen port | Wazuh SIEM + FortiAnalyzer | **Güvenlik Analisti** (SOC sorumlusu); mesai dışı haftalık nöbet; eskalasyon BT ve Ağ Operasyonları Müdürü | Önem 3+: Telegram `soc-alerts` + nöbetçiye telefon |
+| **Uygulama sağlığı:** ERP/LMS erişilebilirliği, CPU, p95 hat doluluğu %70 üstü | Zabbix + Grafana | **Sistem Yöneticisi** | e-posta + ayrı Telegram `ops-health` |
+| **Kural değişikliği** | FortiManager + değişiklik kaydı | **Ağ Yöneticisi** | CAB onayı, kural başına gerekçe |
+
+İki hat bilerek ayrıldı: uptime gürültüsü saldırı uyarısını gömmesin. Telegram botunun profili derste gördüğümüz hatadan
+ders alınarak ayarlandı. Bot **yalnız BLOCK** ve **yalnız inbound** olayları bildiriyor ve 5 dakikalık özet/dedup yapıyor.
+Giden ALLOW ve DNS olaylarını bildirmiyor, yoksa bot kendi trafiğini bildirip rate limit'e takılır.
+Bot token'ı yalnız sır kasasında tutuluyor; sızarsa hemen değiştirilir.
+
+**Log saklama:** Güvenlik ve erişim logları **2 yıl** tutuluyor (5651 sayılı kanun 1-2 yıl arası saklama istiyor; süre
+dolunca KVKK imha politikası uygulanıyor). Son 90 gün sıcak depoda, sonrası hash'li ve imzalı arşivde. Londra logları
+**UK GDPR** gereği kişisel veri azaltılarak ve IDTA sözleşmesiyle Türkiye'deki SIEM'e aktarılıyor.
+
+**Yedek ve yama:** Firewall config'leri her gece yedekleme sunucusuna alınıyor, ayrıca şifreli bir harici kopya tutuluyor.
+Ayda bir geri yükleme testi yapılıyor. Firmware dahil yamalar aylık bakım penceresinde uygulanıyor; kritik bir CVE çıkarsa
+72 saat içinde. HA çiftlerinde önce pasif üye güncelleniyor. FortiGuard PSIRT ve CISA KEV takip ediliyor.
+
+## 6. CVE takibi (bonus)
+
+**CVE-2026-24858: FortiOS FortiCloud SSO kimlik doğrulama atlatma** (FG-IR-26-060, CISA KEV listesinde). 2026 Ocak'ta
+aktif olarak istismar edildi: saldırganlar arka kapı yönetici hesabı açtı ve firewall config'ini değiştirdi. Bütün
+filomuz FortiGate olduğu için doğrudan bizi ilgilendiriyor.
+
+- **Geçici önlem:** `admin-forticloud-sso-login` devre dışı bırakıldı. Yönetim arayüzü tasarım gereği zaten WAN'a kapalı,
+  yalnız bastion'dan erişiliyor. Yeni bir yönetici hesabı açıldığında SIEM uyarı üretiyor.
+- **Kalıcı çözüm:** Sabit FortiOS sürümüne yükseltme. HA çiftinde önce pasif üye güncelleniyor, bakım penceresinde.
+- **Durum:** `patched`.
+
+**CVE-2024-4577: PHP-CGI argüman enjeksiyonu (RCE).** Derste işlenen PHP RCE dersinin bizim tasarımdaki karşılığı. Açık
+yalnız Windows'ta CGI modunu etkiliyor. Bizim LMS ve web sitesi Linux üzerinde PHP-FPM ile çalıştığı için
+**etkilenmiyoruz** (`not-affected`). Yine de geçici katman olarak Cloudflare'in yönetilen WAF kuralı ve ModSecurity CRS
+açık. Kalıcı çözüm, PHP sürümlerinin aylık yama penceresinde güncel tutulması. **Firewall burada doğru katman değil:**
+saldırı izinli 443 portundan geliyor. Bu iş WAF'ın ve yamanın işi.
+
+## 7. Bilerek yapmadıklarımız
+
+- **Tam mesh VPN yok.** İstanbul hub-and-spoke yapısı 3 tünel demek; mesh 6 tünel ve 6 politika demek. Hub'ın tek nokta
+  riskini HA çifti ve çift ISP azaltıyor. Ankara ikinci VPN sonlandırıcısı olarak bekliyor.
+- **Kampüs için ikinci bir iç firewall yok.** Öğrenci ↔ iç ağ ayrımını 900G yapıyor, öğrenciler arası trafiği AP'deki
+  client isolation kesiyor. Ayrı bir iç segmentasyon firewall'u 60.000 USD'nin üstünde bir ek maliyet; bugünkü risk bunu karşılamıyor.
+- **SSL-VPN yok.** Uzaktan erişim IKEv2 ile yapılıyor; FortiClient ve MFA entegrasyonu hazır.
+
+## 8. Kaynaklar
+
+- Fortinet, bayi datasheet özetleri: [FortiGate 200F/80F/60F](https://www.boll-europe.at/datasheets/Fortinet_Product_Matrix.pdf),
+  [FortiGate 200G](https://datacenter360.ca/fortinet/fortigate/fortigate-200g-firewall/),
+  [FortiGate 900G](https://cdwg.com/product/fortinet-fortigate-900g-security-appliance-with-3-years-forticare-premi/7508762),
+  [200F sipariş sonu notu](https://datacenter360.ca/fortinet/fortigate/fortigate-200f-firewall/)
+- [Check Point güvenlik cihazları karşılaştırması](https://www.checkpoint.com/check-point-security-appliances-comparison)
+- [Palo Alto PA-450](https://paloguard.com/firewall-pa-450.asp), [PA-3440](https://networkdevicesinc.com/collections/pa-3400-series-firewalls/products/pan-pa-3440), [karşılaştırma](https://paloguard.com/compare-spec.asp)
+- [Sophos XGS](https://firewalls.com/brands/sophos/firewalls/xgs-firewalls.html), [XGS 2300](https://cdwg.com/product/sophos-xgs-2300-security-appliance/6535228)
+- [Netgate 8200 duyurusu](https://www.netgate.com/blog/announcing-the-netgate-8200), [mağaza](https://shop.netgate.com/products/8200-max-pfsense)
+- [FortiWeb 400F](https://www.shi.com/product/47678528/Fortinet-FortiWeb-400F), [Cloudflare planları](https://www.cloudflare.com/plans/)
+- [CVE-2026-24858](https://cvefeed.io/vuln/detail/CVE-2026-24858), [HivePro analizi](https://www.hivepro.com/threat-advisory/cve-2026-24858-critical-forticloud-sso-zero-day-under-active-exploitation/)
+- Dokümantasyon deposu: [RedRiveRR/guvenlik-duvari-projesi](https://github.com/RedRiveRR/guvenlik-duvari-projesi), K1-K21 kaynak listesi: [kaynaklar-ve-referanslar.md](https://github.com/RedRiveRR/guvenlik-duvari-projesi/blob/main/arastirma/kaynaklar-ve-referanslar.md)
