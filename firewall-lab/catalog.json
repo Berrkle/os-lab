@@ -1,17 +1,17 @@
 {
   "generatedBy": "firewall-lab/scripts/catalog.py",
   "summary": {
-    "companies": 5,
-    "branches": 18,
-    "firewalls": 21,
-    "rules": 98,
+    "companies": 6,
+    "branches": 21,
+    "firewalls": 24,
+    "rules": 111,
     "priceUsd": {
       "min": 700,
       "max": 12000,
       "total": 18399
     },
     "chosenByVendor": {
-      "Fortinet": 12,
+      "Fortinet": 15,
       "Netfilter project": 5,
       "Palo Alto Networks": 1,
       "Cloudflare": 1,
@@ -20,7 +20,7 @@
     },
     "chosenByProduct": {
       "Netfilter project nftables on Kali Linux (central router/firewall)": 5,
-      "Fortinet FortiGate 60F": 3,
+      "Fortinet FortiGate 60F": 4,
       "Fortinet FortiGate 200F (HA)": 2,
       "Fortinet FortiGate 100F": 1,
       "Fortinet FortiGate 600F": 1,
@@ -30,18 +30,20 @@
       "Fortinet FortiGate 1800F class (HA)": 1,
       "Fortinet FortiGate 100F class": 1,
       "WatchGuard Firebox T-series": 1,
+      "Fortinet FortiGate 100F (HA)": 1,
+      "Fortinet FortiGate 200F": 1,
       "Fortinet FortiGate 400F (HA)": 1,
       "Fortinet FortiGate 3500F (HA)": 1,
       "Netgate pfSense Plus (Netgate 4200)": 1
     },
     "vendorsConsidered": {
-      "Fortinet": 20,
-      "Sophos": 13,
+      "Fortinet": 23,
+      "Sophos": 16,
+      "Check Point": 13,
+      "Palo Alto Networks": 12,
       "Netgate": 11,
       "Deciso": 10,
-      "Check Point": 10,
-      "Palo Alto Networks": 9,
-      "Cisco": 7,
+      "Cisco": 10,
       "Netfilter project": 5,
       "WatchGuard": 3,
       "Juniper": 3,
@@ -592,6 +594,153 @@
         {
           "product": "Quantum Spark 1600 / 1800",
           "vendor": "Check Point",
+          "throughputGbps": null,
+          "priceUsd": null
+        }
+      ]
+    },
+    {
+      "company": "GüvenTek Bilişim A.Ş.",
+      "companySlug": "guventek-bilisim",
+      "sector": "Technology",
+      "author": "G*** Ş***",
+      "branch": "Istanbul HQ",
+      "branchId": "istanbul-hq",
+      "branchRole": "headquarters",
+      "location": "Istanbul, Turkey",
+      "segment": "perimeter",
+      "product": "FortiGate 100F (HA)",
+      "vendor": "Fortinet",
+      "throughputGbps": null,
+      "priceUsd": null,
+      "ruleCount": 5,
+      "actions": {
+        "allow": 2,
+        "deny": 3,
+        "reject": 0,
+        "limit": 0
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "PA-440",
+          "vendor": "Palo Alto Networks",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Secure Firewall 1210",
+          "vendor": "Cisco",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Quantum Spark 1600",
+          "vendor": "Check Point",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "XGS 2300",
+          "vendor": "Sophos",
+          "throughputGbps": null,
+          "priceUsd": null
+        }
+      ]
+    },
+    {
+      "company": "GüvenTek Bilişim A.Ş.",
+      "companySlug": "guventek-bilisim",
+      "sector": "Technology",
+      "author": "G*** Ş***",
+      "branch": "Ankara Operations Branch",
+      "branchId": "ankara-branch",
+      "branchRole": "branch",
+      "location": "Ankara, Turkey",
+      "segment": "perimeter",
+      "product": "FortiGate 60F",
+      "vendor": "Fortinet",
+      "throughputGbps": null,
+      "priceUsd": null,
+      "ruleCount": 4,
+      "actions": {
+        "allow": 1,
+        "deny": 3,
+        "reject": 0,
+        "limit": 0
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "PA-410",
+          "vendor": "Palo Alto Networks",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Secure Firewall 1210",
+          "vendor": "Cisco",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Quantum Spark 1550",
+          "vendor": "Check Point",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "XGS 116",
+          "vendor": "Sophos",
+          "throughputGbps": null,
+          "priceUsd": null
+        }
+      ]
+    },
+    {
+      "company": "GüvenTek Bilişim A.Ş.",
+      "companySlug": "guventek-bilisim",
+      "sector": "Technology",
+      "author": "G*** Ş***",
+      "branch": "Izmir R&D and Software",
+      "branchId": "izmir-rnd",
+      "branchRole": "branch",
+      "location": "Izmir, Turkey",
+      "segment": "perimeter",
+      "product": "FortiGate 200F",
+      "vendor": "Fortinet",
+      "throughputGbps": null,
+      "priceUsd": null,
+      "ruleCount": 4,
+      "actions": {
+        "allow": 0,
+        "deny": 3,
+        "reject": 0,
+        "limit": 1
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "PA-1410",
+          "vendor": "Palo Alto Networks",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Secure Firewall 3110",
+          "vendor": "Cisco",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Quantum Force 9100",
+          "vendor": "Check Point",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "XGS 3100",
+          "vendor": "Sophos",
           "throughputGbps": null,
           "priceUsd": null
         }

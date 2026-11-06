@@ -9,3 +9,4 @@ profile identifies the contributor.
 | B*** Ö*** | [@Pireburak](https://github.com/Pireburak) | [AnadoluNet Technology Holding](companies/anadolunet-holding/) |
 | A*** E*** | [@apo536098-wq](https://github.com/apo536098-wq) | [Multi-Branch nftables + QoS Lab](companies/multi-branch-nftables-lab/) |
 | F*** Y*** A*** | [@fatmayelizapaydin](https://github.com/fatmayelizapaydin) | [Kurumsal Ağ Güvenliği ve Altyapı Planlaması](companies/kurumsal-ag-planlamasi/) |
+| G*** Ş*** | [@GvnTech-cmd](https://github.com/GvnTech-cmd) | [GüvenTek Bilişim A.Ş.](companies/guventek-bilisim/) |
