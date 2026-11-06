@@ -1,0 +1,6 @@
+---
+import Base from "../../../layouts/Base.astro";
+import { FirewallPage } from "../../../views/firewall-page";
+import { copy } from "../../../firewall/locale";
+---
+<Base title={copy.tr.lab} description={copy.tr.description} lang="tr"><FirewallPage locale="tr" client:only="react" /></Base>

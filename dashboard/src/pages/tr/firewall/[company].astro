@@ -1,0 +1,16 @@
+---
+import Base from "../../../layouts/Base.astro";
+import { COMPANIES } from "../../../firewall/companies.generated";
+import { FirewallCompanyPage } from "../../../views/firewall-company-page";
+import { copy } from "../../../firewall/locale";
+import "../../../styles/firewall-company.css";
+
+export function getStaticPaths() {
+  return COMPANIES.map((company) => ({ params: { company: company.slug }, props: { company } }));
+}
+
+const { company } = Astro.props;
+---
+<Base title={`${company.name} · ${copy.tr.lab}`} description={`${company.name}: ${copy.tr.companyDescription}`} lang="tr">
+  <FirewallCompanyPage company={company} locale="tr" client:only="react" />
+</Base>

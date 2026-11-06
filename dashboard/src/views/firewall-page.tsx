@@ -24,6 +24,7 @@ import { TopBar } from "../shell/top-bar";
 import { Badge, Section, type Tone } from "../components/ui";
 import { COMPANIES } from "../firewall/companies.generated";
 import type { Branch, Company, Firewall, Rule } from "../firewall/types";
+import { branchRole, copy, cveStatus, firewallPath, ruleAction, ruleDirection, type FirewallLocale } from "../firewall/locale";
 
 const ACCENT = "#f36c21";
 const REPO = "https://github.com/keyvanarasteh/os-lab";
@@ -52,7 +53,7 @@ function companyStats(c: Company) {
   return { branches: c.branches.length, people, segments, rules };
 }
 
-const fmt = (n: number) => n.toLocaleString("en-US");
+const fmt = (n: number, locale: FirewallLocale) => n.toLocaleString(locale === "tr" ? "tr-TR" : "en-US");
 
 function Stat({ value, label }: { value: string; label: string }) {
   return (
@@ -63,16 +64,17 @@ function Stat({ value, label }: { value: string; label: string }) {
   );
 }
 
-function RuleRow({ rule }: { rule: Rule }) {
-  const target = [rule.from && `from ${rule.from}`, rule.to && `→ ${rule.to}`].filter(Boolean).join(" ");
+function RuleRow({ rule, locale }: { rule: Rule; locale: FirewallLocale }) {
+  const t = copy[locale];
+  const target = [rule.from && `${t.from} ${rule.from}`, rule.to && `→ ${rule.to}`].filter(Boolean).join(" ");
   const portText =
     rule.port != null || (rule.proto && rule.proto !== "any")
       ? `${rule.proto && rule.proto !== "any" ? rule.proto : ""}${rule.port != null ? `/${rule.port}` : ""}`.trim()
-      : "any";
+      : t.any;
   return (
     <li className="flex flex-wrap items-baseline gap-x-2 gap-y-1 py-2 text-sm">
-      <Badge tone={ACTION_TONE[rule.action]}>{rule.action}</Badge>
-      <span className="font-mono text-xs text-(--iux-muted-foreground)">{rule.direction ?? "in"}</span>
+      <Badge tone={ACTION_TONE[rule.action]}>{ruleAction(rule.action, locale)}</Badge>
+      <span className="font-mono text-xs text-(--iux-muted-foreground)">{ruleDirection(rule.direction ?? "in", locale)}</span>
       <span className="font-mono text-xs">{portText}</span>
       {target ? <span className="font-mono text-xs text-(--iux-muted-foreground)">{target}</span> : null}
       <span className="min-w-0 flex-1 basis-full text-(--iux-muted-foreground) sm:basis-auto">— {rule.note}</span>
@@ -80,7 +82,8 @@ function RuleRow({ rule }: { rule: Rule }) {
   );
 }
 
-function FirewallCard({ fw }: { fw: Firewall }) {
+function FirewallCard({ fw, locale }: { fw: Firewall; locale: FirewallLocale }) {
+  const t = copy[locale];
   const [showAlts, setShowAlts] = useState(false);
   return (
     <div className="rounded-xl border border-(--iux-border) bg-(--iux-card)/60 p-4">
@@ -92,7 +95,7 @@ function FirewallCard({ fw }: { fw: Firewall }) {
           <span className="text-xs text-(--iux-muted-foreground)">{fw.chosen.throughputGbps} Gbps</span>
         ) : null}
         {fw.chosen.priceUsd != null ? (
-          <span className="text-xs text-(--iux-muted-foreground)">${fmt(fw.chosen.priceUsd)}</span>
+          <span className="text-xs text-(--iux-muted-foreground)">${fmt(fw.chosen.priceUsd, locale)}</span>
         ) : null}
       </div>
       {fw.chosen.reason ? <p className="mt-1.5 text-sm text-(--iux-muted-foreground)">{fw.chosen.reason}</p> : null}
@@ -102,7 +105,7 @@ function FirewallCard({ fw }: { fw: Firewall }) {
         onClick={() => setShowAlts((v) => !v)}
         className="mt-2 text-xs font-semibold text-[#f36c21] hover:underline"
       >
-        {showAlts ? "Hide" : "Show"} {fw.alternatives.length} alternatives considered
+        {showAlts ? t.hide : t.show} {fw.alternatives.length} {t.alternatives}
       </button>
       {showAlts ? (
         <ul className="mt-2 space-y-1.5 border-l-2 border-(--iux-border) pl-3">
@@ -113,7 +116,7 @@ function FirewallCard({ fw }: { fw: Firewall }) {
                 {" "}
                 · {a.vendor}
                 {a.throughputGbps != null ? ` · ${a.throughputGbps} Gbps` : ""}
-                {a.priceUsd != null ? ` · $${fmt(a.priceUsd)}` : ""}
+                {a.priceUsd != null ? ` · $${fmt(a.priceUsd, locale)}` : ""}
               </span>
               {a.reason ? <span className="block text-xs text-(--iux-muted-foreground)">{a.reason}</span> : null}
             </li>
@@ -123,11 +126,11 @@ function FirewallCard({ fw }: { fw: Firewall }) {
 
       <div className="mt-3">
         <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-(--iux-muted-foreground)">
-          <ListNumbersIcon size={13} /> Rule set · first match wins
+          <ListNumbersIcon size={13} /> {t.ruleSet}
         </div>
         <ul className="divide-y divide-(--iux-border)">
           {fw.rules.map((r, i) => (
-            <RuleRow key={i} rule={r} />
+            <RuleRow key={i} rule={r} locale={locale} />
           ))}
         </ul>
       </div>
@@ -135,13 +138,14 @@ function FirewallCard({ fw }: { fw: Firewall }) {
   );
 }
 
-function BranchCard({ branch }: { branch: Branch }) {
+function BranchCard({ branch, locale }: { branch: Branch; locale: FirewallLocale }) {
+  const t = copy[locale];
   const people = peopleTotal(branch);
   return (
     <div className="rounded-xl border border-(--iux-border) p-4">
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="text-base font-semibold">{branch.name}</h3>
-        <Badge>{branch.role}</Badge>
+        <Badge>{branchRole(branch.role, locale)}</Badge>
         {branch.network.dmz ? <Badge tone="warning">DMZ</Badge> : null}
         <span className="flex items-center gap-1 text-xs text-(--iux-muted-foreground)">
           <MapPinIcon size={13} /> {branch.location}
@@ -149,7 +153,7 @@ function BranchCard({ branch }: { branch: Branch }) {
       </div>
       <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-(--iux-muted-foreground)">
         <span className="flex items-center gap-1">
-          <UsersThreeIcon size={14} /> {fmt(people)} people
+          <UsersThreeIcon size={14} /> {fmt(people, locale)} {t.person}
         </span>
         <span className="font-mono text-xs">{branch.network.cidr}</span>
         <span>
@@ -169,19 +173,20 @@ function BranchCard({ branch }: { branch: Branch }) {
         ))}
       </div>
       <p className="mt-2 text-xs text-(--iux-muted-foreground)">
-        Link drivers: {branch.bandwidth.drivers.join(", ")}
+        {t.linkDrivers}: {branch.bandwidth.drivers.join(", ")}
       </p>
 
       <div className="mt-3 space-y-3">
         {branch.firewalls.map((fw, i) => (
-          <FirewallCard key={i} fw={fw} />
+          <FirewallCard key={i} fw={fw} locale={locale} />
         ))}
       </div>
     </div>
   );
 }
 
-function CompanyPanel({ company }: { company: Company }) {
+function CompanyPanel({ company, locale }: { company: Company; locale: FirewallLocale }) {
+  const t = copy[locale];
   const stats = companyStats(company);
   return (
     <div className="flex flex-col gap-5">
@@ -205,43 +210,43 @@ function CompanyPanel({ company }: { company: Company }) {
           {company.author.studentId ? ` · ${company.author.studentId}` : ""} · {company.author.course}
         </p>
         <p className="mt-2 max-w-3xl text-sm text-(--iux-muted-foreground)">{company.summary}</p>
-        <a className="fw-cta mt-4" href={`/firewall/${company.slug}/`}>
-          Explore the network &amp; its gaps <ArrowSquareOutIcon size={16} weight="bold" />
+        <a className="fw-cta mt-4" href={firewallPath(locale, company.slug)}>
+          {t.explore} <ArrowSquareOutIcon size={16} weight="bold" />
         </a>
       </div>
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <Stat value={fmt(stats.branches)} label="Branches" />
-        <Stat value={fmt(stats.people)} label="People" />
-        <Stat value={fmt(stats.segments)} label="Firewalls" />
-        <Stat value={fmt(stats.rules)} label="Rules" />
+        <Stat value={fmt(stats.branches, locale)} label={t.branches} />
+        <Stat value={fmt(stats.people, locale)} label={t.people} />
+        <Stat value={fmt(stats.segments, locale)} label={t.firewalls} />
+        <Stat value={fmt(stats.rules, locale)} label={t.rules} />
       </div>
 
-      <Section title="Branches" icon={<BuildingsIcon size={16} />}>
+      <Section title={t.branches} icon={<BuildingsIcon size={16} />}>
         <div className="space-y-4">
           {company.branches.map((b) => (
-            <BranchCard key={b.id} branch={b} />
+            <BranchCard key={b.id} branch={b} locale={locale} />
           ))}
         </div>
       </Section>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Section title="Remote access & monitoring" icon={<ShieldCheckIcon size={16} />}>
+        <Section title={t.remote} icon={<ShieldCheckIcon size={16} />}>
           <dl className="space-y-2 text-sm">
             {company.remoteAccess ? (
               <div>
-                <dt className="font-semibold">Remote access · {company.remoteAccess.type}</dt>
+                <dt className="font-semibold">{t.remote} · {company.remoteAccess.type}</dt>
                 {company.remoteAccess.note ? (
                   <dd className="text-(--iux-muted-foreground)">{company.remoteAccess.note}</dd>
                 ) : null}
               </div>
             ) : null}
             <div>
-              <dt className="font-semibold">Owner</dt>
+              <dt className="font-semibold">{t.owner}</dt>
               <dd className="text-(--iux-muted-foreground)">{company.monitoring.owner}</dd>
             </div>
             <div>
-              <dt className="font-semibold">Alerts land in</dt>
+              <dt className="font-semibold">{t.alerts}</dt>
               <dd className="text-(--iux-muted-foreground)">{company.monitoring.alertSink}</dd>
             </div>
             {company.monitoring.siem ? (
@@ -252,14 +257,14 @@ function CompanyPanel({ company }: { company: Company }) {
             ) : null}
             {company.monitoring.appVsSecurity ? (
               <div>
-                <dt className="font-semibold">App vs. security monitoring</dt>
+                <dt className="font-semibold">{t.appSecurity}</dt>
                 <dd className="text-(--iux-muted-foreground)">{company.monitoring.appVsSecurity}</dd>
               </div>
             ) : null}
           </dl>
         </Section>
 
-        <Section title="CVE watch" icon={<FireIcon size={16} />}>
+        <Section title={t.cve} icon={<FireIcon size={16} />}>
           {company.cveWatch && company.cveWatch.length ? (
             <ul className="space-y-2 text-sm">
               {company.cveWatch.map((c) => (
@@ -267,7 +272,7 @@ function CompanyPanel({ company }: { company: Company }) {
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-mono text-xs">{c.id}</span>
                     <Badge tone={c.status === "patched" || c.status === "not-affected" ? "success" : "warning"}>
-                      {c.status}
+                      {cveStatus(c.status, locale)}
                     </Badge>
                     <span className="text-(--iux-muted-foreground)">{c.product}</span>
                   </div>
@@ -277,8 +282,7 @@ function CompanyPanel({ company }: { company: Company }) {
             </ul>
           ) : (
             <p className="text-sm text-(--iux-muted-foreground)">
-              No CVEs tracked (optional / bonus). A perimeter firewall can't stop an app-layer bug anyway — that's a
-              WAF-and-patch job.
+              {t.noCve}
             </p>
           )}
         </Section>
@@ -287,7 +291,8 @@ function CompanyPanel({ company }: { company: Company }) {
   );
 }
 
-export function FirewallPage() {
+export function FirewallPage({ locale = "en" }: { locale?: FirewallLocale }) {
+  const t = copy[locale];
   const companies = COMPANIES;
   const [showContribute, setShowContribute] = useState(false);
   const [activeSlug, setActiveSlug] = useState(companies[0]?.slug ?? "");
@@ -296,36 +301,38 @@ export function FirewallPage() {
   return (
     <AppShell activeId="firewall">
       <div className="iux min-h-screen">
-        <TopBar title="Firewall Lab" icon={<FireIcon size={20} weight="duotone" />} />
+        <TopBar title={t.lab} icon={<FireIcon size={20} weight="duotone" />} locale={locale} />
         <main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6">
           <header>
             <h1 className="flex items-center gap-2 text-xl font-bold tracking-tight">
-              <FireIcon size={22} className="text-[#f36c21]" weight="duotone" /> Firewall Lab
+              <FireIcon size={22} className="text-[#f36c21]" weight="duotone" /> {t.lab}
             </h1>
             <p className="mt-1.5 max-w-3xl text-sm text-(--iux-muted-foreground)">
-              BGT207 — design your <strong>dream company</strong>'s network and firewalls: branches, VLAN
-              segmentation, bandwidth, the best-five products per segment (with price), and a rule set you can
-              explain line by line. Every company here arrived as a pull request.
+              {t.intro}
             </p>
+            <nav aria-label="Language" className="mt-3 flex gap-2 text-xs font-semibold">
+              <a href={firewallPath("en")} lang="en" aria-current={locale === "en" ? "page" : undefined} className={locale === "en" ? "text-[#f36c21]" : "text-(--iux-muted-foreground) hover:underline"}>EN</a>
+              <span aria-hidden="true">/</span>
+              <a href={firewallPath("tr")} lang="tr" aria-current={locale === "tr" ? "page" : undefined} className={locale === "tr" ? "text-[#f36c21]" : "text-(--iux-muted-foreground) hover:underline"}>TR</a>
+            </nav>
           </header>
 
           <div className="flex flex-wrap items-center gap-3 rounded-xl border border-dashed border-[#f36c21]/50 bg-[#f36c21]/5 p-4">
             <GitPullRequestIcon size={20} className="text-[#f36c21]" />
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold">Add your company</p>
+              <p className="text-sm font-semibold">{t.add}</p>
               <p className="text-xs text-(--iux-muted-foreground)">
-                Copy <span className="font-mono">firewall-lab/templates/company</span>, fill{" "}
-                <span className="font-mono">company.json</span>, validate, and open a PR.
+                {t.contributeHint}
               </p>
             </div>
             <button type="button" onClick={() => setShowContribute(true)} className="fw-cta fw-cta-lg">
-              <PlusIcon size={17} weight="bold" /> How to contribute
+              <PlusIcon size={17} weight="bold" /> {t.contribute}
             </button>
           </div>
 
           {companies.length ? (
             <>
-              <nav aria-label="Companies" className="flex flex-wrap gap-2 border-b border-(--iux-border) pb-3">
+              <nav aria-label={t.companies} className="flex flex-wrap gap-2 border-b border-(--iux-border) pb-3">
                 {companies.map((c) => (
                   <button
                     key={c.slug}
@@ -342,14 +349,14 @@ export function FirewallPage() {
                   </button>
                 ))}
               </nav>
-              {active ? <CompanyPanel company={active} /> : null}
+              {active ? <CompanyPanel company={active} locale={locale} /> : null}
             </>
           ) : (
-            <p className="text-sm text-(--iux-muted-foreground)">No companies yet — be the first to open a PR.</p>
+            <p className="text-sm text-(--iux-muted-foreground)">{t.empty}</p>
           )}
         </main>
       </div>
-    {showContribute ? <ContributeModal onClose={() => setShowContribute(false)} /> : null}
+    {showContribute ? <ContributeModal onClose={() => setShowContribute(false)} locale={locale} /> : null}
     </AppShell>
   );
 }

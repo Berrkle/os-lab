@@ -3,11 +3,12 @@ import "../styles/global.css";
 interface Props {
   title: string;
   description?: string;
+  lang?: "en" | "tr";
 }
-const { title, description = "os-lab: host overview and every lab in one console." } = Astro.props;
+const { title, description = "os-lab: host overview and every lab in one console.", lang = "en" } = Astro.props;
 ---
 <!doctype html>
-<html lang="en">
+<html lang={lang}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
