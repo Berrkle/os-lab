@@ -12,7 +12,7 @@
 #                                               e.g. keyvanarasteh/fw -> keyvanarasteh.github.io/fw/)
 #   scripts/deploy-page.sh --branch gh-pages    target branch (default gh-pages)
 #   scripts/deploy-page.sh --landing PATH       where / redirects (default firewall/, "" = keep host page)
-#   scripts/deploy-page.sh --no-build           reuse the previous build (dashboard/build-pages)
+#   scripts/deploy-page.sh --no-build           reuse the previous build (dashboard/build-pages.raw)
 #   scripts/deploy-page.sh -h|--help
 #
 # Needs: node + npm, git, gh (logged in with push access: `gh auth login`).
@@ -33,7 +33,8 @@ done
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP="$ROOT/dashboard"
-OUT="$APP/build-pages"          # gitignored staging folder (see dashboard/.gitignore)
+RAW="$APP/build-pages.raw"      # plain astro build (gitignored, see dashboard/.gitignore)
+OUT="$APP/build-pages"          # post-processed site that gets published (gitignored)
 
 need() { command -v "$1" >/dev/null 2>&1 || { echo "missing: $1" >&2; exit 1; }; }
 need node; need npm; need git; need gh
@@ -52,11 +53,12 @@ echo "==> target  $REPO ($BRANCH)  ->  $URL"
 # ---- 1. build the static site with the right base path ----
 if [ "$BUILD" = 1 ]; then
   [ -d "$APP/node_modules" ] || (cd "$APP" && npm ci)
-  rm -rf "$OUT"
+  rm -rf "$RAW"
   echo "==> astro build (base='${BASE:-/}')"
-  (cd "$APP" && SITE_BASE="$BASE" npx --no-install astro build --outDir "$OUT")
+  (cd "$APP" && SITE_BASE="$BASE" npx --no-install astro build --outDir "$RAW")
 fi
-[ -f "$OUT/index.html" ] || { echo "no build in $OUT" >&2; exit 1; }
+[ -f "$RAW/index.html" ] || { echo "no build in $RAW (run without --no-build)" >&2; exit 1; }
+rm -rf "$OUT"; cp -R "$RAW" "$OUT"          # post-process a copy so re-runs start clean
 
 # ---- 2. prefix the hard-coded absolute links with the base path ----
 # Astro's `base` already fixes assets and <a> links it renders; the React views also contain
@@ -109,12 +111,9 @@ cp -R "$OUT/." "$TMP/"
 )
 
 # ---- 5. make sure Pages serves that branch (no-op when already set) ----
-if gh api "repos/$REPO/pages" >/dev/null 2>&1; then
+echo "==> enabling GitHub Pages ($BRANCH, /)"
+gh api -X POST "repos/$REPO/pages" -f "source[branch]=$BRANCH" -f "source[path]=/" >/dev/null 2>&1 ||
   gh api -X PUT "repos/$REPO/pages" -f "source[branch]=$BRANCH" -f "source[path]=/" >/dev/null 2>&1 || true
-else
-  echo "==> enabling GitHub Pages ($BRANCH, /)"
-  gh api -X POST "repos/$REPO/pages" -f "source[branch]=$BRANCH" -f "source[path]=/" >/dev/null
-fi
 
 # ---- 6. wait for the (free, GitHub-run) Pages build ----
 for i in $(seq 1 30); do
