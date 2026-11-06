@@ -1,17 +1,17 @@
 {
   "generatedBy": "firewall-lab/scripts/catalog.py",
   "summary": {
-    "companies": 6,
-    "branches": 21,
-    "firewalls": 24,
-    "rules": 111,
+    "companies": 7,
+    "branches": 25,
+    "firewalls": 28,
+    "rules": 129,
     "priceUsd": {
       "min": 700,
       "max": 12000,
       "total": 18399
     },
     "chosenByVendor": {
-      "Fortinet": 15,
+      "Fortinet": 19,
       "Netfilter project": 5,
       "Palo Alto Networks": 1,
       "Cloudflare": 1,
@@ -19,10 +19,11 @@
       "Netgate": 1
     },
     "chosenByProduct": {
+      "Fortinet FortiGate 60F": 5,
       "Netfilter project nftables on Kali Linux (central router/firewall)": 5,
-      "Fortinet FortiGate 60F": 4,
+      "Fortinet FortiGate 100F": 2,
+      "Fortinet FortiGate 200F": 2,
       "Fortinet FortiGate 200F (HA)": 2,
-      "Fortinet FortiGate 100F": 1,
       "Fortinet FortiGate 600F": 1,
       "Palo Alto Networks PA-3400 series (HA)": 1,
       "Fortinet FortiGate 200F class (ISFW mode)": 1,
@@ -31,19 +32,19 @@
       "Fortinet FortiGate 100F class": 1,
       "WatchGuard Firebox T-series": 1,
       "Fortinet FortiGate 100F (HA)": 1,
-      "Fortinet FortiGate 200F": 1,
       "Fortinet FortiGate 400F (HA)": 1,
       "Fortinet FortiGate 3500F (HA)": 1,
-      "Netgate pfSense Plus (Netgate 4200)": 1
+      "Netgate pfSense Plus (Netgate 4200)": 1,
+      "Fortinet FortiGate 80F": 1
     },
     "vendorsConsidered": {
-      "Fortinet": 23,
-      "Sophos": 16,
-      "Check Point": 13,
-      "Palo Alto Networks": 12,
+      "Fortinet": 33,
+      "Sophos": 17,
+      "Check Point": 17,
+      "Palo Alto Networks": 16,
       "Netgate": 11,
+      "Cisco": 11,
       "Deciso": 10,
-      "Cisco": 10,
       "Netfilter project": 5,
       "WatchGuard": 3,
       "Juniper": 3,
@@ -1233,6 +1234,202 @@
           "vendor": "Sophos",
           "throughputGbps": 7,
           "priceUsd": 750
+        }
+      ]
+    },
+    {
+      "company": "Kurumsal Ağ Topolojisi ve Güvenlik Mimarisi",
+      "companySlug": "siber-guvenlik-sirketi",
+      "sector": "Cybersecurity services",
+      "author": "U*** B***",
+      "branch": "Istanbul HQ",
+      "branchId": "istanbul-hq",
+      "branchRole": "headquarters",
+      "location": "Istanbul, Turkey",
+      "segment": "perimeter",
+      "product": "FortiGate 80F",
+      "vendor": "Fortinet",
+      "throughputGbps": 0.715,
+      "priceUsd": null,
+      "ruleCount": 4,
+      "actions": {
+        "allow": 3,
+        "deny": 1,
+        "reject": 0,
+        "limit": 0
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "FortiGate 60F",
+          "vendor": "Fortinet",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "PA-440",
+          "vendor": "Palo Alto Networks",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Secure Firewall 1210",
+          "vendor": "Cisco",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Quantum Spark 1600",
+          "vendor": "Check Point",
+          "throughputGbps": null,
+          "priceUsd": null
+        }
+      ]
+    },
+    {
+      "company": "Kurumsal Ağ Topolojisi ve Güvenlik Mimarisi",
+      "companySlug": "siber-guvenlik-sirketi",
+      "sector": "Cybersecurity services",
+      "author": "U*** B***",
+      "branch": "Sivas SOC and R&D Hub",
+      "branchId": "sivas-soc",
+      "branchRole": "datacenter",
+      "location": "Sivas, Turkey",
+      "segment": "perimeter",
+      "product": "FortiGate 200F",
+      "vendor": "Fortinet",
+      "throughputGbps": 3,
+      "priceUsd": null,
+      "ruleCount": 5,
+      "actions": {
+        "allow": 4,
+        "deny": 1,
+        "reject": 0,
+        "limit": 0
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "FortiGate 100F",
+          "vendor": "Fortinet",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "FortiGate 400F",
+          "vendor": "Fortinet",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "PA-1410",
+          "vendor": "Palo Alto Networks",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Quantum Force 9100",
+          "vendor": "Check Point",
+          "throughputGbps": null,
+          "priceUsd": null
+        }
+      ]
+    },
+    {
+      "company": "Kurumsal Ağ Topolojisi ve Güvenlik Mimarisi",
+      "companySlug": "siber-guvenlik-sirketi",
+      "sector": "Cybersecurity services",
+      "author": "U*** B***",
+      "branch": "Ankara Academy",
+      "branchId": "ankara-academy",
+      "branchRole": "campus",
+      "location": "Ankara, Turkey",
+      "segment": "perimeter",
+      "product": "FortiGate 100F",
+      "vendor": "Fortinet",
+      "throughputGbps": 1,
+      "priceUsd": null,
+      "ruleCount": 6,
+      "actions": {
+        "allow": 2,
+        "deny": 3,
+        "reject": 0,
+        "limit": 1
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "FortiGate 80F",
+          "vendor": "Fortinet",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "FortiGate 60F",
+          "vendor": "Fortinet",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "PA-440",
+          "vendor": "Palo Alto Networks",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Quantum Spark 1600",
+          "vendor": "Check Point",
+          "throughputGbps": null,
+          "priceUsd": null
+        }
+      ]
+    },
+    {
+      "company": "Kurumsal Ağ Topolojisi ve Güvenlik Mimarisi",
+      "companySlug": "siber-guvenlik-sirketi",
+      "sector": "Cybersecurity services",
+      "author": "U*** B***",
+      "branch": "Dubai Trade Office",
+      "branchId": "dubai-field",
+      "branchRole": "branch",
+      "location": "Dubai, UAE",
+      "segment": "perimeter",
+      "product": "FortiGate 60F",
+      "vendor": "Fortinet",
+      "throughputGbps": null,
+      "priceUsd": null,
+      "ruleCount": 3,
+      "actions": {
+        "allow": 2,
+        "deny": 1,
+        "reject": 0,
+        "limit": 0
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "FortiGate 40F",
+          "vendor": "Fortinet",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "PA-410",
+          "vendor": "Palo Alto Networks",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Quantum Spark 1550",
+          "vendor": "Check Point",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "XGS 116",
+          "vendor": "Sophos",
+          "throughputGbps": null,
+          "priceUsd": null
         }
       ]
     }

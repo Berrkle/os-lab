@@ -10,3 +10,4 @@ profile identifies the contributor.
 | A*** E*** | [@apo536098-wq](https://github.com/apo536098-wq) | [Multi-Branch nftables + QoS Lab](companies/multi-branch-nftables-lab/) |
 | F*** Y*** A*** | [@fatmayelizapaydin](https://github.com/fatmayelizapaydin) | [Kurumsal Ağ Güvenliği ve Altyapı Planlaması](companies/kurumsal-ag-planlamasi/) |
 | G*** Ş*** | [@GvnTech-cmd](https://github.com/GvnTech-cmd) | [GüvenTek Bilişim A.Ş.](companies/guventek-bilisim/) |
+| U*** B*** | [@ufuk888](https://github.com/ufuk888) | [Kurumsal Ağ Topolojisi ve Güvenlik Mimarisi](companies/siber-guvenlik-sirketi/) |
