@@ -229,15 +229,15 @@ Bizde NOC işini Ankara'daki BT ekibi yapar. SOC için ayrı bir ekip kurulur.
 
 ### Kurallar nasıl okunur?
 
-Güvenlik duvarı kuralları yukarıdan aşağı okur, **eşleşen ilk kural** uygulanır. Her şubede sıra aynı:
+Güvenlik duvarı kuralları yukarıdan aşağı okur, **eşleşen ilk kural** uygulanır. Her şubede aynı mantık izlenir:
 
 1. **Temel servisler:** DHCP, DNS ve NTP açılır. Açılmazsa cihazlar IP alamaz, ağ durur.
-2. **Yönetim:** Ayar ekranı sadece yönetim bölümünden (VLAN 99) açılır.
+2. **Yönetim:** Ayar ekranı sadece yönetim bölümünden (VLAN 99) açılır. Ankara BT'si ve Zabbix şubelerdeki cihazlara VPN üzerinden ulaşır.
 3. **Yasaklar:** Misafir şirket ağına, öğrenci veritabanına, test sunucusu gerçek sistemlere giremez.
-4. **İzinler:** Çalışanların kendi sunucuları, Ankara'daki ortak sunucular, internet çıkışı ve Ankara'ya VPN. Son kural her şeyi kapattığı için bu izinler tek tek yazılır.
+4. **İzinler:** Çalışanların kendi sunucuları, Ankara'daki ortak sunucular, internet çıkışı ve Ankara'ya VPN. Güvenlik duvarları ve sunucular güncellemelerini de bu izinlerle indirir. Son kural her şeyi kapattığı için bu izinler tek tek yazılır.
 5. **Son kural (default deny):** Yukarıda izin verilmeyen her şey engellenir ve kaydedilir.
 
-**Kurallardaki portlar ne?** 443 web, 445 dosya paylaşımı, 514 güvenlik duvarı kayıtları, 587 ve 993 e-posta, 22 test sunucularına bağlantı, 500 ve 4500 VPN.
+**Kurallardaki portlar ne?** 80 ve 443 web, 445 dosya paylaşımı, 514 güvenlik duvarı kayıtları, 587 ve 993 e-posta, 22 yönetim ve test sunucularına bağlantı, 161 Zabbix'in cihaz sağlığını okuması, 500 ve 4500 VPN.
 
 **Akademik şubede sıra neden değişti?** Torrent yasağı, öğrenci hız sınırının altındaydı. İlk eşleşen kural uygulandığı için torrent hız sınırı kuralına takılıp geçiyordu. Yasağı üste aldık.
 

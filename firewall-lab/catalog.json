@@ -4,7 +4,7 @@
     "companies": 12,
     "branches": 48,
     "firewalls": 52,
-    "rules": 562,
+    "rules": 570,
     "priceUsd": {
       "min": 700,
       "max": 205357,
@@ -1075,9 +1075,9 @@
       "vendor": "Fortinet",
       "throughputGbps": 3.0,
       "priceUsd": 5544,
-      "ruleCount": 10,
+      "ruleCount": 13,
       "actions": {
-        "allow": 8,
+        "allow": 11,
         "deny": 2,
         "reject": 0,
         "limit": 0
@@ -1124,9 +1124,9 @@
       "vendor": "Fortinet",
       "throughputGbps": 1.0,
       "priceUsd": 3240,
-      "ruleCount": 9,
+      "ruleCount": 10,
       "actions": {
-        "allow": 5,
+        "allow": 6,
         "deny": 3,
         "reject": 0,
         "limit": 1
@@ -1173,9 +1173,9 @@
       "vendor": "Fortinet",
       "throughputGbps": 0.7,
       "priceUsd": 765,
-      "ruleCount": 9,
+      "ruleCount": 10,
       "actions": {
-        "allow": 6,
+        "allow": 7,
         "deny": 3,
         "reject": 0,
         "limit": 0
@@ -1222,9 +1222,9 @@
       "vendor": "Fortinet",
       "throughputGbps": 10.5,
       "priceUsd": 22108,
-      "ruleCount": 15,
+      "ruleCount": 16,
       "actions": {
-        "allow": 9,
+        "allow": 10,
         "deny": 5,
         "reject": 0,
         "limit": 1
@@ -1271,9 +1271,9 @@
       "vendor": "Fortinet",
       "throughputGbps": 2.2,
       "priceUsd": 2150,
-      "ruleCount": 9,
+      "ruleCount": 10,
       "actions": {
-        "allow": 7,
+        "allow": 8,
         "deny": 2,
         "reject": 0,
         "limit": 0
@@ -1320,9 +1320,9 @@
       "vendor": "Check Point",
       "throughputGbps": 2.0,
       "priceUsd": 6731,
-      "ruleCount": 8,
+      "ruleCount": 9,
       "actions": {
-        "allow": 6,
+        "allow": 7,
         "deny": 2,
         "reject": 0,
         "limit": 0

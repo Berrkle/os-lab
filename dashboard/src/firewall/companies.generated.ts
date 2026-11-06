@@ -3665,9 +3665,9 @@ export const COMPANIES: Company[] = [
                 "direction": "out",
                 "proto": "tcp",
                 "port": "80,443",
-                "from": "vlan10-it,vlan20-employees",
+                "from": "firewall,vlan10-it,vlan20-employees",
                 "to": "internet",
-                "note": "IT and staff get web access; without this rule the default deny would cut them off. IoT and servers are not in this rule."
+                "note": "IT and staff get web access; without this rule the default deny would cut them off. IoT and servers are not in this rule. The firewall itself downloads security updates here as soon as they are released."
               },
               {
                 "action": "allow",
@@ -3683,18 +3683,45 @@ export const COMPANIES: Company[] = [
                 "direction": "forward",
                 "proto": "tcp",
                 "port": "443,445,514,587,993",
-                "from": "vpn-peers",
+                "from": "firewall,vpn-peers",
                 "to": "vlan30-servers",
-                "note": "Branches and home workers reach the same shared servers through the VPN, and firewall logs reach the SIEM on 514."
+                "note": "Branches and home workers reach the same shared servers through the VPN, and every firewall's logs reach the SIEM on 514."
               },
               {
                 "action": "allow",
                 "direction": "out",
                 "proto": "tcp",
                 "port": 443,
-                "from": "vlan30-servers",
+                "from": "vlan30-servers,vlan40-dmz",
                 "to": "internet",
-                "note": "Servers download security updates as soon as they are released."
+                "note": "Servers and the DMZ web server download security updates as soon as they are released."
+              },
+              {
+                "action": "allow",
+                "direction": "forward",
+                "proto": "tcp",
+                "port": "22,443",
+                "from": "vlan99-management",
+                "to": "branch-firewalls-over-vpn,vlan40-dmz",
+                "note": "From the management VLAN, Ankara IT reaches the admin screens of the branch firewalls over the VPN and manages the DMZ web server."
+              },
+              {
+                "action": "allow",
+                "direction": "forward",
+                "proto": "tcp",
+                "port": 443,
+                "from": "home-vpn-users",
+                "to": "academic-vlan60-over-vpn",
+                "note": "Academic staff working from home pass through the Ankara VPN to reach the grade and e-learning system."
+              },
+              {
+                "action": "allow",
+                "direction": "forward",
+                "proto": "udp",
+                "port": 161,
+                "from": "vlan30-servers",
+                "to": "firewall,branch-firewalls-over-vpn",
+                "note": "Zabbix reads line and device health from this firewall and, over the VPN, from the branch firewalls."
               },
               {
                 "action": "deny",
@@ -3819,6 +3846,15 @@ export const COMPANIES: Company[] = [
                 "note": "Admin screens of the firewall open only from the management VLAN 99 here or in Ankara over the VPN, with two-step verification."
               },
               {
+                "action": "allow",
+                "direction": "in",
+                "proto": "udp",
+                "port": 161,
+                "from": "ankara-zabbix-over-vpn",
+                "to": "firewall",
+                "note": "Zabbix in Ankara reads line and device health over the VPN."
+              },
+              {
                 "action": "deny",
                 "direction": "in",
                 "proto": "any",
@@ -3848,9 +3884,9 @@ export const COMPANIES: Company[] = [
                 "direction": "out",
                 "proto": "tcp",
                 "port": "80,443",
-                "from": "vlan10-it,vlan20-employees",
+                "from": "firewall,vlan10-it,vlan20-employees",
                 "to": "internet",
-                "note": "IT and staff get web access; without this rule the default deny would cut them off."
+                "note": "IT and staff get web access; without this rule the default deny would cut them off. The firewall itself downloads security updates here as soon as they are released."
               },
               {
                 "action": "allow",
@@ -3993,6 +4029,15 @@ export const COMPANIES: Company[] = [
               },
               {
                 "action": "allow",
+                "direction": "in",
+                "proto": "udp",
+                "port": 161,
+                "from": "ankara-zabbix-over-vpn",
+                "to": "firewall",
+                "note": "Zabbix in Ankara reads line and device health over the VPN."
+              },
+              {
+                "action": "allow",
                 "direction": "out",
                 "proto": "udp",
                 "port": "500,4500",
@@ -4030,9 +4075,9 @@ export const COMPANIES: Company[] = [
                 "direction": "out",
                 "proto": "tcp",
                 "port": "80,443",
-                "from": "vlan10-it,vlan20-employees",
+                "from": "firewall,vlan10-it,vlan20-employees",
                 "to": "internet",
-                "note": "IT and staff get web access; without this rule the default deny would cut them off."
+                "note": "IT and staff get web access; without this rule the default deny would cut them off. The firewall itself downloads security updates here as soon as they are released."
               },
               {
                 "action": "allow",
@@ -4187,6 +4232,15 @@ export const COMPANIES: Company[] = [
               {
                 "action": "allow",
                 "direction": "in",
+                "proto": "udp",
+                "port": 161,
+                "from": "ankara-zabbix-over-vpn",
+                "to": "firewall",
+                "note": "Zabbix in Ankara reads line and device health over the VPN."
+              },
+              {
+                "action": "allow",
+                "direction": "in",
                 "proto": "tcp",
                 "port": "80,443",
                 "from": "vlan70-student-wifi",
@@ -4238,9 +4292,9 @@ export const COMPANIES: Company[] = [
                 "direction": "out",
                 "proto": "tcp",
                 "port": "80,443",
-                "from": "vlan10-it,vlan20-staff,vlan30-faculty,vlan50-labs",
+                "from": "firewall,vlan10-it,vlan20-staff,vlan30-faculty,vlan50-labs",
                 "to": "internet",
-                "note": "IT, staff, faculty and labs get web access; without this rule the default deny would cut them off."
+                "note": "IT, staff, faculty and labs get web access; without this rule the default deny would cut them off. The firewall itself downloads security updates here as soon as they are released."
               },
               {
                 "action": "allow",
@@ -4411,6 +4465,15 @@ export const COMPANIES: Company[] = [
               },
               {
                 "action": "allow",
+                "direction": "in",
+                "proto": "udp",
+                "port": 161,
+                "from": "ankara-zabbix-over-vpn",
+                "to": "firewall",
+                "note": "Zabbix in Ankara reads line and device health over the VPN."
+              },
+              {
+                "action": "allow",
                 "direction": "out",
                 "proto": "tcp",
                 "port": 443,
@@ -4431,9 +4494,9 @@ export const COMPANIES: Company[] = [
                 "direction": "out",
                 "proto": "tcp",
                 "port": "80,443",
-                "from": "vlan10-it,vlan20-developers,vlan30-test-servers",
+                "from": "firewall,vlan10-it,vlan20-developers,vlan30-test-servers",
                 "to": "internet",
-                "note": "Web and package downloads for developers. The DLP profile on this rule stops source code being uploaded anywhere except the company GitHub account."
+                "note": "Web and package downloads for developers. The DLP profile on this rule stops source code being uploaded anywhere except the company GitHub account. The firewall itself downloads security updates here as soon as they are released."
               },
               {
                 "action": "allow",
@@ -4458,9 +4521,9 @@ export const COMPANIES: Company[] = [
                 "direction": "forward",
                 "proto": "tcp",
                 "port": "22,443",
-                "from": "vlan20-developers",
+                "from": "vlan10-it,vlan20-developers",
                 "to": "vlan30-test-servers",
-                "note": "Developers reach their test servers; without this rule the default deny would cut them off."
+                "note": "Developers and IT reach the test servers; without this rule the default deny would cut them off."
               },
               {
                 "action": "deny",
@@ -4585,6 +4648,15 @@ export const COMPANIES: Company[] = [
                 "note": "Admin screens of the firewall open only from the management VLAN 99 here or in Ankara over the VPN, with two-step verification."
               },
               {
+                "action": "allow",
+                "direction": "in",
+                "proto": "udp",
+                "port": 161,
+                "from": "ankara-zabbix-over-vpn",
+                "to": "firewall",
+                "note": "Zabbix in Ankara reads line and device health over the VPN."
+              },
+              {
                 "action": "deny",
                 "direction": "out",
                 "proto": "tcp",
@@ -4598,9 +4670,9 @@ export const COMPANIES: Company[] = [
                 "direction": "out",
                 "proto": "tcp",
                 "port": 443,
-                "from": "vlan10-it,vlan20-researchers",
+                "from": "firewall,vlan10-it,vlan20-researchers,vlan30-rnd-servers",
                 "to": "work-sites-allowlist",
-                "note": "R&D reaches only work-related sites on an allow list, through the web proxy. Every downloaded file is tried in the SandBlast sandbox before it reaches a PC."
+                "note": "R&D reaches only work-related sites on an allow list, through the web proxy. Every downloaded file is tried in the SandBlast sandbox before it reaches a PC. The firewall and the R&D servers download security updates from this list as soon as they are released."
               },
               {
                 "action": "allow",
@@ -4616,18 +4688,18 @@ export const COMPANIES: Company[] = [
                 "direction": "out",
                 "proto": "tcp",
                 "port": "443,445,514,587,993",
-                "from": "firewall,vlan10-it,vlan20-researchers",
+                "from": "firewall,vlan10-it,vlan20-researchers,vlan30-rnd-servers",
                 "to": "ankara-servers",
-                "note": "Through the VPN, staff reach the shared Ankara servers (web 443, files 445, e-mail 587 and 993) and the firewall sends its logs to the SIEM (514)."
+                "note": "Through the VPN, staff reach the shared Ankara servers (web 443, files 445, e-mail 587 and 993) and the firewall sends its logs to the SIEM (514). R&D servers back up project files to Ankara on 445."
               },
               {
                 "action": "allow",
                 "direction": "forward",
                 "proto": "tcp",
                 "port": "443,445",
-                "from": "vlan20-researchers",
+                "from": "vlan10-it,vlan20-researchers",
                 "to": "vlan30-rnd-servers",
-                "note": "Researchers reach project files on the R&D servers; without this rule the default deny would cut them off."
+                "note": "Researchers and IT reach project files on the R&D servers; without this rule the default deny would cut them off."
               },
               {
                 "action": "deny",
