@@ -1651,6 +1651,15 @@ export const COMPANIES: Company[] = [
                 "action": "allow",
                 "direction": "out",
                 "proto": "tcp",
+                "port": 541,
+                "from": "10.10.10.1",
+                "to": "10.50.20.20",
+                "note": "Firewall FortiManager'a (10.50.20.20) FGFM 541 ile kendisi bağlanır: merkezi politika ve config sürümleri buradan; kesilirse filo yönetimi durur ama trafik akmaya devam eder."
+              },
+              {
+                "action": "allow",
+                "direction": "out",
+                "proto": "tcp",
                 "port": 6514,
                 "from": "10.10.10.1",
                 "to": "10.50.20.10",
@@ -1994,6 +2003,15 @@ export const COMPANIES: Company[] = [
                 "from": "10.50.15.0/24",
                 "to": "10.20.10.0/24",
                 "note": "Yönetim yalnız bastion'dan (VPN + MFA sonrası)."
+              },
+              {
+                "action": "allow",
+                "direction": "out",
+                "proto": "tcp",
+                "port": 541,
+                "from": "10.20.10.1",
+                "to": "10.50.20.20",
+                "note": "Firewall FortiManager'a FGFM 541 ile bağlanır (merkezi politika, config sürümleri)."
               },
               {
                 "action": "allow",
@@ -2443,6 +2461,15 @@ export const COMPANIES: Company[] = [
                 "action": "allow",
                 "direction": "out",
                 "proto": "tcp",
+                "port": 541,
+                "from": "10.30.10.1",
+                "to": "10.50.20.20",
+                "note": "Firewall FortiManager'a (10.50.20.20) FGFM 541 ile kendisi bağlanır: merkezi politika ve config sürümleri buradan; kesilirse filo yönetimi durur ama trafik akmaya devam eder."
+              },
+              {
+                "action": "allow",
+                "direction": "out",
+                "proto": "tcp",
                 "port": 6514,
                 "from": "10.30.10.1",
                 "to": "10.50.20.10",
@@ -2594,7 +2621,7 @@ export const COMPANIES: Company[] = [
                 "port": "500,4500",
                 "from": "any",
                 "to": "akd-wan-ipsec",
-                "note": "IKEv2 site-to-site (hub İstanbul) ve sınav dönemi uzaktan erişim; el sıkışma hız sınırlı."
+                "note": "IKEv2 site-to-site tüneli (hub İstanbul); el sıkışma hız sınırlı. Uzaktan erişim VPN'i burada değil, İstanbul ve Ankara'da sonlanır."
               },
               {
                 "action": "allow",
@@ -2830,6 +2857,15 @@ export const COMPANIES: Company[] = [
                 "action": "allow",
                 "direction": "out",
                 "proto": "tcp",
+                "port": 541,
+                "from": "10.40.10.1",
+                "to": "10.50.20.20",
+                "note": "Firewall FortiManager'a FGFM 541 ile bağlanır (merkezi politika, config sürümleri)."
+              },
+              {
+                "action": "allow",
+                "direction": "out",
+                "proto": "tcp",
                 "port": 6514,
                 "from": "10.40.10.1",
                 "to": "10.50.20.10",
@@ -3057,12 +3093,12 @@ export const COMPANIES: Company[] = [
               },
               {
                 "action": "allow",
-                "direction": "forward",
+                "direction": "in",
                 "proto": "tcp",
-                "port": "22,443",
-                "from": "10.50.20.60",
-                "to": "10.0.0.0/8",
-                "note": "Yedekleme sunucusu (10.50.20.60) firewall config'lerini her gece HTTPS/SSH ile çeker; geri yükleme ayda bir test edilir."
+                "port": 541,
+                "from": "10.0.0.0/8",
+                "to": "10.50.20.20",
+                "note": "Sitelerin firewall'ları FortiManager'a (10.50.20.20) FGFM 541 ile bağlanır. FortiManager config sürümlerini tutar ve her gece aynı VLAN'daki yedekleme sunucusuna (10.50.20.60) aktarır; restore ayda bir test edilir."
               },
               {
                 "action": "deny",

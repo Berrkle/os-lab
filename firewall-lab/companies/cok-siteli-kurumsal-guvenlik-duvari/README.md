@@ -89,7 +89,7 @@ internete doğrudan çıkış düşürülüyor (ters kabuk önlemi); tek istisna
 5. Son kural olarak **varsayılan reddet**.
 
 Kenarda `deny` (sessiz) kullanıldı, iç tarafta `reject`. Hiçbir `allow` kuralı portsuz değil. Her kuralın `note` alanı
-o kuralın neden var olduğunu ve kaldırılırsa neyin bozulacağını söylüyor (toplam 127 kural, 6 firewall).
+o kuralın neden var olduğunu ve kaldırılırsa neyin bozulacağını söylüyor (toplam 131 kural, 6 firewall).
 
 ## 3. Bant genişliği
 
@@ -237,7 +237,7 @@ Bot token'ı yalnız sır kasasında tutuluyor; sızarsa hemen değiştirilir.
 dolunca KVKK imha politikası uygulanıyor). Son 90 gün sıcak depoda, sonrası hash'li ve imzalı arşivde. Londra logları
 **UK GDPR** gereği kişisel veri azaltılarak ve IDTA sözleşmesiyle Türkiye'deki SIEM'e aktarılıyor.
 
-**Yedek ve yama:** Firewall config'leri her gece yedekleme sunucusuna alınıyor, ayrıca şifreli bir harici kopya tutuluyor.
+**Yedek ve yama:** Firewall'lar FortiManager'a kendileri bağlanıyor (giden FGFM 541); config sürümleri orada tutuluyor ve her gece aynı VLAN'daki yedekleme sunucusuna aktarılıyor, ayrıca şifreli bir harici kopya tutuluyor.
 Ayda bir geri yükleme testi yapılıyor. Firmware dahil yamalar aylık bakım penceresinde uygulanıyor; kritik bir CVE çıkarsa
 72 saat içinde. HA çiftlerinde önce pasif üye güncelleniyor. FortiGuard PSIRT ve CISA KEV takip ediliyor.
 
