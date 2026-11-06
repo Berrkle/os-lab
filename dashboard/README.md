@@ -16,6 +16,8 @@ backend: host detection, lab plans and jobs live in `console/oslab.py`.
 | `/` | This computer: OS, CPU, memory, disk, KVM, container runtime, host tools, and which labs can run here (ready / needs setup / unavailable, with reasons) |
 | `/labs/<lab>/` | One lab (`android`, `windows`, `linux`, `ios`, `macos`): dependencies with **Install dependencies**, typed actions, plan preview → confirm → run, live job output, container monitor, endpoints, profiles and masked configuration |
 | `/jobs/` | Every lab job with its output; cancel running jobs |
+| `/firewall/` | Firewall Lab company directory and full manifest details |
+| `/firewall/<company>/` | One company's interactive branch composition, VLANs, firewall selections and rule counts |
 | `/android/…` | Android Lab workbench: overview, code & providers, workflows & DAG, execution & logs, analytics, routes & sitemap |
 | `/contribute/` | The contribution steps, compiled from `CONTRIBUTING.md` at build time |
 | `/legal/…` | Terms of Use, Acceptable Use, Privacy Notice and Third-Party Notices, compiled from `docs/legal/*.md` at build time |

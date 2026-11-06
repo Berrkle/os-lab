@@ -1,0 +1,74 @@
+.fw-page { max-width: 1180px; margin: 0 auto; padding: 28px 24px 60px; }
+.fw-back, .fw-back a, .fw-footer, .fw-footer a { display: flex; align-items: center; gap: 8px; }
+.fw-back { justify-content: space-between; color: var(--iux-muted-foreground); font-size: 12px; }
+.fw-back a, .fw-footer a { color: var(--iux-foreground); text-decoration: none; }
+.fw-back a:hover, .fw-footer a:hover { color: #f36c21; }
+.fw-hero { display: flex; justify-content: space-between; gap: 24px; padding: 44px 0 42px; border-bottom: 1px solid var(--iux-border); }
+.fw-eyebrow { color: #f36c21; font-size: 10px; font-weight: 700; letter-spacing: .17em; text-transform: uppercase; }
+.fw-hero h1 { max-width: 820px; margin: 10px 0 12px; font-size: clamp(32px, 5vw, 58px); font-weight: 650; line-height: 1.05; letter-spacing: -.055em; }
+.fw-hero p { max-width: 720px; margin: 0 0 18px; color: var(--iux-muted-foreground); font-size: 14px; line-height: 1.7; }
+.fw-sector { display: inline-flex; border: 1px solid var(--iux-border); border-radius: 999px; padding: 5px 11px; color: var(--iux-muted-foreground); font-size: 11px; }
+.fw-hero-count { display: flex; flex-direction: column; align-items: flex-end; align-self: flex-end; white-space: nowrap; }
+.fw-hero-count strong { color: #f36c21; font-size: clamp(52px, 8vw, 96px); line-height: .85; font-weight: 450; letter-spacing: -.09em; }
+.fw-hero-count span { margin-top: 8px; color: var(--iux-muted-foreground); font-size: 11px; text-transform: uppercase; letter-spacing: .16em; }
+.fw-map { padding: 34px 0 38px; }
+.fw-map-heading { display: flex; justify-content: space-between; align-items: end; gap: 16px; margin-bottom: 24px; }
+.fw-map-heading h2 { margin: 6px 0 0; font-size: 22px; font-weight: 600; }
+.fw-map-heading > span { color: var(--iux-muted-foreground); font-size: 12px; }
+.fw-branch-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 205px), 1fr)); gap: 12px; }
+.fw-branch { position: relative; display: flex; flex-direction: column; min-height: 192px; overflow: hidden; padding: 17px; text-align: left; color: var(--iux-foreground); background: var(--iux-card); border: 1px solid var(--iux-border); border-radius: 12px; cursor: pointer; animation: fw-rise .5s both; transition: border-color .25s, transform .25s, box-shadow .25s; }
+.fw-branch:hover { transform: translateY(-3px); border-color: #f36c21; }
+.fw-branch:focus-visible { outline: 2px solid #f36c21; outline-offset: 3px; }
+.fw-branch[data-selected="true"] { border-color: #f36c21; box-shadow: 0 0 0 1px #f36c21 inset; }
+.fw-branch-line { position: absolute; left: 0; top: 0; width: 100%; height: 3px; background: #f36c21; transform: scaleX(0); transform-origin: left; transition: transform .35s; }
+.fw-branch[data-selected="true"] .fw-branch-line { transform: scaleX(1); }
+.fw-branch-top, .fw-branch-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.fw-branch-top { margin-bottom: 18px; }
+.fw-index { color: #f36c21; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.fw-role { color: var(--iux-muted-foreground); font-size: 10px; text-transform: uppercase; letter-spacing: .08em; }
+.fw-branch strong { font-size: 15px; line-height: 1.3; font-weight: 600; }
+.fw-location { display: flex; align-items: center; gap: 4px; margin-top: 5px; color: var(--iux-muted-foreground); font-size: 11px; }
+.fw-branch-meter { display: flex; height: 5px; gap: 3px; margin-top: auto; padding-top: 21px; box-sizing: content-box; }
+.fw-branch-meter i { flex: 1; height: 5px; border-radius: 2px; background: color-mix(in srgb, #f36c21 45%, var(--iux-card)); }
+.fw-branch-meter i:nth-child(3n+2) { background: color-mix(in srgb, #f36c21 70%, var(--iux-card)); }
+.fw-branch-meter i:nth-child(3n) { background: #f36c21; }
+.fw-branch-foot { margin-top: 10px; color: var(--iux-muted-foreground); font-size: 10px; }
+.fw-detail { border-top: 1px solid var(--iux-border); animation: fw-rise .42s both; }
+.fw-detail-heading { display: flex; justify-content: space-between; align-items: end; gap: 20px; padding: 30px 0 24px; }
+.fw-detail-heading h2 { margin: 6px 0 5px; font-size: clamp(24px, 3vw, 34px); font-weight: 600; letter-spacing: -.035em; }
+.fw-detail-heading p { margin: 0; color: var(--iux-muted-foreground); font-size: 12px; font-family: ui-monospace, monospace; }
+.fw-bandwidth { display: flex; align-items: baseline; flex-wrap: wrap; gap: 5px; color: var(--iux-muted-foreground); font-size: 11px; white-space: nowrap; }
+.fw-bandwidth strong { color: var(--iux-foreground); font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.fw-bandwidth small { color: #f36c21; }
+.fw-numbers { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--iux-border); border-radius: 10px; overflow: hidden; }
+.fw-numbers > div { display: flex; flex-direction: column; gap: 2px; padding: 16px 20px; border-right: 1px solid var(--iux-border); }
+.fw-numbers > div:last-child { border: 0; }
+.fw-numbers strong { font-size: 24px; line-height: 1; font-weight: 550; font-variant-numeric: tabular-nums; }
+.fw-numbers span { color: var(--iux-muted-foreground); font-size: 10px; text-transform: uppercase; letter-spacing: .1em; }
+.fw-detail-grid { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr); gap: 16px; margin-top: 16px; }
+.fw-piece { min-width: 0; padding: 20px; border: 1px solid var(--iux-border); border-radius: 10px; background: var(--iux-card); }
+.fw-piece-title { display: flex; align-items: baseline; gap: 9px; padding-bottom: 17px; }
+.fw-piece-title > span:first-child { color: #f36c21; font-size: 11px; font-weight: 700; }
+.fw-piece-title h3 { margin: 0; font-size: 14px; font-weight: 600; }
+.fw-piece-title > span:last-child { margin-left: auto; color: var(--iux-muted-foreground); font-size: 10px; }
+.fw-vlans, .fw-firewalls { display: flex; flex-direction: column; gap: 7px; }
+.fw-vlan { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 11px 12px; border-radius: 7px; background: var(--iux-muted); animation: fw-rise .45s both; }
+.fw-vlan-id { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border: 1px solid color-mix(in srgb, #f36c21 40%, transparent); border-radius: 5px; color: #f36c21; font-size: 10px; font-weight: 700; }
+.fw-vlan-main { display: flex; flex-direction: column; min-width: 0; }
+.fw-vlan-main strong { font-size: 12px; font-weight: 600; }
+.fw-vlan-main small { overflow: hidden; color: var(--iux-muted-foreground); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.fw-vlan code { margin-left: auto; color: var(--iux-muted-foreground); font-size: 10px; white-space: nowrap; }
+.fw-firewall { display: flex; align-items: center; gap: 11px; min-width: 0; padding: 12px; border: 1px solid var(--iux-border); border-radius: 7px; animation: fw-rise .45s both; }
+.fw-firewall-icon { display: grid; place-items: center; flex: none; width: 34px; height: 34px; border-radius: 7px; color: #f36c21; background: color-mix(in srgb, #f36c21 10%, transparent); }
+.fw-firewall > div:nth-child(2) { display: flex; flex-direction: column; min-width: 0; }
+.fw-segment { color: #f36c21; font-size: 10px; text-transform: uppercase; letter-spacing: .07em; }
+.fw-firewall strong { overflow: hidden; font-size: 12px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.fw-firewall small, .fw-rule-count { color: var(--iux-muted-foreground); font-size: 10px; }
+.fw-rule-count { margin-left: auto; flex: none; }
+.fw-drivers { margin: 17px 0 0; color: var(--iux-muted-foreground); font-size: 11px; line-height: 1.6; }
+.fw-drivers strong { margin-right: 7px; color: var(--iux-foreground); font-weight: 600; }
+.fw-footer { justify-content: space-between; margin-top: 36px; padding-top: 20px; border-top: 1px solid var(--iux-border); font-size: 12px; }
+@keyframes fw-rise { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 720px) { .fw-page { padding: 20px 16px 44px; } .fw-hero { padding: 34px 0; } .fw-hero-count { display: none; } .fw-map-heading > span { display: none; } .fw-detail-grid { grid-template-columns: 1fr; } .fw-detail-heading { align-items: start; flex-direction: column; } }
+@media (max-width: 440px) { .fw-back > span { display: none; } .fw-numbers > div { padding: 12px 8px; } .fw-numbers strong { font-size: 20px; } .fw-vlan { flex-wrap: wrap; } .fw-vlan code { width: 100%; margin-left: 40px; } }
+@media (prefers-reduced-motion: reduce) { .fw-branch, .fw-detail, .fw-vlan, .fw-firewall { animation: none; } .fw-branch, .fw-branch-line { transition: none; } }
