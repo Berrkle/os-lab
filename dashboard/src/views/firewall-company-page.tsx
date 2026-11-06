@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { ArrowLeftIcon, ArrowRightIcon, FireIcon, MapPinIcon, ShieldCheckIcon } from "@phosphor-icons/react";
+import { ArrowLeftIcon, ArrowRightIcon, FireIcon, MapPinIcon, ShieldCheckIcon, WarningDiamondIcon, GraphIcon } from "@phosphor-icons/react";
 import { AppShell } from "../shell/app-shell";
 import { TopBar } from "../shell/top-bar";
 import { COMPANIES } from "../firewall/companies.generated";
 import type { Branch, Company } from "../firewall/types";
+import { auditCompany } from "../firewall/audit";
+import { GapsTab } from "./firewall-gaps";
 
 const fmt = (value: number) => value.toLocaleString("en-US");
 const people = (branch: Branch) => Object.values(branch.population).reduce<number>((sum, value) => sum + (value ?? 0), 0);
@@ -79,6 +81,9 @@ function BranchDetail({ branch }: { branch: Branch }) {
 
 export function FirewallCompanyPage({ company }: { company: Company }) {
   const [selectedId, setSelectedId] = useState(company.branches[0]?.id ?? "");
+  const [tab, setTab] = useState<"network" | "gaps">(() => (typeof location !== "undefined" && location.hash === "#gaps" ? "gaps" : "network"));
+  const gaps = auditCompany(company).total;
+  const pick = (t: "network" | "gaps") => { setTab(t); history.replaceState(null, "", t === "gaps" ? "#gaps" : location.pathname + location.search); };
   const selected = company.branches.find((branch) => branch.id === selectedId) ?? company.branches[0];
   const next = COMPANIES[(COMPANIES.findIndex((item) => item.slug === company.slug) + 1) % COMPANIES.length];
   return (
@@ -92,6 +97,13 @@ export function FirewallCompanyPage({ company }: { company: Company }) {
             <div className="fw-hero-count"><strong>{String(company.branches.length).padStart(2, "0")}</strong><span>branches</span></div>
           </header>
 
+          <div className="fw-tabs" data-tab={tab} role="tablist" aria-label="Company views">
+            <span className="fw-tab-pill" aria-hidden="true" />
+            <button type="button" role="tab" className="fw-tab" aria-selected={tab === "network"} onClick={() => pick("network")}><GraphIcon size={15} weight="bold" /> Network</button>
+            <button type="button" role="tab" className="fw-tab" aria-selected={tab === "gaps"} onClick={() => pick("gaps")}><WarningDiamondIcon size={15} weight="bold" /> Gaps <b>{gaps}</b></button>
+          </div>
+
+          {tab === "gaps" ? <GapsTab company={company} /> : <>
           <section className="fw-map" aria-label="Company branches">
             <div className="fw-map-heading"><div><span className="fw-eyebrow">01 / Overview</span><h2>Branch composition</h2></div><span>Select a branch to inspect its design</span></div>
             <div className="fw-branch-grid">
@@ -100,6 +112,7 @@ export function FirewallCompanyPage({ company }: { company: Company }) {
           </section>
 
           {selected && <BranchDetail branch={selected} />}
+          </>}
           <footer className="fw-footer"><a href="/firewall/">All company designs</a><a href={`/firewall/${next.slug}/`}>Next: {next.name} <ArrowRightIcon size={15} /></a></footer>
         </main>
       </div>

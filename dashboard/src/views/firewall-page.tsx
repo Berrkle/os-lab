@@ -17,6 +17,8 @@ import {
   ShieldCheckIcon,
   UsersThreeIcon
 } from "@phosphor-icons/react";
+import { ContributeModal } from "./contribute-modal";
+import "../styles/firewall-contribute.css";
 import { AppShell } from "../shell/app-shell";
 import { TopBar } from "../shell/top-bar";
 import { Badge, Section, type Tone } from "../components/ui";
@@ -25,7 +27,6 @@ import type { Branch, Company, Firewall, Rule } from "../firewall/types";
 
 const ACCENT = "#f36c21";
 const REPO = "https://github.com/keyvanarasteh/os-lab";
-const LAB_PATH = `${REPO}/tree/master/firewall-lab`;
 
 const ACTION_TONE: Record<Rule["action"], Tone> = {
   allow: "success",
@@ -204,8 +205,8 @@ function CompanyPanel({ company }: { company: Company }) {
           {company.author.studentId ? ` · ${company.author.studentId}` : ""} · {company.author.course}
         </p>
         <p className="mt-2 max-w-3xl text-sm text-(--iux-muted-foreground)">{company.summary}</p>
-        <a className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-[#f36c21] hover:underline" href={`/firewall/${company.slug}/`}>
-          Explore the network <ArrowSquareOutIcon size={13} />
+        <a className="fw-cta mt-4" href={`/firewall/${company.slug}/`}>
+          Explore the network &amp; its gaps <ArrowSquareOutIcon size={16} weight="bold" />
         </a>
       </div>
 
@@ -288,6 +289,7 @@ function CompanyPanel({ company }: { company: Company }) {
 
 export function FirewallPage() {
   const companies = COMPANIES;
+  const [showContribute, setShowContribute] = useState(false);
   const [activeSlug, setActiveSlug] = useState(companies[0]?.slug ?? "");
   const active = useMemo(() => companies.find((c) => c.slug === activeSlug) ?? companies[0], [companies, activeSlug]);
 
@@ -316,14 +318,9 @@ export function FirewallPage() {
                 <span className="font-mono">company.json</span>, validate, and open a PR.
               </p>
             </div>
-            <a
-              href={LAB_PATH}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-1.5 rounded-lg bg-[#f36c21] px-3.5 py-1.5 text-xs font-semibold text-white hover:opacity-90"
-            >
-              <PlusIcon size={14} /> How to contribute
-            </a>
+            <button type="button" onClick={() => setShowContribute(true)} className="fw-cta fw-cta-lg">
+              <PlusIcon size={17} weight="bold" /> How to contribute
+            </button>
           </div>
 
           {companies.length ? (
@@ -352,6 +349,7 @@ export function FirewallPage() {
           )}
         </main>
       </div>
+    {showContribute ? <ContributeModal onClose={() => setShowContribute(false)} /> : null}
     </AppShell>
   );
 }
