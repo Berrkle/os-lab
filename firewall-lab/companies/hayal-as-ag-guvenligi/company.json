@@ -76,6 +76,7 @@
             "product": "FortiGate 200F",
             "vendor": "Fortinet",
             "throughputGbps": 3.0,
+            "priceUsd": 5544,
             "reason": "Chosen. Diğer şubelerdeki FortiGate'lerle aynı ekrandan yönetilir. Bütün şubelerin bağlandığı merkez olmaya uygun. 1 Gbps hattın 3 katı hız, büyüme payı var. 2 adet, HA (aktif-pasif): biri bozulursa diğeri birkaç saniyede devralır"
           },
           "alternatives": [
@@ -83,24 +84,28 @@
               "product": "Palo Alto PA-1420",
               "vendor": "Palo Alto Networks",
               "throughputGbps": 4.8,
+              "priceUsd": 20778,
               "reason": "Hangi uygulamanın kullanıldığını çok iyi tanır. Daha pahalı"
             },
             {
               "product": "Check Point Quantum Force 9100",
               "vendor": "Check Point",
               "throughputGbps": 4.95,
+              "priceUsd": 56030,
               "reason": "Kurumsal yönetim paneli çok gelişmiş. Lisans maliyeti yüksek"
             },
             {
               "product": "Cisco Secure Firewall 3105",
               "vendor": "Cisco",
               "throughputGbps": 10.0,
+              "priceUsd": 31155,
               "reason": "Çok güçlü, ağda Cisco switch varsa uyumlu. Bu şube için fazla büyük ve pahalı"
             },
             {
               "product": "Sophos XGS 2300",
               "vendor": "Sophos",
               "throughputGbps": 1.4,
+              "priceUsd": 3495,
               "reason": "Uygun fiyatlı, kullanımı kolay. 1 Gbps hatta yetiyor ama büyüme payı az"
             }
           ],
@@ -228,6 +233,7 @@
             "product": "FortiGate 100F",
             "vendor": "Fortinet",
             "throughputGbps": 1.0,
+            "priceUsd": 3240,
             "reason": "Chosen. Ankara'daki FortiGate ile aynı panelden yönetilir. Misafir Wi-Fi'ı ayrı ağa almak kolay"
           },
           "alternatives": [
@@ -235,24 +241,28 @@
               "product": "Sophos XGS 2100",
               "vendor": "Sophos",
               "throughputGbps": 1.25,
+              "priceUsd": 2293,
               "reason": "Uygun fiyatlı, arayüzü kolay. Ama Ankara'dan ayrı bir panelle yönetilmesi gerekir"
             },
             {
               "product": "Check Point Quantum Spark 1600",
               "vendor": "Check Point",
               "throughputGbps": 1.5,
+              "priceUsd": 5049,
               "reason": "Küçük ofisler için iyi. Lisans maliyeti yüksek"
             },
             {
               "product": "Palo Alto PA-440",
               "vendor": "Palo Alto Networks",
               "throughputGbps": 1.0,
+              "priceUsd": 1804,
               "reason": "Güvenlik çok iyi ama bu büyüklükte bir ofis için pahalı"
             },
             {
               "product": "pfSense (Netgate 6100)",
               "vendor": "Netgate",
               "throughputGbps": 1.0,
+              "priceUsd": 949,
               "reason": "Ücretsiz yazılım, ucuz donanım. Ama üretici desteği sınırlı ve BT ekibinin bilgisi önemli"
             }
           ],
@@ -387,6 +397,7 @@
             "product": "FortiGate 60F",
             "vendor": "Fortinet",
             "throughputGbps": 0.7,
+            "priceUsd": 765,
             "reason": "Chosen. Ankara'dan uzaktan yönetilir. Küçük ve ucuz. Ana hat koparsa 4G/5G yedek hatta otomatik geçer"
           },
           "alternatives": [
@@ -394,24 +405,28 @@
               "product": "Check Point Quantum Spark 1600",
               "vendor": "Check Point",
               "throughputGbps": 1.5,
+              "priceUsd": 5049,
               "reason": "Küçük ofislerde yaygın. Ama ayrı panel ve pahalı lisans"
             },
             {
               "product": "Palo Alto PA-440",
               "vendor": "Palo Alto Networks",
               "throughputGbps": 1.0,
+              "priceUsd": 1804,
               "reason": "Çok güvenli ama 38 kişilik ofis için pahalı"
             },
             {
               "product": "Sophos XGS 2100",
               "vendor": "Sophos",
               "throughputGbps": 1.25,
+              "priceUsd": 2293,
               "reason": "Bu ofis için fazla büyük. Sophos'un daha küçük modelleri de kullanılabilir"
             },
             {
               "product": "pfSense (Netgate 6100)",
               "vendor": "Netgate",
               "throughputGbps": 1.0,
+              "priceUsd": 949,
               "reason": "Ucuz. Ama uzaktan yönetimi ve desteği diğerleri kadar kolay değil"
             }
           ],
@@ -566,6 +581,7 @@
             "product": "FortiGate 600F",
             "vendor": "Fortinet",
             "throughputGbps": 10.5,
+            "priceUsd": 22108,
             "reason": "Chosen. 10 Gbps hattı karşılıyor. Captive portal, kullanıcı başı hız sınırı ve kayıt tutma hazır geliyor. Diğer şubelerle aynı panel. 2 adet, HA (aktif-pasif): biri bozulursa diğeri birkaç saniyede devralır"
           },
           "alternatives": [
@@ -573,24 +589,28 @@
               "product": "Palo Alto PA-3440",
               "vendor": "Palo Alto Networks",
               "throughputGbps": 12.8,
+              "priceUsd": 29776,
               "reason": "Daha hızlı ve uygulama tanıması çok iyi. Ama 2 cihaz alındığında maliyet çok artıyor"
             },
             {
               "product": "Sophos XGS 5500",
               "vendor": "Sophos",
               "throughputGbps": 12.4,
+              "priceUsd": 23586,
               "reason": "Hızlı ve görece ucuz. Eğitim kurumlarında yaygın"
             },
             {
               "product": "Cisco Secure Firewall 3120",
               "vendor": "Cisco",
               "throughputGbps": 21.0,
+              "priceUsd": 59978,
               "reason": "Çok güçlü, büyüme payı fazla. Yönetimi daha karmaşık ve pahalı"
             },
             {
               "product": "Check Point Quantum Force 19100",
               "vendor": "Check Point",
               "throughputGbps": 28.8,
+              "priceUsd": 116229,
               "reason": "En güçlü aday ama bu şube için fazla büyük ve en pahalısı"
             }
           ],
@@ -750,6 +770,7 @@
             "product": "FortiGate 90G",
             "vendor": "Fortinet",
             "throughputGbps": 2.2,
+            "priceUsd": 2150,
             "reason": "Chosen. Hattın 2 katı hız. Diğer şubelerle aynı panel. Kaynak kodun dışarı gönderilmesini engelleyebiliyor (DLP)"
           },
           "alternatives": [
@@ -757,24 +778,28 @@
               "product": "Palo Alto PA-460",
               "vendor": "Palo Alto Networks",
               "throughputGbps": 2.1,
+              "priceUsd": 4500,
               "reason": "Uygulama tanıması çok iyi. Örneğin GitHub'da \"okumaya izin ver, başka hesaba yüklemeyi engelle\" denebilir. Pahalı"
             },
             {
               "product": "Check Point Quantum Spark 1800",
               "vendor": "Check Point",
               "throughputGbps": 2.0,
+              "priceUsd": 6731,
               "reason": "Güvenli, hızı yeterli. Ayrı panel ve pahalı lisans"
             },
             {
               "product": "Sophos XGS 2300",
               "vendor": "Sophos",
               "throughputGbps": 1.4,
+              "priceUsd": 3495,
               "reason": "Uygun fiyatlı ama 1 Gbps hatta büyüme payı az"
             },
             {
               "product": "OPNsense (kendi sunucumuzda)",
               "vendor": "Deciso",
               "throughputGbps": 1.0,
+              "priceUsd": 0,
               "reason": "Ücretsiz. DevOps ekibi yönetebilir. Ama üretici desteği yok ve hız sınırda"
             }
           ],
@@ -902,6 +927,7 @@
             "product": "Check Point Quantum Spark 1800",
             "vendor": "Check Point",
             "throughputGbps": 2.0,
+            "priceUsd": 6731,
             "reason": "Chosen. Diğer şubelerden farklı üretici. SandBlast kum havuzu şüpheli dosyaları açılmadan önce test ediyor"
           },
           "alternatives": [
@@ -909,24 +935,28 @@
               "product": "Palo Alto PA-440",
               "vendor": "Palo Alto Networks",
               "throughputGbps": 1.0,
+              "priceUsd": 1804,
               "reason": "WildFire kum havuzu çok iyi. O da farklı bir üretici olur"
             },
             {
               "product": "FortiGate 70F",
               "vendor": "Fortinet",
               "throughputGbps": 0.8,
+              "priceUsd": 955,
               "reason": "Hızı yeterli ama diğer şubelerle aynı üretici olduğu için katmanlı güvenlik zayıflar"
             },
             {
               "product": "Sophos XGS 2100",
               "vendor": "Sophos",
               "throughputGbps": 1.25,
+              "priceUsd": 2293,
               "reason": "İyi ama kum havuzu ve DLP özellikleri ilk ikisi kadar güçlü değil"
             },
             {
               "product": "pfSense (Netgate 6100)",
               "vendor": "Netgate",
               "throughputGbps": 1.0,
+              "priceUsd": 949,
               "reason": "Ucuz ama kum havuzu ve DLP hazır gelmiyor. En gizli şube için uygun değil"
             }
           ],

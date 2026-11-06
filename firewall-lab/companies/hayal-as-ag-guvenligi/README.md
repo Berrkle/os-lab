@@ -337,6 +337,36 @@ Bu işlerin sorumlusu Ankara BT ekibidir.
 | CVE-2026-24858 | FortiGate şubeleri | FortiCloud ile yönetici girişi kapalı, ayar ekranı sadece VLAN 99'dan açılır | Bir sonraki bakımda Fortinet'in düzelttiği sürüme geçilir |
 | CVE-2024-24919 | Ar-Ge Check Point | Sadece şifreyle VPN hesabı yok, her girişte iki adımlı doğrulama var | Check Point yaması kurulumdan önce yüklenir |
 
+### Fiyatlar
+
+Fiyatlar yaklaşık ve dolar cinsinden. Üreticiler her modelin fiyatını yayınlamadığı için satıcı sayfalarından alındı. Lisans, destek ve kura göre değişir, gerçek fiyat için teklif alınır.
+
+| Ürün | Yaklaşık fiyat | Neye göre? |
+|------|---------------:|------------|
+| FortiGate 60F | 765 | Satıcı liste fiyatı, sadece cihaz |
+| FortiGate 70F | 955 | Satıcı liste fiyatı |
+| FortiGate 90G | 2.150 | Satıcı liste fiyatı, sadece cihaz |
+| FortiGate 100F | 3.240 | Satıcı liste fiyatı, sadece cihaz |
+| FortiGate 200F | 5.544 | Satıcı liste fiyatı, sadece cihaz |
+| FortiGate 600F | 22.108 | Satıcı liste fiyatı, sadece cihaz |
+| Palo Alto PA-440 | 1.804 | Satıcı fiyatı |
+| Palo Alto PA-460 | 4.500 | Üçüncü taraf fiyat rehberindeki tahmin |
+| Palo Alto PA-1420 | 20.778 | Satıcı fiyatı |
+| Palo Alto PA-3440 | 29.776 | Pazaryeri fiyatı |
+| Check Point Quantum Spark 1600 | 5.049 | 1 yıllık paket |
+| Check Point Quantum Spark 1800 | 6.731 | 1 yıllık paket |
+| Check Point Quantum Force 9100 | 56.030 | Plus model, 1 yıllık paket |
+| Check Point Quantum Force 19100 | 116.229 | 1 yıllık paket |
+| Cisco Secure Firewall 3105 | 31.155 | Satıcı liste fiyatı |
+| Cisco Secure Firewall 3120 | 59.978 | Satıcı fiyatı |
+| Sophos XGS 2100 | 2.293 | Satıcı fiyatı |
+| Sophos XGS 2300 | 3.495 | Satıcı fiyatı |
+| Sophos XGS 5500 | 23.586 | Satıcı liste fiyatı |
+| pfSense (Netgate 6100) | 949 | Üretici mağazası, MAX model |
+| OPNsense | 0 | Yazılım ücretsiz, sunucu parası ayrı |
+
+Check Point fiyatları abonelik içerdiği için sadece cihaz fiyatlarıyla birebir karşılaştırılmaz. Ankara ve Akademik'te iki cihaz olduğu için cihaz maliyeti iki katıdır.
+
 ## Durum
 
 1. [x] Şirket yapısı ve şube klasörleri
