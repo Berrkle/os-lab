@@ -1,0 +1,451 @@
+{
+  "schemaVersion": 1,
+  "name": "Kurumsal Ağ Güvenliği ve Altyapı Planlaması",
+  "sector": "Education / Software",
+  "author": {
+    "name": "F*** Y*** A***",
+    "course": "BGT207",
+    "github": "fatmayelizapaydin"
+  },
+  "summary": "A multinational organization with Istanbul, Ankara and London offices and a high-traffic academic branch of 10,000 students. Every site has an HA FortiGate pair on primary plus backup links, four VLAN roles (management, staff, student/guest, servers), default-deny rules, IPS and antivirus, and a central SIEM with SOC shifts.",
+  "branches": [
+    {
+      "id": "istanbul-office",
+      "name": "Istanbul Office",
+      "role": "headquarters",
+      "location": "Istanbul, Turkey",
+      "population": {
+        "staff": 340,
+        "software": 60,
+        "rnd": 20
+      },
+      "network": {
+        "cidr": "10.10.0.0/16",
+        "dmz": false,
+        "vlans": [
+          {
+            "id": 10,
+            "name": "management",
+            "cidr": "10.10.0.0/24",
+            "note": "Only IT and security teams. Placeholder CIDR added by the reviewer; the original submission names this VLAN but gives no IP plan."
+          },
+          {
+            "id": 20,
+            "name": "staff",
+            "cidr": "10.10.1.0/24",
+            "note": "Administrative staff. Placeholder CIDR added by the reviewer; the original submission names this VLAN but gives no IP plan."
+          },
+          {
+            "id": 40,
+            "name": "servers-rnd-software",
+            "cidr": "10.10.4.0/24",
+            "note": "Critical servers, test and development. Placeholder CIDR added by the reviewer; the original submission names this VLAN but gives no IP plan."
+          }
+        ]
+      },
+      "bandwidth": {
+        "downMbps": 5000,
+        "upMbps": 5000,
+        "drivers": [
+          "corporate traffic",
+          "SSL inspection",
+          "backup link 5 Gbps"
+        ]
+      },
+      "firewalls": [
+        {
+          "segment": "perimeter",
+          "chosen": {
+            "product": "FortiGate 400F (HA)",
+            "vendor": "Fortinet",
+            "reason": "High UTM capacity for 420 staff and 3.95 Gbps need."
+          },
+          "alternatives": [
+            {
+              "product": "Palo Alto PA-5220",
+              "vendor": "Palo Alto Networks",
+              "reason": "Listed as a top-5 candidate; no per-product rationale in the original."
+            },
+            {
+              "product": "Cisco Firepower 4110",
+              "vendor": "Cisco",
+              "reason": "Listed as a top-5 candidate; no per-product rationale in the original."
+            },
+            {
+              "product": "Check Point Security Gateway 3200",
+              "vendor": "Check Point",
+              "reason": "Listed as a top-5 candidate; no per-product rationale in the original."
+            },
+            {
+              "product": "Juniper SRX 4600",
+              "vendor": "Juniper",
+              "reason": "Listed as a top-5 candidate; no per-product rationale in the original."
+            }
+          ],
+          "rules": [
+            {
+              "action": "allow",
+              "direction": "out",
+              "proto": "tcp",
+              "port": 443,
+              "from": "vlan20-staff",
+              "to": "internet",
+              "note": "SSL inspection and application control are active for heavy corporate traffic."
+            },
+            {
+              "action": "allow",
+              "direction": "in",
+              "proto": "any",
+              "from": "vlan10-management",
+              "to": "all-devices",
+              "note": "IT and security teams manage devices through the management VLAN only."
+            },
+            {
+              "action": "deny",
+              "direction": "in",
+              "proto": "any",
+              "from": "any",
+              "to": "any",
+              "note": "Default Deny: all remaining traffic is blocked (implicit deny at the bottom of the table)."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ankara-office",
+      "name": "Ankara Office",
+      "role": "branch",
+      "location": "Ankara, Turkey",
+      "population": {
+        "staff": 175,
+        "software": 30,
+        "rnd": 15
+      },
+      "network": {
+        "cidr": "10.20.0.0/16",
+        "dmz": false,
+        "vlans": [
+          {
+            "id": 10,
+            "name": "management",
+            "cidr": "10.20.0.0/24",
+            "note": "Only IT and security teams. Placeholder CIDR added by the reviewer; the original submission names this VLAN but gives no IP plan."
+          },
+          {
+            "id": 20,
+            "name": "staff",
+            "cidr": "10.20.1.0/24",
+            "note": "Administrative staff. Placeholder CIDR added by the reviewer; the original submission names this VLAN but gives no IP plan."
+          },
+          {
+            "id": 40,
+            "name": "servers-rnd-software",
+            "cidr": "10.20.4.0/24",
+            "note": "Critical servers, test and development. Placeholder CIDR added by the reviewer; the original submission names this VLAN but gives no IP plan."
+          }
+        ]
+      },
+      "bandwidth": {
+        "downMbps": 2000,
+        "upMbps": 2000,
+        "drivers": [
+          "office work",
+          "web filtering",
+          "backup link 1 Gbps"
+        ]
+      },
+      "firewalls": [
+        {
+          "segment": "perimeter",
+          "chosen": {
+            "product": "FortiGate 200F (HA)",
+            "vendor": "Fortinet",
+            "reason": "Best price/performance balance for 220 staff, high UTM speed and HA support."
+          },
+          "alternatives": [
+            {
+              "product": "Palo Alto PA-3220",
+              "vendor": "Palo Alto Networks",
+              "reason": "Listed as a top-5 candidate; no per-product rationale in the original."
+            },
+            {
+              "product": "Cisco Firepower 2130",
+              "vendor": "Cisco",
+              "reason": "Listed as a top-5 candidate; no per-product rationale in the original."
+            },
+            {
+              "product": "Check Point Security Gateway 1550",
+              "vendor": "Check Point",
+              "reason": "Listed as a top-5 candidate; no per-product rationale in the original."
+            },
+            {
+              "product": "SonicWall NSA 6700",
+              "vendor": "SonicWall",
+              "reason": "Listed as a top-5 candidate; no per-product rationale in the original."
+            }
+          ],
+          "rules": [
+            {
+              "action": "allow",
+              "direction": "out",
+              "proto": "tcp",
+              "port": "80,443",
+              "from": "vlan20-staff",
+              "to": "internet",
+              "note": "Web filtering is on for administrative and technical staff."
+            },
+            {
+              "action": "allow",
+              "direction": "in",
+              "proto": "any",
+              "from": "vlan10-management",
+              "to": "all-devices",
+              "note": "IT and security teams manage devices through the management VLAN only."
+            },
+            {
+              "action": "deny",
+              "direction": "in",
+              "proto": "any",
+              "from": "any",
+              "to": "any",
+              "note": "Default Deny: all remaining traffic is blocked (implicit deny at the bottom of the table)."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "london-office",
+      "name": "London Office",
+      "role": "branch",
+      "location": "London, United Kingdom",
+      "population": {
+        "staff": 159,
+        "software": 30,
+        "rnd": 12
+      },
+      "network": {
+        "cidr": "10.30.0.0/16",
+        "dmz": false,
+        "vlans": [
+          {
+            "id": 10,
+            "name": "management",
+            "cidr": "10.30.0.0/24",
+            "note": "Only IT and security teams. Placeholder CIDR added by the reviewer; the original submission names this VLAN but gives no IP plan."
+          },
+          {
+            "id": 20,
+            "name": "staff",
+            "cidr": "10.30.1.0/24",
+            "note": "Administrative staff. Placeholder CIDR added by the reviewer; the original submission names this VLAN but gives no IP plan."
+          },
+          {
+            "id": 40,
+            "name": "servers-rnd-software",
+            "cidr": "10.30.4.0/24",
+            "note": "Critical servers, test and development. Placeholder CIDR added by the reviewer; the original submission names this VLAN but gives no IP plan."
+          }
+        ]
+      },
+      "bandwidth": {
+        "downMbps": 2000,
+        "upMbps": 2000,
+        "drivers": [
+          "office work",
+          "VPN to HQ",
+          "backup link 1 Gbps"
+        ]
+      },
+      "firewalls": [
+        {
+          "segment": "perimeter",
+          "chosen": {
+            "product": "FortiGate 200F (HA)",
+            "vendor": "Fortinet",
+            "reason": "Same class as Ankara for a 210-person office."
+          },
+          "alternatives": [
+            {
+              "product": "Palo Alto PA-3220",
+              "vendor": "Palo Alto Networks",
+              "reason": "Listed as a top-5 candidate; no per-product rationale in the original."
+            },
+            {
+              "product": "Cisco Firepower 2130",
+              "vendor": "Cisco",
+              "reason": "Listed as a top-5 candidate; no per-product rationale in the original."
+            },
+            {
+              "product": "Check Point Security Gateway 1550",
+              "vendor": "Check Point",
+              "reason": "Listed as a top-5 candidate; no per-product rationale in the original."
+            },
+            {
+              "product": "SonicWall NSA 6700",
+              "vendor": "SonicWall",
+              "reason": "Listed as a top-5 candidate; no per-product rationale in the original."
+            }
+          ],
+          "rules": [
+            {
+              "action": "allow",
+              "direction": "forward",
+              "proto": "udp",
+              "port": "500,4500",
+              "from": "vlan20-staff",
+              "to": "vpn-peers",
+              "note": "Secure VPN tunnels carry the international coordination traffic."
+            },
+            {
+              "action": "allow",
+              "direction": "in",
+              "proto": "any",
+              "from": "vlan10-management",
+              "to": "all-devices",
+              "note": "IT and security teams manage devices through the management VLAN only."
+            },
+            {
+              "action": "deny",
+              "direction": "in",
+              "proto": "any",
+              "from": "any",
+              "to": "any",
+              "note": "Default Deny: all remaining traffic is blocked (implicit deny at the bottom of the table)."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "academic-branch",
+      "name": "Academic Branch",
+      "role": "campus",
+      "location": "Istanbul, Turkey",
+      "population": {
+        "staff": 680,
+        "students": 10000,
+        "software": 30,
+        "rnd": 40
+      },
+      "network": {
+        "cidr": "10.40.0.0/16",
+        "dmz": false,
+        "vlans": [
+          {
+            "id": 10,
+            "name": "management",
+            "cidr": "10.40.0.0/24",
+            "note": "Only IT and security teams. Placeholder CIDR added by the reviewer; the original submission names this VLAN but gives no IP plan."
+          },
+          {
+            "id": 20,
+            "name": "staff",
+            "cidr": "10.40.1.0/24",
+            "note": "Administrative staff. Placeholder CIDR added by the reviewer; the original submission names this VLAN but gives no IP plan."
+          },
+          {
+            "id": 40,
+            "name": "servers-rnd-software",
+            "cidr": "10.40.4.0/24",
+            "note": "Critical servers, test and development. Placeholder CIDR added by the reviewer; the original submission names this VLAN but gives no IP plan."
+          },
+          {
+            "id": 30,
+            "name": "students-guest",
+            "cidr": "10.40.32.0/19",
+            "note": "Isolated, internet-only student network. Placeholder CIDR added by the reviewer; the original submission names this VLAN but gives no IP plan."
+          }
+        ]
+      },
+      "bandwidth": {
+        "downMbps": 30000,
+        "upMbps": 30000,
+        "drivers": [
+          "10,000 students",
+          "video streaming",
+          "P2P (limited)",
+          "backup link 10 Gbps"
+        ]
+      },
+      "firewalls": [
+        {
+          "segment": "perimeter",
+          "chosen": {
+            "product": "FortiGate 3500F (HA)",
+            "vendor": "Fortinet",
+            "reason": "Very high throughput for 27.09 Gbps of campus demand."
+          },
+          "alternatives": [
+            {
+              "product": "Palo Alto PA-7050",
+              "vendor": "Palo Alto Networks",
+              "reason": "Listed as a top-5 candidate; no per-product rationale in the original."
+            },
+            {
+              "product": "Cisco Firepower 9300",
+              "vendor": "Cisco",
+              "reason": "Listed as a top-5 candidate; no per-product rationale in the original."
+            },
+            {
+              "product": "Check Point 65000 Security System",
+              "vendor": "Check Point",
+              "reason": "Listed as a top-5 candidate; no per-product rationale in the original."
+            },
+            {
+              "product": "Juniper SRX 5800",
+              "vendor": "Juniper",
+              "reason": "Listed as a top-5 candidate; no per-product rationale in the original."
+            }
+          ],
+          "rules": [
+            {
+              "action": "limit",
+              "direction": "out",
+              "proto": "any",
+              "from": "vlan30-students",
+              "to": "internet",
+              "note": "Rate limiting on the student VLAN keeps 10,000 students from choking the uplink."
+            },
+            {
+              "action": "deny",
+              "direction": "out",
+              "proto": "any",
+              "from": "vlan30-students",
+              "to": "p2p",
+              "note": "P2P/torrent traffic is blocked on the student VLAN."
+            },
+            {
+              "action": "allow",
+              "direction": "in",
+              "proto": "any",
+              "from": "vlan10-management",
+              "to": "all-devices",
+              "note": "IT and security teams manage devices through the management VLAN only."
+            },
+            {
+              "action": "deny",
+              "direction": "in",
+              "proto": "any",
+              "from": "any",
+              "to": "any",
+              "note": "Default Deny: all remaining traffic is blocked (implicit deny at the bottom of the table)."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "remoteAccess": {
+    "type": "site-to-site-vpn",
+    "note": "Secure VPN tunnels between sites; the London office has dedicated rule sets for international coordination."
+  },
+  "monitoring": {
+    "siem": "All FortiGate logs go to a central SIEM via syslog; SNMPv3 with Zabbix/Grafana for CPU, RAM, interface and bandwidth.",
+    "owner": "SOC analysts on 24/7 shifts under a RACI matrix that names who is informed and who responds.",
+    "alertSink": "Automatic e-mail and SMS to the IT security team (bandwidth over 85% or a critical firewall rule hit).",
+    "appVsSecurity": "Sysadmin dashboards (Zabbix/Grafana) track device and bandwidth health; SIEM/SOC handles security events."
+  },
+  "slug": "kurumsal-ag-planlamasi"
+}

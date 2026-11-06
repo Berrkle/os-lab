@@ -1,17 +1,17 @@
 {
   "generatedBy": "firewall-lab/scripts/catalog.py",
   "summary": {
-    "companies": 4,
-    "branches": 14,
-    "firewalls": 17,
-    "rules": 85,
+    "companies": 5,
+    "branches": 18,
+    "firewalls": 21,
+    "rules": 98,
     "priceUsd": {
       "min": 700,
       "max": 12000,
       "total": 18399
     },
     "chosenByVendor": {
-      "Fortinet": 8,
+      "Fortinet": 12,
       "Netfilter project": 5,
       "Palo Alto Networks": 1,
       "Cloudflare": 1,
@@ -21,6 +21,7 @@
     "chosenByProduct": {
       "Netfilter project nftables on Kali Linux (central router/firewall)": 5,
       "Fortinet FortiGate 60F": 3,
+      "Fortinet FortiGate 200F (HA)": 2,
       "Fortinet FortiGate 100F": 1,
       "Fortinet FortiGate 600F": 1,
       "Palo Alto Networks PA-3400 series (HA)": 1,
@@ -29,28 +30,31 @@
       "Fortinet FortiGate 1800F class (HA)": 1,
       "Fortinet FortiGate 100F class": 1,
       "WatchGuard Firebox T-series": 1,
+      "Fortinet FortiGate 400F (HA)": 1,
+      "Fortinet FortiGate 3500F (HA)": 1,
       "Netgate pfSense Plus (Netgate 4200)": 1
     },
     "vendorsConsidered": {
-      "Fortinet": 16,
+      "Fortinet": 20,
       "Sophos": 13,
       "Netgate": 11,
       "Deciso": 10,
-      "Check Point": 6,
-      "Palo Alto Networks": 5,
+      "Check Point": 10,
+      "Palo Alto Networks": 9,
+      "Cisco": 7,
       "Netfilter project": 5,
       "WatchGuard": 3,
-      "Cisco": 3,
+      "Juniper": 3,
       "Palo Alto": 2,
       "MikroTik": 2,
       "Ubiquiti": 2,
+      "SonicWall": 2,
       "Netgate / Deciso": 1,
       "Cloudflare": 1,
       "Amazon": 1,
       "Akamai": 1,
       "Imperva": 1,
-      "F5": 1,
-      "Juniper": 1
+      "F5": 1
     }
   },
   "firewalls": [
@@ -588,6 +592,202 @@
         {
           "product": "Quantum Spark 1600 / 1800",
           "vendor": "Check Point",
+          "throughputGbps": null,
+          "priceUsd": null
+        }
+      ]
+    },
+    {
+      "company": "Kurumsal Ağ Güvenliği ve Altyapı Planlaması",
+      "companySlug": "kurumsal-ag-planlamasi",
+      "sector": "Education / Software",
+      "author": "F*** Y*** A***",
+      "branch": "Istanbul Office",
+      "branchId": "istanbul-office",
+      "branchRole": "headquarters",
+      "location": "Istanbul, Turkey",
+      "segment": "perimeter",
+      "product": "FortiGate 400F (HA)",
+      "vendor": "Fortinet",
+      "throughputGbps": null,
+      "priceUsd": null,
+      "ruleCount": 3,
+      "actions": {
+        "allow": 2,
+        "deny": 1,
+        "reject": 0,
+        "limit": 0
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "Palo Alto PA-5220",
+          "vendor": "Palo Alto Networks",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Cisco Firepower 4110",
+          "vendor": "Cisco",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Check Point Security Gateway 3200",
+          "vendor": "Check Point",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Juniper SRX 4600",
+          "vendor": "Juniper",
+          "throughputGbps": null,
+          "priceUsd": null
+        }
+      ]
+    },
+    {
+      "company": "Kurumsal Ağ Güvenliği ve Altyapı Planlaması",
+      "companySlug": "kurumsal-ag-planlamasi",
+      "sector": "Education / Software",
+      "author": "F*** Y*** A***",
+      "branch": "Ankara Office",
+      "branchId": "ankara-office",
+      "branchRole": "branch",
+      "location": "Ankara, Turkey",
+      "segment": "perimeter",
+      "product": "FortiGate 200F (HA)",
+      "vendor": "Fortinet",
+      "throughputGbps": null,
+      "priceUsd": null,
+      "ruleCount": 3,
+      "actions": {
+        "allow": 2,
+        "deny": 1,
+        "reject": 0,
+        "limit": 0
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "Palo Alto PA-3220",
+          "vendor": "Palo Alto Networks",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Cisco Firepower 2130",
+          "vendor": "Cisco",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Check Point Security Gateway 1550",
+          "vendor": "Check Point",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "SonicWall NSA 6700",
+          "vendor": "SonicWall",
+          "throughputGbps": null,
+          "priceUsd": null
+        }
+      ]
+    },
+    {
+      "company": "Kurumsal Ağ Güvenliği ve Altyapı Planlaması",
+      "companySlug": "kurumsal-ag-planlamasi",
+      "sector": "Education / Software",
+      "author": "F*** Y*** A***",
+      "branch": "London Office",
+      "branchId": "london-office",
+      "branchRole": "branch",
+      "location": "London, United Kingdom",
+      "segment": "perimeter",
+      "product": "FortiGate 200F (HA)",
+      "vendor": "Fortinet",
+      "throughputGbps": null,
+      "priceUsd": null,
+      "ruleCount": 3,
+      "actions": {
+        "allow": 2,
+        "deny": 1,
+        "reject": 0,
+        "limit": 0
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "Palo Alto PA-3220",
+          "vendor": "Palo Alto Networks",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Cisco Firepower 2130",
+          "vendor": "Cisco",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Check Point Security Gateway 1550",
+          "vendor": "Check Point",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "SonicWall NSA 6700",
+          "vendor": "SonicWall",
+          "throughputGbps": null,
+          "priceUsd": null
+        }
+      ]
+    },
+    {
+      "company": "Kurumsal Ağ Güvenliği ve Altyapı Planlaması",
+      "companySlug": "kurumsal-ag-planlamasi",
+      "sector": "Education / Software",
+      "author": "F*** Y*** A***",
+      "branch": "Academic Branch",
+      "branchId": "academic-branch",
+      "branchRole": "campus",
+      "location": "Istanbul, Turkey",
+      "segment": "perimeter",
+      "product": "FortiGate 3500F (HA)",
+      "vendor": "Fortinet",
+      "throughputGbps": null,
+      "priceUsd": null,
+      "ruleCount": 4,
+      "actions": {
+        "allow": 1,
+        "deny": 2,
+        "reject": 0,
+        "limit": 1
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "Palo Alto PA-7050",
+          "vendor": "Palo Alto Networks",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Cisco Firepower 9300",
+          "vendor": "Cisco",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Check Point 65000 Security System",
+          "vendor": "Check Point",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Juniper SRX 5800",
+          "vendor": "Juniper",
           "throughputGbps": null,
           "priceUsd": null
         }
