@@ -144,3 +144,10 @@
 @keyframes fwg-grow { to { transform: scaleY(1); } }
 @keyframes fwg-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(214,54,47,.5); } 50% { box-shadow: 0 0 0 5px rgba(214,54,47,0); } }
 @media (prefers-reduced-motion: reduce) { .fwg, .fwg-card, .fwg-cell, .fwg-card::before, .fwg-ring-bar, .fwg-sev i, .fw-tab-pill, .fwg-fold { animation: none !important; transition: none !important; } .fwg-card::before { transform: scaleY(1); } .fwg-sev i { transform: none; opacity: 1; } }
+
+.fwg-inst { display: grid; gap: 4px; margin: 0 0 10px; padding: 0; list-style: none; }
+.fwg-inst li { padding: 5px 8px; border-left: 2px solid var(--iux-border); border-radius: 0 6px 6px 0; background: rgba(127,127,127,.07); font: 11px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--iux-muted-foreground); word-break: break-word; }
+.fwg-inst .fwg-more-n { border-left-color: #f36c21; background: none; color: #f36c21; font-weight: 700; }
+.fwg-inst-all { margin: 10px 0 0; }
+.fwg-all { display: block; margin: 20px auto 0; padding: 11px 22px; border: 1px solid #f36c21; border-radius: 12px; background: transparent; color: #f36c21; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; transition: background .2s, color .2s, transform .2s; }
+.fwg-all:hover { background: #f36c21; color: #fff; transform: translateY(-2px); }
