@@ -5,6 +5,8 @@
 
 Hayali bir şirket kuruyoruz ve bu şirketin tüm şubelerine adım adım güvenlik duvarı (firewall) kuruyoruz.
 
+**İçindekiler:** [Ağ şeması](#ağ-şeması) · [Şirket yapısı](#adım-1-şirket-yapısı) · [Bant genişliği](#adım-2-bant-genişliği) · [Güvenlik duvarları](#adım-3-her-şube-için-en-iyi-5-güvenlik-duvarı) · [Kurulum](#adım-4-adım-adım-kurulum) · [İzleme](#adım-5-i̇zleme-monitoring) · [Kurallar ve işletme](#kural-setleri-ve-işletme) · [Ankara](#ankara-ofisi-genel-merkez) · [İstanbul](#i̇stanbul-ofisi) · [Londra](#londra-ofisi) · [Akademik](#akademik-şube) · [Yazılım](#yazılım-ekibi) · [Ar-Ge](#ar-ge-ekibi) · [Kaynaklar](#kaynaklar)
+
 ## Şirket: Hayal A.Ş.
 
 Hayal A.Ş. okullar ve şirketler için eğitim yazılımları geliştirir. Kendi akademik kampüsünü de işletir.
@@ -134,7 +136,9 @@ Güvenlik duvarı, internet hattından yavaş olursa kapı daralır, darboğaz o
 
 **3. Şubenin ihtiyacı:** Öğrenci girişi, misafir Wi-Fi, merkezden yönetim, şüpheli dosya testi gibi özellikler.
 
-**4. Yedeklilik:** Büyük şubelerde (Ankara ve Akademik) 2 cihaz birlikte çalışır. Biri bozulursa diğeri devralır. Buna **HA (High Availability)** denir. **İki cihaz hızı ikiye katlamaz:** Biri çalışır, diğeri bekler. Bu yüzden hesap tek cihazın hızına göre yapıldı. Ankara'da 2 × 3 Gbps = 6 Gbps değil, yine 3 Gbps. Küçük şubelerde ikinci cihaz yerine Ankara'daki depoda **yedek cihaz** bekletilir: bir FortiGate ve Ar-Ge için bir Check Point. Cihaz bozulursa yedeği Türkiye'deki şubelere 1 gün içinde gönderilir. Ankara'dan Londra'ya gönderim gümrük yüzünden 2–3 gün sürer. Bu yüzden Londra için üreticinin **İngiltere'deki değişim hizmeti** kullanılır: bozuk cihazın yerine yenisi ertesi iş günü ofise getirilir.
+**4. Yedeklilik:** Büyük şubelerde (Ankara ve Akademik) 2 cihaz birlikte çalışır. Biri bozulursa diğeri devralır. Buna **HA (High Availability)** denir. **İki cihaz hızı ikiye katlamaz:** Biri çalışır, diğeri bekler. Bu yüzden hesap tek cihazın hızına göre yapıldı. Ankara'da 2 × 3 Gbps = 6 Gbps değil, yine 3 Gbps.
+
+Küçük şubelerde ikinci cihaz yerine Ankara'daki depoda **yedek cihaz** bekletilir: bir FortiGate ve Ar-Ge için bir Check Point. Cihaz bozulursa yedeği Türkiye'deki şubelere 1 gün içinde gönderilir. Ankara'dan Londra'ya gönderim gümrük yüzünden 2–3 gün sürer. Bu yüzden Londra için üreticinin **İngiltere'deki değişim hizmeti** kullanılır: bozuk cihazın yerine yenisi ertesi iş günü ofise getirilir.
 
 ### Seçimler
 
@@ -223,8 +227,6 @@ Bizde NOC işini Ankara'daki BT ekibi yapar. SOC için ayrı bir ekip kurulur.
 
 ## Kural setleri ve işletme
 
-Hocanın eksik listesinden sonra tasarımı bu başlıklarda tamamladık.
-
 ### Kurallar nasıl okunur?
 
 Güvenlik duvarı kuralları yukarıdan aşağı okur, **eşleşen ilk kural** uygulanır. Her şubede sıra aynı:
@@ -293,19 +295,6 @@ Fiyatlar yaklaşık ve dolar cinsinden. Üreticiler her modelin fiyatını yayı
 
 Check Point fiyatları abonelik içerdiği için sadece cihaz fiyatlarıyla birebir karşılaştırılmaz. Ankara ve Akademik'te iki cihaz olduğu için cihaz maliyeti iki katıdır.
 
-# Kaynaklar
-
-Hız değerleri üreticilerin teknik belgelerinden (datasheet) ve satıcı sayfalarından alındı (Ekim 2026).
-
-| Üretici | Kaynak |
-|---------|--------|
-| Fortinet (FortiGate) | [Fortinet Product Matrix (2024)](https://www.boll-europe.at/datasheets/Fortinet_Product_Matrix.pdf), [Nomios – FortiGate modelleri](https://www.nomios.com/partners/fortinet/network-security/fortigate-firewall/entry-and-mid-range/), [SHI – FortiGate 600F](https://www.shi.com/product/44900362/Fortinet-FortiGate-600F), [datacenter360 – FortiGate 90G](https://datacenter360.ca/fortinet/fortigate/fortigate-90g-firewall/) |
-| Palo Alto Networks | [Palo Alto – donanım güvenlik duvarı serileri](https://www.paloaltonetworks.com/resources/infographics/hwfw-upgrade) |
-| Check Point | [Quantum Spark 1900/2000 datasheet](https://www.checkpoint.com/downloads/quantum-spark-1900-2000-datasheet.pdf), [Check Point cihaz karşılaştırması](https://www.checkpoint.com/check-point-security-appliances-comparison), [Quantum Force 9100](https://www.checkpoint.com/quantum/force/9100/), [Quantum Force 19100](https://www.checkpoint.com/quantum/force/19100/) |
-| Cisco | [Secure Firewall 3100 datasheet](https://www.cisco.com/c/en/us/products/collateral/security/firewalls/secure-firewall-3100-series-ds.html) |
-| Sophos | [Sophos XGS serisi](https://www.sophos.com/en-gb/products/next-gen-firewall/xgs-1u-distributed-edge-firewalls) |
-| Netgate (pfSense) | [Netgate 6100](https://shop.netgate.com/products/6100-base-pfsense), [Suricata forumu – IPS açıkken hız düşüşü](https://forum.suricata.io/t/throughput-drop-on-netgate-8200-max-lan-vlan-ix1-with-suricata-inline-mode/6060) |
-
 # Ankara Ofisi (Genel Merkez)
 
 Şirketin yönetim merkezi. Yönetim, insan kaynakları ve finans burada.
@@ -323,7 +312,7 @@ Hız değerleri üreticilerin teknik belgelerinden (datasheet) ve satıcı sayfa
 
 ## En uygun 5 güvenlik duvarı
 
-**İhtiyaç:** 803 Mbps (ana hat 1 Gbps). Diğer 5 şubenin VPN bağlantıları burada sonlanıyor. Ortak sunucular burada.
+**İhtiyaç:** 803 Mbps (ana hat 1 Gbps). Diğer 5 şubenin VPN bağlantıları burada sonlanıyor. Ortak sunucular burada.  
 **Kural:** Tehdit koruma hızı ≥ 1 Gbps. Cihazlar 2 adet, yedekli (HA) çalışacak.
 
 | # | Cihaz | Tehdit koruma hızı | Neden bu sırada? |
@@ -369,7 +358,7 @@ Satış ve operasyon ofisi. Müşterilerle burada çalışılır.
 
 ## En uygun 5 güvenlik duvarı
 
-**İhtiyaç:** 339 Mbps (ana hat 500 Mbps). Misafir Wi-Fi'ı var. Ankara'ya VPN ile bağlanacak.
+**İhtiyaç:** 339 Mbps (ana hat 500 Mbps). Misafir Wi-Fi'ı var. Ankara'ya VPN ile bağlanacak.  
 **Kural:** Tehdit koruma hızı ≥ 500 Mbps.
 
 | # | Cihaz | Tehdit koruma hızı | Neden bu sırada? |
@@ -413,7 +402,7 @@ Yurt dışı satış ofisi. Küçük bir ekip.
 
 ## En uygun 5 güvenlik duvarı
 
-**İhtiyaç:** 87 Mbps (ana hat 200 Mbps). BT ekibi sadece 3 kişi. Ankara'dan uzaktan yönetilmeli.
+**İhtiyaç:** 87 Mbps (ana hat 200 Mbps). BT ekibi sadece 3 kişi. Ankara'dan uzaktan yönetilmeli.  
 **Kural:** Tehdit koruma hızı ≥ 200 Mbps.
 
 | # | Cihaz | Tehdit koruma hızı | Neden bu sırada? |
@@ -458,7 +447,7 @@ Yurt dışı satış ofisi. Küçük bir ekip.
 
 ## En uygun 5 güvenlik duvarı
 
-**İhtiyaç:** 5,1 Gbps (ana hat 10 Gbps). 10.000'den fazla kullanıcı, öğrencilerin kendi cihazları, 5651 sayılı kanuna göre kayıt tutma (Türkiye'de toplu internet veren yerler kimin ne zaman bağlandığını kaydetmek zorunda), öğrencilerin internete kimlikleriyle giriş yapması (captive portal).
+**İhtiyaç:** 5,1 Gbps (ana hat 10 Gbps). 10.000'den fazla kullanıcı, öğrencilerin kendi cihazları, 5651 sayılı kanuna göre kayıt tutma (Türkiye'de toplu internet veren yerler kimin ne zaman bağlandığını kaydetmek zorunda), öğrencilerin internete kimlikleriyle giriş yapması (captive portal).  
 **Kural:** Tehdit koruma hızı ≥ 10 Gbps. Cihazlar 2 adet, yedekli (HA) çalışacak.
 
 | # | Cihaz | Tehdit koruma hızı | Neden bu sırada? |
@@ -517,7 +506,7 @@ Yurt dışı satış ofisi. Küçük bir ekip.
 
 ## En uygun 5 güvenlik duvarı
 
-**İhtiyaç:** 713 Mbps (ana hat 1 Gbps). GitHub, paket depoları ve bulut sunuculara sorunsuz erişim. Kaynak kod dışarı sızmamalı.
+**İhtiyaç:** 713 Mbps (ana hat 1 Gbps). GitHub, paket depoları ve bulut sunuculara sorunsuz erişim. Kaynak kod dışarı sızmamalı.  
 **Kural:** Tehdit koruma hızı ≥ 1 Gbps.
 
 | # | Cihaz | Tehdit koruma hızı | Neden bu sırada? |
@@ -562,7 +551,7 @@ Yeni ürünler üzerinde çalışan ekip. Ankara'da, diğer birimlerden ayrı bi
 
 ## En uygun 5 güvenlik duvarı
 
-**İhtiyaç:** 270 Mbps (ana hat 500 Mbps). Şirketin en gizli verileri burada. Hızdan çok güvenlik önemli.
+**İhtiyaç:** 270 Mbps (ana hat 500 Mbps). Şirketin en gizli verileri burada. Hızdan çok güvenlik önemli.  
 **Kural:** Tehdit koruma hızı ≥ 500 Mbps. Kum havuzu (sandbox) ve veri sızıntısı koruması (DLP) olmalı.
 
 | # | Cihaz | Tehdit koruma hızı | Neden bu sırada? |
@@ -596,3 +585,16 @@ Yeni ürünler üzerinde çalışan ekip. Ankara'da, diğer birimlerden ayrı bi
 3. **En sıkı kurallar:** İnternette sadece işle ilgili sitelere izin verilir, gerisi kapalı.
 4. **Şüpheli dosya testi (kum havuzu):** İnternetten gelen her dosya, kullanıcıya ulaşmadan önce güvenli bir ortamda açılıp denenir. Zararlıysa engellenir.
 5. **Dosya sızıntısına karşı:** Google Drive, Dropbox ve kişisel e-postaya dosya göndermek kapalı.
+
+# Kaynaklar
+
+Hız değerleri üreticilerin teknik belgelerinden (datasheet) ve satıcı sayfalarından alındı (Ekim 2026).
+
+| Üretici | Kaynak |
+|---------|--------|
+| Fortinet (FortiGate) | [Fortinet Product Matrix (2024)](https://www.boll-europe.at/datasheets/Fortinet_Product_Matrix.pdf), [Nomios – FortiGate modelleri](https://www.nomios.com/partners/fortinet/network-security/fortigate-firewall/entry-and-mid-range/), [SHI – FortiGate 600F](https://www.shi.com/product/44900362/Fortinet-FortiGate-600F), [datacenter360 – FortiGate 90G](https://datacenter360.ca/fortinet/fortigate/fortigate-90g-firewall/) |
+| Palo Alto Networks | [Palo Alto – donanım güvenlik duvarı serileri](https://www.paloaltonetworks.com/resources/infographics/hwfw-upgrade) |
+| Check Point | [Quantum Spark 1900/2000 datasheet](https://www.checkpoint.com/downloads/quantum-spark-1900-2000-datasheet.pdf), [Check Point cihaz karşılaştırması](https://www.checkpoint.com/check-point-security-appliances-comparison), [Quantum Force 9100](https://www.checkpoint.com/quantum/force/9100/), [Quantum Force 19100](https://www.checkpoint.com/quantum/force/19100/) |
+| Cisco | [Secure Firewall 3100 datasheet](https://www.cisco.com/c/en/us/products/collateral/security/firewalls/secure-firewall-3100-series-ds.html) |
+| Sophos | [Sophos XGS serisi](https://www.sophos.com/en-gb/products/next-gen-firewall/xgs-1u-distributed-edge-firewalls) |
+| Netgate (pfSense) | [Netgate 6100](https://shop.netgate.com/products/6100-base-pfsense), [Suricata forumu – IPS açıkken hız düşüşü](https://forum.suricata.io/t/throughput-drop-on-netgate-8200-max-lan-vlan-ix1-with-suricata-inline-mode/6060) |
