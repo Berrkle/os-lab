@@ -1,17 +1,17 @@
 {
   "generatedBy": "firewall-lab/scripts/catalog.py",
   "summary": {
-    "companies": 12,
-    "branches": 48,
-    "firewalls": 52,
-    "rules": 538,
+    "companies": 13,
+    "branches": 52,
+    "firewalls": 56,
+    "rules": 597,
     "priceUsd": {
       "min": 700,
       "max": 205357,
-      "total": 439026
+      "total": 671026
     },
     "chosenByVendor": {
-      "Fortinet": 35,
+      "Fortinet": 39,
       "Netgate": 5,
       "Netfilter project": 5,
       "Palo Alto Networks": 3,
@@ -22,12 +22,14 @@
     "chosenByProduct": {
       "Fortinet FortiGate 60F": 6,
       "Netfilter project nftables on Kali Linux (central router/firewall)": 5,
+      "Fortinet FortiGate 200F (HA)": 4,
       "Netgate pfSense CE 2.9": 4,
       "Fortinet FortiGate 100F": 3,
       "Fortinet FortiGate 200F": 3,
       "Fortinet FortiGate 600F": 2,
-      "Fortinet FortiGate 200F (HA)": 2,
+      "Fortinet FortiGate 3500F (HA)": 2,
       "Fortinet Fortinet FortiGate 200F": 2,
+      "Fortinet FortiGate 600F (HA)": 1,
       "Palo Alto Networks PA-3400 series (HA)": 1,
       "Fortinet FortiGate 200F class (ISFW mode)": 1,
       "Cloudflare Cloudflare WAF": 1,
@@ -44,7 +46,6 @@
       "Fortinet FortiGate 90G": 1,
       "Check Point Check Point Quantum Spark 1800": 1,
       "Fortinet FortiGate 400F (HA)": 1,
-      "Fortinet FortiGate 3500F (HA)": 1,
       "Palo Alto Networks Palo Alto Networks PA-5410": 1,
       "Fortinet Fortinet FortiGate 1000F": 1,
       "Palo Alto Networks Palo Alto Networks PA-1410": 1,
@@ -55,16 +56,16 @@
       "Fortinet FortiGate 80F": 1
     },
     "vendorsConsidered": {
-      "Fortinet": 57,
-      "Palo Alto Networks": 39,
-      "Check Point": 34,
-      "Sophos": 32,
-      "Cisco": 25,
+      "Fortinet": 62,
+      "Palo Alto Networks": 43,
+      "Check Point": 38,
+      "Sophos": 34,
+      "Cisco": 28,
       "Netgate": 22,
       "Deciso": 18,
+      "WatchGuard": 5,
+      "Juniper": 5,
       "Netfilter project": 5,
-      "WatchGuard": 4,
-      "Juniper": 4,
       "SonicWall": 3,
       "Palo Alto": 2,
       "MikroTik": 2,
@@ -323,6 +324,202 @@
           "vendor": "Check Point",
           "throughputGbps": 28,
           "priceUsd": 18000
+        }
+      ]
+    },
+    {
+      "company": "AegisAI & CyberSystems Global",
+      "companySlug": "aegisai-global",
+      "sector": "Technology / Education",
+      "author": "S***",
+      "branch": "Istanbul Office (HQ)",
+      "branchId": "istanbul-hq",
+      "branchRole": "headquarters",
+      "location": "İstanbul, TR",
+      "segment": "perimeter",
+      "product": "FortiGate 600F (HA)",
+      "vendor": "Fortinet",
+      "throughputGbps": 10.5,
+      "priceUsd": 38000,
+      "ruleCount": 21,
+      "actions": {
+        "allow": 16,
+        "deny": 4,
+        "reject": 0,
+        "limit": 1
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "PA-3430 (HA)",
+          "vendor": "Palo Alto Networks",
+          "throughputGbps": 9.5,
+          "priceUsd": 62000
+        },
+        {
+          "product": "Quantum 6900 (HA)",
+          "vendor": "Check Point",
+          "throughputGbps": 9.2,
+          "priceUsd": 54000
+        },
+        {
+          "product": "Secure Firewall 3130 (HA)",
+          "vendor": "Cisco",
+          "throughputGbps": 10.2,
+          "priceUsd": 58000
+        },
+        {
+          "product": "FortiGate 400F (HA)",
+          "vendor": "Fortinet",
+          "throughputGbps": 9.0,
+          "priceUsd": 26000
+        }
+      ]
+    },
+    {
+      "company": "AegisAI & CyberSystems Global",
+      "companySlug": "aegisai-global",
+      "sector": "Technology / Education",
+      "author": "S***",
+      "branch": "New York Office",
+      "branchId": "new-york",
+      "branchRole": "branch",
+      "location": "New York, US",
+      "segment": "perimeter",
+      "product": "FortiGate 200F (HA)",
+      "vendor": "Fortinet",
+      "throughputGbps": 3.0,
+      "priceUsd": 14500,
+      "ruleCount": 11,
+      "actions": {
+        "allow": 9,
+        "deny": 2,
+        "reject": 0,
+        "limit": 0
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "PA-1410 (HA)",
+          "vendor": "Palo Alto Networks",
+          "throughputGbps": 3.2,
+          "priceUsd": 24000
+        },
+        {
+          "product": "Quantum 3800 (HA)",
+          "vendor": "Check Point",
+          "throughputGbps": 3.0,
+          "priceUsd": 21000
+        },
+        {
+          "product": "XGS 3300 (HA)",
+          "vendor": "Sophos",
+          "throughputGbps": 3.1,
+          "priceUsd": 13000
+        },
+        {
+          "product": "Secure Firewall 1220 (HA)",
+          "vendor": "Cisco",
+          "throughputGbps": 3.3,
+          "priceUsd": 19500
+        }
+      ]
+    },
+    {
+      "company": "AegisAI & CyberSystems Global",
+      "companySlug": "aegisai-global",
+      "sector": "Technology / Education",
+      "author": "S***",
+      "branch": "Amsterdam Office",
+      "branchId": "amsterdam",
+      "branchRole": "branch",
+      "location": "Amsterdam, NL",
+      "segment": "perimeter",
+      "product": "FortiGate 200F (HA)",
+      "vendor": "Fortinet",
+      "throughputGbps": 3.0,
+      "priceUsd": 14500,
+      "ruleCount": 12,
+      "actions": {
+        "allow": 9,
+        "deny": 3,
+        "reject": 0,
+        "limit": 0
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "PA-1410 (HA)",
+          "vendor": "Palo Alto Networks",
+          "throughputGbps": 3.2,
+          "priceUsd": 24000
+        },
+        {
+          "product": "Quantum 3600 (HA)",
+          "vendor": "Check Point",
+          "throughputGbps": 2.6,
+          "priceUsd": 18500
+        },
+        {
+          "product": "XGS 3300 (HA)",
+          "vendor": "Sophos",
+          "throughputGbps": 3.1,
+          "priceUsd": 13000
+        },
+        {
+          "product": "Firebox M590 (HA)",
+          "vendor": "WatchGuard",
+          "throughputGbps": 2.9,
+          "priceUsd": 12500
+        }
+      ]
+    },
+    {
+      "company": "AegisAI & CyberSystems Global",
+      "companySlug": "aegisai-global",
+      "sector": "Technology / Education",
+      "author": "S***",
+      "branch": "Academic Branch (Antalya Campus)",
+      "branchId": "academic-antalya",
+      "branchRole": "campus",
+      "location": "Antalya, TR",
+      "segment": "perimeter",
+      "product": "FortiGate 3500F (HA)",
+      "vendor": "Fortinet",
+      "throughputGbps": 63.0,
+      "priceUsd": 165000,
+      "ruleCount": 15,
+      "actions": {
+        "allow": 11,
+        "deny": 3,
+        "reject": 0,
+        "limit": 1
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "PA-5440 (HA)",
+          "vendor": "Palo Alto Networks",
+          "throughputGbps": 54.0,
+          "priceUsd": 240000
+        },
+        {
+          "product": "Quantum 16600 (HA)",
+          "vendor": "Check Point",
+          "throughputGbps": 52.0,
+          "priceUsd": 195000
+        },
+        {
+          "product": "Secure Firewall 4245 (HA)",
+          "vendor": "Cisco",
+          "throughputGbps": 60.0,
+          "priceUsd": 210000
+        },
+        {
+          "product": "SRX5400 (HA)",
+          "vendor": "Juniper",
+          "throughputGbps": 50.0,
+          "priceUsd": 180000
         }
       ]
     },
