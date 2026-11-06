@@ -1,0 +1,678 @@
+{
+  "schemaVersion": 1,
+  "name": "AnadoluNet Technology Holding",
+  "sector": "Technology / Education",
+  "author": {
+    "name": "B*** Ö***",
+    "course": "BGT207",
+    "github": "Pireburak"
+  },
+  "summary": "AnadoluNet is a technology holding with an Izmir headquarters and software team, offices in Bursa (with an isolated OT production VLAN) and Berlin (GDPR), and an Eskisehir academy campus of 8,000 students. Hub-and-spoke IPsec IKEv2 tunnels meet at the Izmir firewalls; every site is default-deny with explained rules, per-user QoS and a central SIEM.",
+  "branches": [
+    {
+      "id": "izmir-hq",
+      "name": "Izmir HQ + Software Team",
+      "role": "headquarters",
+      "location": "Izmir, Turkey",
+      "population": {
+        "staff": 300,
+        "software": 80
+      },
+      "network": {
+        "cidr": "10.10.0.0/16",
+        "dmz": true,
+        "vlans": [
+          {
+            "id": 10,
+            "name": "management",
+            "cidr": "10.10.10.0/24",
+            "note": "Firewall, switch and server management."
+          },
+          {
+            "id": 20,
+            "name": "staff",
+            "cidr": "10.10.20.0/23",
+            "note": "Office staff."
+          },
+          {
+            "id": 30,
+            "name": "software",
+            "cidr": "10.10.30.0/24",
+            "note": "Software team, separate floor."
+          },
+          {
+            "id": 40,
+            "name": "servers",
+            "cidr": "10.10.40.0/24",
+            "note": "ERP, AD, mail; Git/CI in 10.10.40.48/28. DMZ 172.16.40.0/24 is kept in a separate private block."
+          }
+        ]
+      },
+      "bandwidth": {
+        "downMbps": 2500,
+        "upMbps": 2500,
+        "drivers": [
+          "ERP",
+          "Git/CI",
+          "VPN hub traffic",
+          "video conferencing",
+          "SIEM logs"
+        ]
+      },
+      "firewalls": [
+        {
+          "segment": "perimeter",
+          "chosen": {
+            "product": "PA-3400 series (HA)",
+            "vendor": "Palo Alto Networks",
+            "reason": "Strongest threat prevention for the VPN hub; manages all sites via Panorama."
+          },
+          "alternatives": [
+            {
+              "product": "FortiGate 400F / 600F class (HA)",
+              "vendor": "Fortinet",
+              "reason": "High IPsec performance for a VPN hub, built-in SD-WAN."
+            },
+            {
+              "product": "Quantum 6000 series",
+              "vendor": "Check Point",
+              "reason": "Strong policy management."
+            },
+            {
+              "product": "Secure Firewall 3100 series",
+              "vendor": "Cisco",
+              "reason": "Fits enterprise Cisco infrastructure."
+            },
+            {
+              "product": "XGS 5500 / 6500",
+              "vendor": "Sophos",
+              "reason": "More cost-effective and easy to manage."
+            }
+          ],
+          "rules": [
+            {
+              "action": "allow",
+              "direction": "in",
+              "proto": "tcp",
+              "port": "22,443",
+              "from": "vlan10-management",
+              "to": "all-devices",
+              "note": "IT team manages devices only from Management VLAN 10 (SSH/HTTPS)."
+            },
+            {
+              "action": "allow",
+              "direction": "in",
+              "proto": "tcp",
+              "port": 443,
+              "from": "any",
+              "to": "dmz-web",
+              "note": "Public website is reachable on HTTPS only, with the IPS profile enabled."
+            },
+            {
+              "action": "allow",
+              "direction": "in",
+              "proto": "tcp",
+              "port": "389,636,993,8443",
+              "from": "vlan20-staff",
+              "to": "vlan40-servers",
+              "note": "Staff reach ERP, LDAP and mail on the internal server VLAN."
+            },
+            {
+              "action": "allow",
+              "direction": "in",
+              "proto": "tcp",
+              "port": "22,443",
+              "from": "vlan30-software",
+              "to": "git-ci",
+              "note": "Software team reaches Git/CI servers only (SSH 22, HTTPS)."
+            },
+            {
+              "action": "deny",
+              "direction": "in",
+              "proto": "any",
+              "from": "vlan30-software",
+              "to": "vlan20-staff",
+              "note": "Software and staff teams are isolated from each other."
+            },
+            {
+              "action": "allow",
+              "direction": "out",
+              "proto": "tcp",
+              "port": "80,443",
+              "from": "internal-vlans",
+              "to": "any",
+              "note": "All internal VLANs browse the internet through web filter and QoS."
+            },
+            {
+              "action": "deny",
+              "direction": "in",
+              "proto": "any",
+              "from": "dmz",
+              "to": "internal-vlans",
+              "note": "If the DMZ is compromised, the internal network stays unreachable."
+            },
+            {
+              "action": "deny",
+              "direction": "in",
+              "proto": "any",
+              "from": "any",
+              "to": "any",
+              "note": "Default rule: deny everything else and log it."
+            }
+          ]
+        },
+        {
+          "segment": "software",
+          "chosen": {
+            "product": "FortiGate 200F class (ISFW mode)",
+            "vendor": "Fortinet",
+            "reason": "Mode designed for high-speed segmentation between internal networks."
+          },
+          "alternatives": [
+            {
+              "product": "PA-1400 series",
+              "vendor": "Palo Alto Networks",
+              "reason": "Fine-grained user- and application-based rules."
+            },
+            {
+              "product": "Quantum 3000 series",
+              "vendor": "Check Point",
+              "reason": "Same management console as HQ."
+            },
+            {
+              "product": "Secure Firewall 1200 / 3100",
+              "vendor": "Cisco",
+              "reason": "Segmentation alongside Cisco switches."
+            },
+            {
+              "product": "OPNsense / pfSense",
+              "vendor": "Netgate / Deciso",
+              "reason": "Free and flexible for test and dev environments."
+            }
+          ],
+          "rules": [
+            {
+              "action": "allow",
+              "direction": "forward",
+              "proto": "tcp",
+              "port": "22,443",
+              "from": "vlan30-software",
+              "to": "git-ci",
+              "note": "East-west traffic of the 80 developers to Git/CI servers (about 2 Gbps internal)."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "proto": "any",
+              "from": "vlan30-software",
+              "to": "vlan20-staff",
+              "note": "Developer VLAN cannot wander into the staff VLAN."
+            }
+          ]
+        },
+        {
+          "segment": "dmz",
+          "chosen": {
+            "product": "Cloudflare WAF",
+            "vendor": "Cloudflare",
+            "reason": "Global network absorbs very large DDoS attacks; ready-made OWASP rules."
+          },
+          "alternatives": [
+            {
+              "product": "AWS WAF",
+              "vendor": "Amazon",
+              "reason": "Native integration since the website runs on AWS."
+            },
+            {
+              "product": "App & API Protector",
+              "vendor": "Akamai",
+              "reason": "Strong bot protection, widely used in large enterprises."
+            },
+            {
+              "product": "Imperva WAF",
+              "vendor": "Imperva",
+              "reason": "Strong in database and API protection."
+            },
+            {
+              "product": "Advanced WAF / Distributed Cloud",
+              "vendor": "F5",
+              "reason": "Also offers an on-prem option."
+            }
+          ],
+          "rules": [
+            {
+              "action": "allow",
+              "direction": "in",
+              "proto": "tcp",
+              "port": 443,
+              "from": "any",
+              "to": "dmz-web",
+              "note": "Only HTTPS from the internet to the web server in the DMZ."
+            },
+            {
+              "action": "deny",
+              "direction": "in",
+              "proto": "any",
+              "from": "any",
+              "to": "dmz",
+              "note": "Anything else from the internet to the DMZ is dropped and logged."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "academy",
+      "name": "AnadoluNet Academy",
+      "role": "campus",
+      "location": "Eskisehir, Turkey",
+      "population": {
+        "staff": 550,
+        "students": 8000
+      },
+      "network": {
+        "cidr": "10.40.0.0/16",
+        "dmz": false,
+        "vlans": [
+          {
+            "id": 100,
+            "name": "students",
+            "cidr": "10.40.0.0/17",
+            "note": "Student Wi-Fi: 8,000 students x ~2 devices, /17 for headroom."
+          },
+          {
+            "id": 110,
+            "name": "faculty",
+            "cidr": "10.40.128.0/22",
+            "note": "350 faculty."
+          },
+          {
+            "id": 120,
+            "name": "admin",
+            "cidr": "10.40.132.0/23",
+            "note": "200 administrative staff."
+          },
+          {
+            "id": 130,
+            "name": "labs",
+            "cidr": "10.40.136.0/22",
+            "note": "Computer labs."
+          },
+          {
+            "id": 140,
+            "name": "servers",
+            "cidr": "10.40.140.0/24",
+            "note": "LMS, exam and campus servers."
+          },
+          {
+            "id": 10,
+            "name": "management",
+            "cidr": "10.40.141.0/24",
+            "note": "Moved to .141 because 10.40.10.0/24 overlaps the student /17."
+          },
+          {
+            "id": 99,
+            "name": "guest",
+            "cidr": "192.168.99.0/24",
+            "note": "Same guest range at every site; never enters the VPN."
+          }
+        ]
+      },
+      "bandwidth": {
+        "downMbps": 5000,
+        "upMbps": 5000,
+        "drivers": [
+          "LMS",
+          "online exams",
+          "student Wi-Fi",
+          "video lessons",
+          "labs"
+        ]
+      },
+      "firewalls": [
+        {
+          "segment": "perimeter",
+          "chosen": {
+            "product": "FortiGate 1800F class (HA)",
+            "vendor": "Fortinet",
+            "reason": "High session count and price/performance thanks to custom silicon; common on campuses."
+          },
+          "alternatives": [
+            {
+              "product": "PA-5400 series",
+              "vendor": "Palo Alto Networks",
+              "reason": "Strongest application identification and threat prevention."
+            },
+            {
+              "product": "Quantum 9000 / 16000 series",
+              "vendor": "Check Point",
+              "reason": "Strong centralized management for large networks."
+            },
+            {
+              "product": "Secure Firewall 4200 series",
+              "vendor": "Cisco",
+              "reason": "High capacity, integrates with Cisco campus networks."
+            },
+            {
+              "product": "SRX4000 series",
+              "vendor": "Juniper",
+              "reason": "Very high routing and session capacity."
+            }
+          ],
+          "rules": [
+            {
+              "action": "allow",
+              "direction": "in",
+              "proto": "tcp",
+              "port": 443,
+              "from": "vlan100-students",
+              "to": "vlan140-servers",
+              "note": "Students reach the LMS/exam servers over HTTPS; prioritized during exams."
+            },
+            {
+              "action": "deny",
+              "direction": "in",
+              "proto": "any",
+              "from": "vlan100-students",
+              "to": "internal-vlans",
+              "note": "Students cannot reach faculty, admin, lab or management networks."
+            },
+            {
+              "action": "allow",
+              "direction": "out",
+              "proto": "tcp",
+              "port": "80,443",
+              "from": "vlan100-students",
+              "to": "any",
+              "note": "Students browse the internet with a 10/3 Mbps limit; P2P stays blocked."
+            },
+            {
+              "action": "allow",
+              "direction": "in",
+              "proto": "tcp",
+              "port": "443,445",
+              "from": "vlan110-faculty",
+              "to": "vlan140-servers",
+              "note": "Faculty enter grades and share files on LMS and Izmir servers (over VPN)."
+            },
+            {
+              "action": "allow",
+              "direction": "in",
+              "proto": "tcp",
+              "port": "8443,443",
+              "from": "vlan120-admin",
+              "to": "izmir-erp",
+              "note": "Admin staff reach the Izmir ERP over VPN."
+            },
+            {
+              "action": "allow",
+              "direction": "out",
+              "proto": "tcp",
+              "port": "80,443",
+              "from": "vlan130-labs",
+              "to": "any",
+              "note": "Labs browse the internet; this rule is switched off during exams."
+            },
+            {
+              "action": "deny",
+              "direction": "in",
+              "proto": "any",
+              "from": "vlan99-guest",
+              "to": "internal-vlans",
+              "note": "Guests get internet only and reach no internal network."
+            },
+            {
+              "action": "deny",
+              "direction": "in",
+              "proto": "any",
+              "from": "any",
+              "to": "any",
+              "note": "Default rule: deny everything else and log it."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bursa",
+      "name": "Bursa Office",
+      "role": "branch",
+      "location": "Bursa, Turkey",
+      "population": {
+        "staff": 120
+      },
+      "network": {
+        "cidr": "10.20.0.0/16",
+        "dmz": false,
+        "vlans": [
+          {
+            "id": 10,
+            "name": "management",
+            "cidr": "10.20.10.0/24"
+          },
+          {
+            "id": 20,
+            "name": "staff",
+            "cidr": "10.20.20.0/24",
+            "note": "Production engineers hold 10.20.20.32/28 by DHCP reservation."
+          },
+          {
+            "id": 50,
+            "name": "ot",
+            "cidr": "10.20.50.0/24",
+            "note": "Production/OT devices, isolated, no internet."
+          },
+          {
+            "id": 99,
+            "name": "guest",
+            "cidr": "192.168.99.0/24"
+          }
+        ]
+      },
+      "bandwidth": {
+        "downMbps": 300,
+        "upMbps": 300,
+        "drivers": [
+          "ERP over VPN",
+          "email",
+          "OT monitoring"
+        ]
+      },
+      "firewalls": [
+        {
+          "segment": "perimeter",
+          "chosen": {
+            "product": "FortiGate 100F class",
+            "vendor": "Fortinet",
+            "reason": "Understands OT protocols; Rugged models exist for field use."
+          },
+          "alternatives": [
+            {
+              "product": "XGS 2100 / 2300",
+              "vendor": "Sophos",
+              "reason": "Easy management, synchronized with endpoint protection."
+            },
+            {
+              "product": "PA-450",
+              "vendor": "Palo Alto Networks",
+              "reason": "Industrial protocol visibility with the OT security add-on."
+            },
+            {
+              "product": "Firebox M-series",
+              "vendor": "WatchGuard",
+              "reason": "Cost-effective for mid-sized offices."
+            },
+            {
+              "product": "Quantum Spark 1900",
+              "vendor": "Check Point",
+              "reason": "Small/mid office, same management as HQ."
+            }
+          ],
+          "rules": [
+            {
+              "action": "allow",
+              "direction": "out",
+              "proto": "tcp",
+              "port": "8443,993,443",
+              "from": "vlan20-staff",
+              "to": "izmir-servers",
+              "note": "Staff reach ERP, mail and HTTPS on the Izmir servers through the VPN."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "proto": "tcp",
+              "port": 4840,
+              "from": "engineers",
+              "to": "vlan50-ot",
+              "note": "Only production engineers reach the OT VLAN, monitoring port only."
+            },
+            {
+              "action": "deny",
+              "direction": "out",
+              "proto": "any",
+              "from": "vlan50-ot",
+              "to": "any",
+              "note": "Production devices never reach the internet; an attempt raises a SOC alert."
+            },
+            {
+              "action": "allow",
+              "direction": "out",
+              "proto": "tcp",
+              "port": "80,443",
+              "from": "vlan20-staff",
+              "to": "any",
+              "note": "Staff browse the web through the web filter."
+            },
+            {
+              "action": "deny",
+              "direction": "in",
+              "proto": "any",
+              "from": "any",
+              "to": "any",
+              "note": "Default rule: deny everything else and log it."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "berlin",
+      "name": "Berlin Office",
+      "role": "branch",
+      "location": "Berlin, Germany",
+      "population": {
+        "staff": 60
+      },
+      "network": {
+        "cidr": "10.30.0.0/16",
+        "dmz": false,
+        "vlans": [
+          {
+            "id": 10,
+            "name": "management",
+            "cidr": "10.30.10.0/24"
+          },
+          {
+            "id": 20,
+            "name": "staff",
+            "cidr": "10.30.20.0/24"
+          },
+          {
+            "id": 99,
+            "name": "guest",
+            "cidr": "192.168.99.0/24"
+          }
+        ]
+      },
+      "bandwidth": {
+        "downMbps": 200,
+        "upMbps": 200,
+        "drivers": [
+          "ERP over VPN",
+          "email",
+          "web"
+        ]
+      },
+      "firewalls": [
+        {
+          "segment": "perimeter",
+          "chosen": {
+            "product": "Firebox T-series",
+            "vendor": "WatchGuard",
+            "reason": "Simple, cloud-managed, built for small offices."
+          },
+          "alternatives": [
+            {
+              "product": "FortiGate 60F / 70F",
+              "vendor": "Fortinet",
+              "reason": "Affordable, automatic VPN to HQ (SD-WAN)."
+            },
+            {
+              "product": "XGS 1xx series",
+              "vendor": "Sophos",
+              "reason": "Easy UI, desktop form factor."
+            },
+            {
+              "product": "PA-400 series",
+              "vendor": "Palo Alto Networks",
+              "reason": "Policy consistency if HQ runs Palo Alto."
+            },
+            {
+              "product": "Quantum Spark 1600 / 1800",
+              "vendor": "Check Point",
+              "reason": "Small office, easy GDPR reporting."
+            }
+          ],
+          "rules": [
+            {
+              "action": "allow",
+              "direction": "out",
+              "proto": "tcp",
+              "port": "8443,993,443",
+              "from": "vlan20-staff",
+              "to": "izmir-servers",
+              "note": "Staff reach ERP, mail and HTTPS on the Izmir servers through the VPN."
+            },
+            {
+              "action": "allow",
+              "direction": "out",
+              "proto": "tcp",
+              "port": "80,443",
+              "from": "vlan20-staff",
+              "to": "any",
+              "note": "Staff browse the web through the web filter."
+            },
+            {
+              "action": "deny",
+              "direction": "in",
+              "proto": "any",
+              "from": "any",
+              "to": "berlin-internal",
+              "note": "GDPR: personal data is never exposed to inbound internet traffic."
+            },
+            {
+              "action": "deny",
+              "direction": "in",
+              "proto": "any",
+              "from": "any",
+              "to": "any",
+              "note": "Default rule: deny everything else and log it."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "remoteAccess": {
+    "type": "role-based-vpn",
+    "note": "Site-to-site IPsec IKEv2 (AES-256-GCM, SHA-256, DH20) into Izmir; staff and faculty at home use SSL/IPsec VPN with MFA; students get no VPN."
+  },
+  "monitoring": {
+    "siem": "Central SIEM/log server in Izmir fed by all four NGFWs, switches and AWS CloudTrail/GuardDuty; Zabbix/LibreNMS for device health, Grafana for the NOC screen.",
+    "owner": "SOC manager in Izmir (Tier 1-3 analysts, MSSP at night); NOC engineers own line, device and VPN outages.",
+    "alertSink": "SIEM to SOC Tier 1; email alerts for critical events.",
+    "appVsSecurity": "NOC watches availability (VPN down 1 min, line >80% for 15 min); SOC watches attacks (failed admin logins, IPS hits, OT-to-internet attempts)."
+  },
+  "slug": "anadolunet-holding"
+}
