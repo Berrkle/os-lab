@@ -1,0 +1,698 @@
+{
+  "schemaVersion": 1,
+  "name": "Çok Siteli Kurumsal Güvenlik Duvarı Projesi",
+  "sector": "Education / Software",
+  "author": {
+    "name": "A*** M*** K***",
+    "course": "BGT207",
+    "github": "RedRiveRR"
+  },
+  "summary": "A fictional multinational with Ankara, Istanbul (VPN hub, log center, DMZ) and London offices, a 10,000-student academic branch and a site-independent Dev/R&D zone. Default-deny zone matrix, open-source firewall ranking (OPNsense, pfSense CE, FortiGate-VM, VM-Series, nftables), bandwidth scenarios S1-S3 and a documented monitoring and on-call process; written documentation phase, lab not yet built.",
+  "branches": [
+    {
+      "id": "ankara-office",
+      "name": "Ankara Office",
+      "role": "headquarters",
+      "location": "Ankara, Turkey",
+      "population": {
+        "staff": 40
+      },
+      "network": {
+        "cidr": "10.10.0.0/16",
+        "dmz": false,
+        "vlans": [
+          {
+            "id": 10,
+            "name": "MGMT",
+            "cidr": "10.10.10.0/24",
+            "note": "Device management."
+          },
+          {
+            "id": 20,
+            "name": "SRV",
+            "cidr": "10.10.20.0/24",
+            "note": "Under 50 servers."
+          },
+          {
+            "id": 30,
+            "name": "OFFICE",
+            "cidr": "10.10.30.0/24",
+            "note": "Users, about 2 devices per person."
+          },
+          {
+            "id": 60,
+            "name": "GUEST",
+            "cidr": "10.10.60.0/24",
+            "note": "Guest devices."
+          }
+        ]
+      },
+      "bandwidth": {
+        "downMbps": 200,
+        "upMbps": 100,
+        "drivers": [
+          "local internet",
+          "spoke VPN"
+        ]
+      },
+      "firewalls": [
+        {
+          "segment": "perimeter",
+          "chosen": {
+            "product": "OPNsense",
+            "vendor": "Deciso",
+            "reason": "Rank 1: stateful, NAT, VLAN, pipe/queue QoS, site-to-site VPN and logging; FQ_CoDel for fair sharing on the campus edge."
+          },
+          "alternatives": [
+            {
+              "product": "pfSense CE",
+              "vendor": "Netgate",
+              "reason": "Rank 2: officially documented IPsec and Limiters, 1 GB RAM minimum."
+            },
+            {
+              "product": "FortiGate-VM (permanent evaluation)",
+              "vendor": "Fortinet",
+              "reason": "Rank 3: evaluation limited to 1 vCPU / 2 GB / 3 interfaces and low encryption; one copy per account."
+            },
+            {
+              "product": "VM-Series (30-day trial)",
+              "vendor": "Palo Alto Networks",
+              "reason": "Rank 4: heavy (VM-50: 2 vCPU, ~5.5 GB RAM, 60 GB disk); current terms unverified."
+            },
+            {
+              "product": "Linux nftables",
+              "vendor": "Netfilter project",
+              "reason": "Rank 5: free, full control but no UI; teaching fallback and lab client/server nodes."
+            }
+          ],
+          "rules": [
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "office",
+              "to": "srv",
+              "note": "OFFICE reaches the server zone only on listed ports."
+            },
+            {
+              "action": "allow",
+              "direction": "out",
+              "from": "office",
+              "to": "internet",
+              "note": "OFFICE gets filtered internet (F)."
+            },
+            {
+              "action": "allow",
+              "direction": "out",
+              "from": "guest",
+              "to": "internet",
+              "note": "GUEST gets internet only, low bandwidth; DNS outside only."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "proto": "any",
+              "from": "office,guest",
+              "to": "mgmt",
+              "note": "No user zone may open a connection to MGMT; MGMT manages them."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "proto": "any",
+              "from": "any",
+              "to": "any",
+              "note": "Policy default: everything is denied; each allow below is a documented exception (owner, reason, log level, review date)."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "istanbul-hub",
+      "name": "Istanbul Office (VPN hub, log center, DMZ)",
+      "role": "branch",
+      "location": "Istanbul, Turkey",
+      "population": {
+        "staff": 80
+      },
+      "network": {
+        "cidr": "10.20.0.0/16",
+        "dmz": true,
+        "vlans": [
+          {
+            "id": 10,
+            "name": "MGMT",
+            "cidr": "10.20.10.0/24",
+            "note": "Device management."
+          },
+          {
+            "id": 20,
+            "name": "SRV",
+            "cidr": "10.20.20.0/24",
+            "note": "Under 50 servers."
+          },
+          {
+            "id": 30,
+            "name": "OFFICE",
+            "cidr": "10.20.30.0/23",
+            "note": "Users, about 2 devices per person."
+          },
+          {
+            "id": 60,
+            "name": "GUEST",
+            "cidr": "10.20.60.0/24",
+            "note": "Guest devices."
+          },
+          {
+            "id": 70,
+            "name": "DMZ",
+            "cidr": "10.20.70.0/24",
+            "note": "Published services only."
+          }
+        ]
+      },
+      "bandwidth": {
+        "downMbps": 500,
+        "upMbps": 200,
+        "drivers": [
+          "all site-to-site tunnels",
+          "syslog center",
+          "DMZ"
+        ]
+      },
+      "firewalls": [
+        {
+          "segment": "perimeter",
+          "chosen": {
+            "product": "OPNsense",
+            "vendor": "Deciso",
+            "reason": "Rank 1: stateful, NAT, VLAN, pipe/queue QoS, site-to-site VPN and logging; FQ_CoDel for fair sharing on the campus edge."
+          },
+          "alternatives": [
+            {
+              "product": "pfSense CE",
+              "vendor": "Netgate",
+              "reason": "Rank 2: officially documented IPsec and Limiters, 1 GB RAM minimum."
+            },
+            {
+              "product": "FortiGate-VM (permanent evaluation)",
+              "vendor": "Fortinet",
+              "reason": "Rank 3: evaluation limited to 1 vCPU / 2 GB / 3 interfaces and low encryption; one copy per account."
+            },
+            {
+              "product": "VM-Series (30-day trial)",
+              "vendor": "Palo Alto Networks",
+              "reason": "Rank 4: heavy (VM-50: 2 vCPU, ~5.5 GB RAM, 60 GB disk); current terms unverified."
+            },
+            {
+              "product": "Linux nftables",
+              "vendor": "Netfilter project",
+              "reason": "Rank 5: free, full control but no UI; teaching fallback and lab client/server nodes."
+            }
+          ],
+          "rules": [
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "office",
+              "to": "srv",
+              "note": "OFFICE reaches the server zone only on listed ports."
+            },
+            {
+              "action": "allow",
+              "direction": "out",
+              "from": "office",
+              "to": "internet",
+              "note": "OFFICE gets filtered internet (F)."
+            },
+            {
+              "action": "allow",
+              "direction": "out",
+              "from": "guest",
+              "to": "internet",
+              "note": "GUEST gets internet only, low bandwidth; DNS outside only."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "proto": "any",
+              "from": "office,guest",
+              "to": "mgmt",
+              "note": "No user zone may open a connection to MGMT; MGMT manages them."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "london-office",
+              "to": "srv",
+              "note": "Approved site pairs only, e.g. London OFFICE to Istanbul SRV; RND and MGMT cross sites only from IT Ops."
+            },
+            {
+              "action": "allow",
+              "direction": "in",
+              "from": "internet",
+              "to": "dmz",
+              "note": "Internet reaches only DMZ published services, port-limited."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "proto": "any",
+              "from": "any",
+              "to": "any",
+              "note": "Policy default: everything is denied; each allow below is a documented exception (owner, reason, log level, review date)."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "london-office",
+      "name": "London Office",
+      "role": "branch",
+      "location": "London, United Kingdom",
+      "population": {
+        "staff": 30
+      },
+      "network": {
+        "cidr": "10.30.0.0/16",
+        "dmz": false,
+        "vlans": [
+          {
+            "id": 10,
+            "name": "MGMT",
+            "cidr": "10.30.10.0/24",
+            "note": "Device management."
+          },
+          {
+            "id": 20,
+            "name": "SRV",
+            "cidr": "10.30.20.0/24",
+            "note": "Under 50 servers."
+          },
+          {
+            "id": 30,
+            "name": "OFFICE",
+            "cidr": "10.30.30.0/24",
+            "note": "Users, about 2 devices per person."
+          },
+          {
+            "id": 60,
+            "name": "GUEST",
+            "cidr": "10.30.60.0/24",
+            "note": "Guest devices."
+          }
+        ]
+      },
+      "bandwidth": {
+        "downMbps": 100,
+        "upMbps": 50,
+        "drivers": [
+          "video conferencing",
+          "central apps over VPN"
+        ]
+      },
+      "firewalls": [
+        {
+          "segment": "perimeter",
+          "chosen": {
+            "product": "pfSense CE",
+            "vendor": "Netgate",
+            "reason": "Rank 2: officially documented IPsec and Limiters, 1 GB RAM minimum."
+          },
+          "alternatives": [
+            {
+              "product": "OPNsense",
+              "vendor": "Deciso",
+              "reason": "Rank 1: stateful, NAT, VLAN, pipe/queue QoS, site-to-site VPN and logging; FQ_CoDel for fair sharing on the campus edge."
+            },
+            {
+              "product": "FortiGate-VM (permanent evaluation)",
+              "vendor": "Fortinet",
+              "reason": "Rank 3: evaluation limited to 1 vCPU / 2 GB / 3 interfaces and low encryption; one copy per account."
+            },
+            {
+              "product": "VM-Series (30-day trial)",
+              "vendor": "Palo Alto Networks",
+              "reason": "Rank 4: heavy (VM-50: 2 vCPU, ~5.5 GB RAM, 60 GB disk); current terms unverified."
+            },
+            {
+              "product": "Linux nftables",
+              "vendor": "Netfilter project",
+              "reason": "Rank 5: free, full control but no UI; teaching fallback and lab client/server nodes."
+            }
+          ],
+          "rules": [
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "office",
+              "to": "srv",
+              "note": "OFFICE reaches the server zone only on listed ports."
+            },
+            {
+              "action": "allow",
+              "direction": "out",
+              "from": "office",
+              "to": "internet",
+              "note": "OFFICE gets filtered internet (F)."
+            },
+            {
+              "action": "allow",
+              "direction": "out",
+              "from": "guest",
+              "to": "internet",
+              "note": "GUEST gets internet only, low bandwidth; DNS outside only."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "proto": "any",
+              "from": "office,guest",
+              "to": "mgmt",
+              "note": "No user zone may open a connection to MGMT; MGMT manages them."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "proto": "any",
+              "from": "any",
+              "to": "any",
+              "note": "Policy default: everything is denied; each allow below is a documented exception (owner, reason, log level, review date)."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "academic-branch",
+      "name": "Academic Branch",
+      "role": "campus",
+      "location": "Istanbul, Turkey",
+      "population": {
+        "staff": 400,
+        "students": 10000
+      },
+      "network": {
+        "cidr": "10.40.0.0/15",
+        "dmz": true,
+        "vlans": [
+          {
+            "id": 10,
+            "name": "MGMT",
+            "cidr": "10.40.10.0/24"
+          },
+          {
+            "id": 20,
+            "name": "SRV-INFRA",
+            "cidr": "10.40.20.0/24",
+            "note": "LMS, SIS, DNS, DHCP, AD."
+          },
+          {
+            "id": 30,
+            "name": "ADM",
+            "cidr": "10.40.30.0/24",
+            "note": "Administrative staff and printers."
+          },
+          {
+            "id": 40,
+            "name": "STAFF",
+            "cidr": "10.40.40.0/22",
+            "note": "About 400 lecturers x 2 devices."
+          },
+          {
+            "id": 60,
+            "name": "GUEST",
+            "cidr": "10.40.60.0/22",
+            "note": "Visitors."
+          },
+          {
+            "id": 65,
+            "name": "LAB",
+            "cidr": "10.40.64.0/22",
+            "note": "Computer classrooms."
+          },
+          {
+            "id": 70,
+            "name": "DMZ",
+            "cidr": "10.40.70.0/24",
+            "note": "Externally reachable services."
+          },
+          {
+            "id": 500,
+            "name": "STU-01",
+            "cidr": "10.41.0.0/22",
+            "note": "STU-01..STU-32 = VLAN 500-531, 32 x /22 inside 10.41.0.0/17: 20,000 devices without one huge broadcast domain."
+          }
+        ]
+      },
+      "bandwidth": {
+        "downMbps": 10000,
+        "upMbps": 10000,
+        "drivers": [
+          "student Wi-Fi",
+          "LMS",
+          "labs",
+          "research"
+        ]
+      },
+      "firewalls": [
+        {
+          "segment": "perimeter",
+          "chosen": {
+            "product": "OPNsense",
+            "vendor": "Deciso",
+            "reason": "Rank 1: stateful, NAT, VLAN, pipe/queue QoS, site-to-site VPN and logging; FQ_CoDel for fair sharing on the campus edge."
+          },
+          "alternatives": [
+            {
+              "product": "pfSense CE",
+              "vendor": "Netgate",
+              "reason": "Rank 2: officially documented IPsec and Limiters, 1 GB RAM minimum."
+            },
+            {
+              "product": "FortiGate-VM (permanent evaluation)",
+              "vendor": "Fortinet",
+              "reason": "Rank 3: evaluation limited to 1 vCPU / 2 GB / 3 interfaces and low encryption; one copy per account."
+            },
+            {
+              "product": "VM-Series (30-day trial)",
+              "vendor": "Palo Alto Networks",
+              "reason": "Rank 4: heavy (VM-50: 2 vCPU, ~5.5 GB RAM, 60 GB disk); current terms unverified."
+            },
+            {
+              "product": "Linux nftables",
+              "vendor": "Netfilter project",
+              "reason": "Rank 5: free, full control but no UI; teaching fallback and lab client/server nodes."
+            }
+          ],
+          "rules": [
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "stu",
+              "to": "srv",
+              "note": "STU reaches LMS, DNS and DHCP only; students are fully isolated from each other and from other zones."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "proto": "any",
+              "from": "stu",
+              "to": "stu,staff,adm,lab,mgmt",
+              "note": "STU to STU and to STAFF/ADM/LAB/MGMT: isolation, each of the 32 student VLANs gets the same policy."
+            },
+            {
+              "action": "allow",
+              "direction": "out",
+              "from": "stu",
+              "to": "internet",
+              "note": "STU gets filtered internet with per-IP limiter and FQ_CoDel."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "staff",
+              "to": "adm,lab,srv",
+              "note": "STAFF reaches ADM, LAB and the LMS admin on listed ports."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "adm",
+              "to": "srv,staff",
+              "note": "ADM reaches SIS/ERP on the server zone and STAFF on listed ports."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "lab",
+              "to": "srv,internet",
+              "note": "LAB reaches servers; internet is restricted in exam mode."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "srv",
+              "to": "internet",
+              "note": "SRV only answers connections the others started (established); it updates over the internet on listed ports."
+            },
+            {
+              "action": "allow",
+              "direction": "in",
+              "from": "internet",
+              "to": "dmz",
+              "note": "Internet reaches only the DMZ published services, port-limited."
+            },
+            {
+              "action": "allow",
+              "direction": "out",
+              "from": "guest",
+              "to": "internet",
+              "note": "GUEST gets restricted internet at low bandwidth."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "proto": "any",
+              "from": "any",
+              "to": "any",
+              "note": "Policy default: everything is denied; each allow below is a documented exception (owner, reason, log level, review date)."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-rnd-zone",
+      "name": "Site-independent Dev / R&D zone",
+      "role": "datacenter",
+      "location": "Istanbul, Turkey",
+      "population": {},
+      "network": {
+        "cidr": "10.50.0.0/16",
+        "dmz": false,
+        "vlans": [
+          {
+            "id": 10,
+            "name": "IT-OPS",
+            "cidr": "10.50.10.0/24",
+            "note": "Jump host and management workstations."
+          },
+          {
+            "id": 20,
+            "name": "SHARED-SVC",
+            "cidr": "10.50.20.0/24",
+            "note": "Syslog, monitoring, backup."
+          },
+          {
+            "id": 80,
+            "name": "DEV",
+            "cidr": "10.50.80.0/23",
+            "note": "Git, CI/CD, artifacts."
+          },
+          {
+            "id": 90,
+            "name": "RND",
+            "cidr": "10.50.90.0/24",
+            "note": "Research."
+          }
+        ]
+      },
+      "bandwidth": {
+        "downMbps": 100,
+        "upMbps": 100,
+        "drivers": [
+          "Git/CI",
+          "research data",
+          "tunnel transit"
+        ]
+      },
+      "firewalls": [
+        {
+          "segment": "perimeter",
+          "chosen": {
+            "product": "pfSense CE",
+            "vendor": "Netgate",
+            "reason": "Rank 2: officially documented IPsec and Limiters, 1 GB RAM minimum."
+          },
+          "alternatives": [
+            {
+              "product": "OPNsense",
+              "vendor": "Deciso",
+              "reason": "Rank 1: stateful, NAT, VLAN, pipe/queue QoS, site-to-site VPN and logging; FQ_CoDel for fair sharing on the campus edge."
+            },
+            {
+              "product": "FortiGate-VM (permanent evaluation)",
+              "vendor": "Fortinet",
+              "reason": "Rank 3: evaluation limited to 1 vCPU / 2 GB / 3 interfaces and low encryption; one copy per account."
+            },
+            {
+              "product": "VM-Series (30-day trial)",
+              "vendor": "Palo Alto Networks",
+              "reason": "Rank 4: heavy (VM-50: 2 vCPU, ~5.5 GB RAM, 60 GB disk); current terms unverified."
+            },
+            {
+              "product": "Linux nftables",
+              "vendor": "Netfilter project",
+              "reason": "Rank 5: free, full control but no UI; teaching fallback and lab client/server nodes."
+            }
+          ],
+          "rules": [
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "dev",
+              "to": "srv,rnd",
+              "note": "DEV reaches artifact and deploy servers and exchanges research data with RND."
+            },
+            {
+              "action": "allow",
+              "direction": "out",
+              "proto": "tcp",
+              "port": "80,443,22,9418",
+              "from": "dev",
+              "to": "internet",
+              "note": "DEV gets broad but monitored internet (80/443/22/9418)."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "rnd",
+              "to": "srv,dev,internet",
+              "note": "RND reaches servers and DEV; its internet egress is limited and monitored."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "proto": "tcp",
+              "port": "22,443",
+              "from": "mgmt",
+              "to": "srv,dev,rnd",
+              "note": "MGMT manages servers, DEV and RND over SSH/HTTPS/SNMP."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "proto": "any",
+              "from": "any",
+              "to": "any",
+              "note": "Policy default: everything is denied; each allow below is a documented exception (owner, reason, log level, review date)."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "remoteAccess": {
+    "type": "site-to-site-vpn",
+    "note": "Istanbul is the default VPN hub (transit 10.255.0.0/24, /30 per tunnel): ANK-IST 100 Mbps, IST-LON 100 Mbps, ANK-AKD and IST-AKD 500 Mbps; RND and MGMT cross sites only from IT Ops."
+  },
+  "monitoring": {
+    "siem": "One syslog VM (rsyslog) in the Istanbul MGMT network, plus Prometheus or Zabbix with Grafana and NetFlow/SNMP in a monitoring VM; suggested SIEMs Elastic, Splunk, Graylog, Wazuh.",
+    "owner": "BT and Network Operations: network administrator (rule approval, VLAN/VPN), system administrator (metrics, backup), security analyst (log triage), helpdesk, and an on-call duty person out of hours.",
+    "alertSink": "Monitoring VM dashboard and alerts, triaged by site, class (C1-C9) and zone, then runbook, escalation, incident log and postmortem.",
+    "appVsSecurity": "Logs (firewall allow/deny, VPN, system events) feed security triage; metrics (CPU, RAM, interface speed, packet loss, sessions) feed availability alerts."
+  },
+  "slug": "cok-siteli-kurumsal-guvenlik-duvari"
+}

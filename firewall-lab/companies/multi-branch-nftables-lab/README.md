@@ -1,6 +1,6 @@
 # Multi-Branch nftables + QoS Lab
 
-> Contributed by **A*** E***** ([@apo536098-wq](https://github.com/apo536098-wq)) · BGT207 Güvenlik Duvarı Çözümleri · 2026-2027 Güz midterm project.
+> Contributed by `A*** E***` ([@apo536098-wq](https://github.com/apo536098-wq)) · BGT207 Güvenlik Duvarı Çözümleri · 2026-2027 Güz midterm project.
 > Student names are masked on purpose. Converted to `company.json` from the student's README and `company_fw.sh`. The student's design is a single Linux (nftables) firewall, so the alternatives in `company.json` are reviewer-added comparison points, not part of the original submission.
 
 Segmentation, firewall and bandwidth management for a multi-branch company network.

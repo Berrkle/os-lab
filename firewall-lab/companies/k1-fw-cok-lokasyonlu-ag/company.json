@@ -1,0 +1,1334 @@
+{
+  "schemaVersion": 1,
+  "name": "K1-FW — Çok Lokasyonlu Kurumsal Ağ ve Güvenlik Duvarı",
+  "sector": "Education / Software",
+  "author": {
+    "name": "H*** A*** K***",
+    "course": "BGT207",
+    "github": "frudotz"
+  },
+  "summary": "A fictional multinational with an Ankara HQ (VPN hub), Istanbul office with software and CI, a London office and a 10,000-student academic campus. One private 10.0.0.0/8 plan (site = second octet, same VLAN meaning everywhere), a zone-based policy matrix with explained rules, bandwidth sized by concurrency models, and a pfSense CE based simulation lab (documentation phase finished, lab not yet built).",
+  "branches": [
+    {
+      "id": "ankara-hq",
+      "name": "Ankara HQ (VPN hub)",
+      "role": "headquarters",
+      "location": "Ankara, Turkey",
+      "population": {
+        "staff": 165
+      },
+      "network": {
+        "cidr": "10.10.0.0/16",
+        "dmz": true,
+        "vlans": [
+          {
+            "id": 10,
+            "name": "MGMT",
+            "cidr": "10.10.10.0/24"
+          },
+          {
+            "id": 20,
+            "name": "SERVER",
+            "cidr": "10.10.20.0/24",
+            "note": "SERVER (merkezi: AD/LDAP?, DNS, syslog, yedek)"
+          },
+          {
+            "id": 25,
+            "name": "DMZ",
+            "cidr": "10.10.25.0/24",
+            "note": "DMZ (opsiyonel)"
+          },
+          {
+            "id": 30,
+            "name": "ADMIN",
+            "cidr": "10.10.30.0/24"
+          },
+          {
+            "id": 40,
+            "name": "STAFF",
+            "cidr": "10.10.40.0/24"
+          },
+          {
+            "id": 70,
+            "name": "GUEST",
+            "cidr": "10.10.70.0/24"
+          },
+          {
+            "id": 100,
+            "name": "VOICE",
+            "cidr": "10.10.100.0/24",
+            "note": "VOICE (ops.)"
+          }
+        ]
+      },
+      "bandwidth": {
+        "downMbps": 1000,
+        "upMbps": 1000,
+        "drivers": [
+          "central services",
+          "hub transit traffic",
+          "nightly backup"
+        ]
+      },
+      "firewalls": [
+        {
+          "segment": "perimeter",
+          "chosen": {
+            "product": "pfSense CE 2.9",
+            "vendor": "Netgate",
+            "reason": "Primary choice: satisfies the required firewall features with official documentation, runs four sites on one machine with 1 GB RAM each, per-IP Limiter supports the bandwidth demonstration, dated HA and IPsec docs."
+          },
+          "alternatives": [
+            {
+              "product": "OPNsense 26.7",
+              "vendor": "Deciso",
+              "reason": "Functional equivalent with a modern UI and BSD license; needs at least 3 GB RAM per node, so four sites need about 12 GB just for firewalls."
+            },
+            {
+              "product": "FortiGate-VM (permanent trial)",
+              "vendor": "Fortinet",
+              "reason": "Commercial NGFW comparison on one site with 2-3 zones; trial limits 3 interfaces/policies/routes and has no FortiGuard."
+            },
+            {
+              "product": "VM-Series (30-day trial)",
+              "vendor": "Palo Alto Networks",
+              "reason": "Commercial comparison; needs ESXi/KVM/Hyper-V and at least 5.5 GB RAM, 30-day limit."
+            },
+            {
+              "product": "Cisco ASA (Packet Tracer)",
+              "vendor": "Cisco",
+              "reason": "Rejected as primary: Packet Tracer cannot exercise the full policy and limiter set."
+            }
+          ],
+          "rules": [
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "guest",
+              "to": "firewall guest ip",
+              "note": "P-01: Yalnızca firewall DNS'i."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "guest",
+              "to": "rfc1918_all (10/8,172.16/12,192.168/16)",
+              "note": "P-02: İç ağ koruması (FR-05)."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "guest",
+              "to": "wan (any)",
+              "note": "P-03: İnternet-only."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "guest",
+              "to": "any",
+              "note": "P-04: Son kural."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "staff",
+              "to": "firewall ip",
+              "note": "P-20: —."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "staff",
+              "to": "lms,library,file,print,intranet",
+              "note": "P-21: İş servisleri."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "staff (öğretim elemanı alias'ı)",
+              "to": "lab",
+              "note": "P-22: Lab yönetimi (ops.)."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "staff",
+              "to": "admin,mgmt,itops,rnd,swdev,ci,student,guest",
+              "note": "P-23: İzolasyon."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "staff",
+              "to": "wan",
+              "note": "P-24: İnternet."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "admin",
+              "to": "firewall ip",
+              "note": "P-25: —."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "admin",
+              "to": "sis_admin,hr,erp,file,print",
+              "note": "P-26: Hassas uygulamalar → erişim loglanır."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "admin",
+              "to": "diğer tüm iç zone'lar",
+              "note": "P-27: —."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "admin",
+              "to": "wan",
+              "note": "P-28: İnternet (daraltılmış)."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "diğer tüm zone'lar",
+              "to": "rnd",
+              "note": "P-44: İçeri erişim yok (IT-OPS hariç P-71)."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "server",
+              "to": "syslog (mgmt/server-ank),ntp,dns_auth",
+              "note": "P-60: Altyapı."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "server",
+              "to": "wan (güncelleme depoları alias'ı / proxy)",
+              "note": "P-61: Güncellemeler."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "server",
+              "to": "kullanıcı zone'ları (admin,staff,student,lab,guest,swdev,rnd)",
+              "note": "P-62: Sunucu bağlantı başlatmaz."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "wan",
+              "to": "dmz (public_web)",
+              "note": "P-63: Yayın (FR-14)."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "dmz",
+              "to": "app_backend (server)",
+              "note": "P-64: Arka uç."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "dmz",
+              "to": "any",
+              "note": "P-65: —."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "itops,vpn_itops (10.255.100.0/24)",
+              "to": "mgmt (tüm siteler)",
+              "note": "P-70: Yönetim (FR-08) — tüm oturumlar loglanır."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "itops",
+              "to": "tüm iç zone'lar",
+              "note": "P-71: Destek/sorun giderme; dar ve loglu."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "itops",
+              "to": "wan",
+              "note": "P-72: —."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "mgmt",
+              "to": "ntp,syslog,dns,güncelleme alias'ı",
+              "note": "P-73: Cihazların gereksinimi."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "mgmt",
+              "to": "any (p-73 dışı)",
+              "note": "P-74: Yönetim düzlemi dışa konuşmaz."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "tüm zone'lar (itops/vpn_itops hariç)",
+              "to": "mgmt,firewall yönetim portları",
+              "note": "P-75: Yönetim koruması (FR-29); anti-lockout yalnızca MGMT arayüzünde."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "proto": "any",
+              "from": "any",
+              "to": "any",
+              "note": "Default deny: anything not listed is dropped and logged."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "istanbul-office",
+      "name": "Istanbul Office and Software",
+      "role": "branch",
+      "location": "Istanbul, Turkey",
+      "population": {
+        "staff": 100,
+        "software": 60
+      },
+      "network": {
+        "cidr": "10.20.0.0/16",
+        "dmz": false,
+        "vlans": [
+          {
+            "id": 10,
+            "name": "MGMT",
+            "cidr": "10.20.10.0/24"
+          },
+          {
+            "id": 20,
+            "name": "SERVER",
+            "cidr": "10.20.20.0/24",
+            "note": "SERVER (Git, artefakt deposu, container registry, yerel DNS)"
+          },
+          {
+            "id": 30,
+            "name": "ADMIN",
+            "cidr": "10.20.30.0/24"
+          },
+          {
+            "id": 40,
+            "name": "STAFF",
+            "cidr": "10.20.40.0/24"
+          },
+          {
+            "id": 70,
+            "name": "GUEST",
+            "cidr": "10.20.70.0/24"
+          },
+          {
+            "id": 80,
+            "name": "SOFTWARE-DEV",
+            "cidr": "10.20.80.0/24"
+          },
+          {
+            "id": 81,
+            "name": "CI-BUILD",
+            "cidr": "10.20.81.0/24"
+          },
+          {
+            "id": 100,
+            "name": "VOICE",
+            "cidr": "10.20.100.0/24",
+            "note": "VOICE (ops.)"
+          }
+        ]
+      },
+      "bandwidth": {
+        "downMbps": 1000,
+        "upMbps": 1000,
+        "drivers": [
+          "developer downloads",
+          "CI agents",
+          "registry cache"
+        ]
+      },
+      "firewalls": [
+        {
+          "segment": "perimeter",
+          "chosen": {
+            "product": "pfSense CE 2.9",
+            "vendor": "Netgate",
+            "reason": "Primary choice: satisfies the required firewall features with official documentation, runs four sites on one machine with 1 GB RAM each, per-IP Limiter supports the bandwidth demonstration, dated HA and IPsec docs."
+          },
+          "alternatives": [
+            {
+              "product": "OPNsense 26.7",
+              "vendor": "Deciso",
+              "reason": "Functional equivalent with a modern UI and BSD license; needs at least 3 GB RAM per node, so four sites need about 12 GB just for firewalls."
+            },
+            {
+              "product": "FortiGate-VM (permanent trial)",
+              "vendor": "Fortinet",
+              "reason": "Commercial NGFW comparison on one site with 2-3 zones; trial limits 3 interfaces/policies/routes and has no FortiGuard."
+            },
+            {
+              "product": "VM-Series (30-day trial)",
+              "vendor": "Palo Alto Networks",
+              "reason": "Commercial comparison; needs ESXi/KVM/Hyper-V and at least 5.5 GB RAM, 30-day limit."
+            },
+            {
+              "product": "Cisco ASA (Packet Tracer)",
+              "vendor": "Cisco",
+              "reason": "Rejected as primary: Packet Tracer cannot exercise the full policy and limiter set."
+            }
+          ],
+          "rules": [
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "guest",
+              "to": "firewall guest ip",
+              "note": "P-01: Yalnızca firewall DNS'i."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "guest",
+              "to": "rfc1918_all (10/8,172.16/12,192.168/16)",
+              "note": "P-02: İç ağ koruması (FR-05)."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "guest",
+              "to": "wan (any)",
+              "note": "P-03: İnternet-only."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "guest",
+              "to": "any",
+              "note": "P-04: Son kural."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "staff",
+              "to": "firewall ip",
+              "note": "P-20: —."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "staff",
+              "to": "lms,library,file,print,intranet",
+              "note": "P-21: İş servisleri."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "staff (öğretim elemanı alias'ı)",
+              "to": "lab",
+              "note": "P-22: Lab yönetimi (ops.)."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "staff",
+              "to": "admin,mgmt,itops,rnd,swdev,ci,student,guest",
+              "note": "P-23: İzolasyon."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "staff",
+              "to": "wan",
+              "note": "P-24: İnternet."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "admin",
+              "to": "firewall ip",
+              "note": "P-25: —."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "admin",
+              "to": "sis_admin,hr,erp,file,print",
+              "note": "P-26: Hassas uygulamalar → erişim loglanır."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "admin",
+              "to": "diğer tüm iç zone'lar",
+              "note": "P-27: —."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "admin",
+              "to": "wan",
+              "note": "P-28: İnternet (daraltılmış)."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "swdev",
+              "to": "git,artifact,registry,ci",
+              "note": "P-30: Geliştirme (FR-07)."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "swdev",
+              "to": "ci",
+              "note": "P-31: Test ortamı erişimi."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "swdev",
+              "to": "wan",
+              "note": "P-32: Geniş internet."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "swdev",
+              "to": "admin,staff,mgmt,itops,rnd,student,lab,guest",
+              "note": "P-33: İzolasyon."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "ci",
+              "to": "git,artifact,registry",
+              "note": "P-34: Build."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "ci",
+              "to": "proxy (veya wan allow-list alias)",
+              "note": "P-35: Dış bağımlılık, loglu."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "ci",
+              "to": "dmz (staging host alias)",
+              "note": "P-36: Deploy."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "ci",
+              "to": "any",
+              "note": "P-37: Son kural (kullanıcı zone'ları dahil)."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "diğer tüm zone'lar",
+              "to": "rnd",
+              "note": "P-44: İçeri erişim yok (IT-OPS hariç P-71)."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "server",
+              "to": "syslog (mgmt/server-ank),ntp,dns_auth",
+              "note": "P-60: Altyapı."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "server",
+              "to": "wan (güncelleme depoları alias'ı / proxy)",
+              "note": "P-61: Güncellemeler."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "server",
+              "to": "kullanıcı zone'ları (admin,staff,student,lab,guest,swdev,rnd)",
+              "note": "P-62: Sunucu bağlantı başlatmaz."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "wan",
+              "to": "dmz (public_web)",
+              "note": "P-63: Yayın (FR-14)."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "dmz",
+              "to": "app_backend (server)",
+              "note": "P-64: Arka uç."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "dmz",
+              "to": "any",
+              "note": "P-65: —."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "itops,vpn_itops (10.255.100.0/24)",
+              "to": "mgmt (tüm siteler)",
+              "note": "P-70: Yönetim (FR-08) — tüm oturumlar loglanır."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "itops",
+              "to": "tüm iç zone'lar",
+              "note": "P-71: Destek/sorun giderme; dar ve loglu."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "itops",
+              "to": "wan",
+              "note": "P-72: —."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "mgmt",
+              "to": "ntp,syslog,dns,güncelleme alias'ı",
+              "note": "P-73: Cihazların gereksinimi."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "mgmt",
+              "to": "any (p-73 dışı)",
+              "note": "P-74: Yönetim düzlemi dışa konuşmaz."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "tüm zone'lar (itops/vpn_itops hariç)",
+              "to": "mgmt,firewall yönetim portları",
+              "note": "P-75: Yönetim koruması (FR-29); anti-lockout yalnızca MGMT arayüzünde."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "proto": "any",
+              "from": "any",
+              "to": "any",
+              "note": "Default deny: anything not listed is dropped and logged."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "london-office",
+      "name": "London Office",
+      "role": "branch",
+      "location": "London, United Kingdom",
+      "population": {
+        "staff": 30
+      },
+      "network": {
+        "cidr": "10.30.0.0/16",
+        "dmz": false,
+        "vlans": [
+          {
+            "id": 10,
+            "name": "MGMT",
+            "cidr": "10.30.10.0/24"
+          },
+          {
+            "id": 20,
+            "name": "SERVER",
+            "cidr": "10.30.20.0/24",
+            "note": "SERVER (yerel DNS/DHCP, dosya önbelleği)"
+          },
+          {
+            "id": 30,
+            "name": "ADMIN",
+            "cidr": "10.30.30.0/24"
+          },
+          {
+            "id": 40,
+            "name": "STAFF",
+            "cidr": "10.30.40.0/24"
+          },
+          {
+            "id": 70,
+            "name": "GUEST",
+            "cidr": "10.30.70.0/24"
+          }
+        ]
+      },
+      "bandwidth": {
+        "downMbps": 200,
+        "upMbps": 200,
+        "drivers": [
+          "video conferencing",
+          "central services over VPN"
+        ]
+      },
+      "firewalls": [
+        {
+          "segment": "perimeter",
+          "chosen": {
+            "product": "pfSense CE 2.9",
+            "vendor": "Netgate",
+            "reason": "Primary choice: satisfies the required firewall features with official documentation, runs four sites on one machine with 1 GB RAM each, per-IP Limiter supports the bandwidth demonstration, dated HA and IPsec docs."
+          },
+          "alternatives": [
+            {
+              "product": "OPNsense 26.7",
+              "vendor": "Deciso",
+              "reason": "Functional equivalent with a modern UI and BSD license; needs at least 3 GB RAM per node, so four sites need about 12 GB just for firewalls."
+            },
+            {
+              "product": "FortiGate-VM (permanent trial)",
+              "vendor": "Fortinet",
+              "reason": "Commercial NGFW comparison on one site with 2-3 zones; trial limits 3 interfaces/policies/routes and has no FortiGuard."
+            },
+            {
+              "product": "VM-Series (30-day trial)",
+              "vendor": "Palo Alto Networks",
+              "reason": "Commercial comparison; needs ESXi/KVM/Hyper-V and at least 5.5 GB RAM, 30-day limit."
+            },
+            {
+              "product": "Cisco ASA (Packet Tracer)",
+              "vendor": "Cisco",
+              "reason": "Rejected as primary: Packet Tracer cannot exercise the full policy and limiter set."
+            }
+          ],
+          "rules": [
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "guest",
+              "to": "firewall guest ip",
+              "note": "P-01: Yalnızca firewall DNS'i."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "guest",
+              "to": "rfc1918_all (10/8,172.16/12,192.168/16)",
+              "note": "P-02: İç ağ koruması (FR-05)."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "guest",
+              "to": "wan (any)",
+              "note": "P-03: İnternet-only."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "guest",
+              "to": "any",
+              "note": "P-04: Son kural."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "staff",
+              "to": "firewall ip",
+              "note": "P-20: —."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "staff",
+              "to": "lms,library,file,print,intranet",
+              "note": "P-21: İş servisleri."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "staff (öğretim elemanı alias'ı)",
+              "to": "lab",
+              "note": "P-22: Lab yönetimi (ops.)."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "staff",
+              "to": "admin,mgmt,itops,rnd,swdev,ci,student,guest",
+              "note": "P-23: İzolasyon."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "staff",
+              "to": "wan",
+              "note": "P-24: İnternet."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "admin",
+              "to": "firewall ip",
+              "note": "P-25: —."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "admin",
+              "to": "sis_admin,hr,erp,file,print",
+              "note": "P-26: Hassas uygulamalar → erişim loglanır."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "admin",
+              "to": "diğer tüm iç zone'lar",
+              "note": "P-27: —."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "admin",
+              "to": "wan",
+              "note": "P-28: İnternet (daraltılmış)."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "diğer tüm zone'lar",
+              "to": "rnd",
+              "note": "P-44: İçeri erişim yok (IT-OPS hariç P-71)."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "server",
+              "to": "syslog (mgmt/server-ank),ntp,dns_auth",
+              "note": "P-60: Altyapı."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "server",
+              "to": "wan (güncelleme depoları alias'ı / proxy)",
+              "note": "P-61: Güncellemeler."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "server",
+              "to": "kullanıcı zone'ları (admin,staff,student,lab,guest,swdev,rnd)",
+              "note": "P-62: Sunucu bağlantı başlatmaz."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "wan",
+              "to": "dmz (public_web)",
+              "note": "P-63: Yayın (FR-14)."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "dmz",
+              "to": "app_backend (server)",
+              "note": "P-64: Arka uç."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "dmz",
+              "to": "any",
+              "note": "P-65: —."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "itops,vpn_itops (10.255.100.0/24)",
+              "to": "mgmt (tüm siteler)",
+              "note": "P-70: Yönetim (FR-08) — tüm oturumlar loglanır."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "itops",
+              "to": "tüm iç zone'lar",
+              "note": "P-71: Destek/sorun giderme; dar ve loglu."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "itops",
+              "to": "wan",
+              "note": "P-72: —."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "mgmt",
+              "to": "ntp,syslog,dns,güncelleme alias'ı",
+              "note": "P-73: Cihazların gereksinimi."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "mgmt",
+              "to": "any (p-73 dışı)",
+              "note": "P-74: Yönetim düzlemi dışa konuşmaz."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "tüm zone'lar (itops/vpn_itops hariç)",
+              "to": "mgmt,firewall yönetim portları",
+              "note": "P-75: Yönetim koruması (FR-29); anti-lockout yalnızca MGMT arayüzünde."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "proto": "any",
+              "from": "any",
+              "to": "any",
+              "note": "Default deny: anything not listed is dropped and logged."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "academic-campus",
+      "name": "Academic Campus",
+      "role": "campus",
+      "location": "Ankara, Turkey",
+      "population": {
+        "staff": 900,
+        "students": 10000,
+        "rnd": 40
+      },
+      "network": {
+        "cidr": "10.40.0.0/14",
+        "dmz": true,
+        "vlans": [
+          {
+            "id": 10,
+            "name": "MGMT",
+            "cidr": "10.40.10.0/24"
+          },
+          {
+            "id": 20,
+            "name": "SERVER",
+            "cidr": "10.40.20.0/24",
+            "note": "SERVER (LMS, ÖBS, kütüphane, DNS, DHCP, syslog)"
+          },
+          {
+            "id": 25,
+            "name": "DMZ",
+            "cidr": "10.40.25.0/24",
+            "note": "DMZ (web/LMS dış erişim, opsiyonel)"
+          },
+          {
+            "id": 30,
+            "name": "ADMIN",
+            "cidr": "10.40.30.0/23",
+            "note": "ADMIN (300 idari × 1,5 = 450 cihaz → /23 gerekir!)"
+          },
+          {
+            "id": 40,
+            "name": "STAFF",
+            "cidr": "10.40.40.0/22",
+            "note": "STAFF (600 akademik × 1,5 = 900 → /22 = 1022)"
+          },
+          {
+            "id": 50,
+            "name": "STUDENT-WIRED",
+            "cidr": "10.40.50.0/22",
+            "note": "STUDENT-WIRED (sınıflar, kütüphane)"
+          },
+          {
+            "id": 51,
+            "name": "STUDENT-WIFI",
+            "cidr": "10.41.0.0/16"
+          },
+          {
+            "id": 60,
+            "name": "LAB",
+            "cidr": "10.40.60.0/22",
+            "note": "LAB (laboratuvarlar; lab başına /24)"
+          },
+          {
+            "id": 70,
+            "name": "GUEST",
+            "cidr": "10.40.70.0/21"
+          },
+          {
+            "id": 90,
+            "name": "RND",
+            "cidr": "10.40.90.0/24"
+          },
+          {
+            "id": 100,
+            "name": "VOICE",
+            "cidr": "10.40.100.0/24",
+            "note": "VOICE (ops.)"
+          }
+        ]
+      },
+      "bandwidth": {
+        "downMbps": 10000,
+        "upMbps": 10000,
+        "drivers": [
+          "student Wi-Fi and wired",
+          "LMS",
+          "labs",
+          "research"
+        ]
+      },
+      "firewalls": [
+        {
+          "segment": "perimeter",
+          "chosen": {
+            "product": "pfSense CE 2.9",
+            "vendor": "Netgate",
+            "reason": "Primary choice: satisfies the required firewall features with official documentation, runs four sites on one machine with 1 GB RAM each, per-IP Limiter supports the bandwidth demonstration, dated HA and IPsec docs."
+          },
+          "alternatives": [
+            {
+              "product": "OPNsense 26.7",
+              "vendor": "Deciso",
+              "reason": "Functional equivalent with a modern UI and BSD license; needs at least 3 GB RAM per node, so four sites need about 12 GB just for firewalls."
+            },
+            {
+              "product": "FortiGate-VM (permanent trial)",
+              "vendor": "Fortinet",
+              "reason": "Commercial NGFW comparison on one site with 2-3 zones; trial limits 3 interfaces/policies/routes and has no FortiGuard."
+            },
+            {
+              "product": "VM-Series (30-day trial)",
+              "vendor": "Palo Alto Networks",
+              "reason": "Commercial comparison; needs ESXi/KVM/Hyper-V and at least 5.5 GB RAM, 30-day limit."
+            },
+            {
+              "product": "Cisco ASA (Packet Tracer)",
+              "vendor": "Cisco",
+              "reason": "Rejected as primary: Packet Tracer cannot exercise the full policy and limiter set."
+            }
+          ],
+          "rules": [
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "guest",
+              "to": "firewall guest ip",
+              "note": "P-01: Yalnızca firewall DNS'i."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "guest",
+              "to": "rfc1918_all (10/8,172.16/12,192.168/16)",
+              "note": "P-02: İç ağ koruması (FR-05)."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "guest",
+              "to": "wan (any)",
+              "note": "P-03: İnternet-only."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "guest",
+              "to": "any",
+              "note": "P-04: Son kural."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "student,lab",
+              "to": "firewall arayüz ip",
+              "note": "P-10: Temel servisler."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "student,lab",
+              "to": "lms,library,sis_student_portal",
+              "note": "P-11: Akademik servisler (FR-04)."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "student,lab",
+              "to": "print_student",
+              "note": "P-12: Kütüphane yazdırma."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "lab",
+              "to": "image_license",
+              "note": "P-13: Lab imaj/lisans (FR-06)."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "student,lab",
+              "to": "dmz",
+              "note": "P-14: Yayınlanan servisler."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "student,lab",
+              "to": "admin,mgmt,itops,server (p-11..13 dışı),staff,rnd,swdev,ci",
+              "note": "P-15: İzolasyon (FR-03)."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "student,lab",
+              "to": "wan",
+              "note": "P-16: Politika."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "student,lab",
+              "to": "wan",
+              "note": "P-17: İnternet."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "student ↔ lab",
+              "to": "—",
+              "note": "P-18: Öğrenci cihazı lab makinesine erişmez."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "staff",
+              "to": "firewall ip",
+              "note": "P-20: —."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "staff",
+              "to": "lms,library,file,print,intranet",
+              "note": "P-21: İş servisleri."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "staff (öğretim elemanı alias'ı)",
+              "to": "lab",
+              "note": "P-22: Lab yönetimi (ops.)."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "staff",
+              "to": "admin,mgmt,itops,rnd,swdev,ci,student,guest",
+              "note": "P-23: İzolasyon."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "staff",
+              "to": "wan",
+              "note": "P-24: İnternet."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "admin",
+              "to": "firewall ip",
+              "note": "P-25: —."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "admin",
+              "to": "sis_admin,hr,erp,file,print",
+              "note": "P-26: Hassas uygulamalar → erişim loglanır."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "admin",
+              "to": "diğer tüm iç zone'lar",
+              "note": "P-27: —."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "admin",
+              "to": "wan",
+              "note": "P-28: İnternet (daraltılmış)."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "rnd",
+              "to": "firewall ip",
+              "note": "P-40: —."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "rnd",
+              "to": "git (i̇stanbul,vpn),rnd_storage,backup",
+              "note": "P-41: Kod ve veri."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "rnd",
+              "to": "wan_allowlist (veri kaynakları,yayınlar) **veya** proxy",
+              "note": "P-42: Kısıtlı internet, loglu (fikri mülkiyet)."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "rnd",
+              "to": "any",
+              "note": "P-43: —."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "diğer tüm zone'lar",
+              "to": "rnd",
+              "note": "P-44: İçeri erişim yok (IT-OPS hariç P-71)."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "server",
+              "to": "syslog (mgmt/server-ank),ntp,dns_auth",
+              "note": "P-60: Altyapı."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "server",
+              "to": "wan (güncelleme depoları alias'ı / proxy)",
+              "note": "P-61: Güncellemeler."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "server",
+              "to": "kullanıcı zone'ları (admin,staff,student,lab,guest,swdev,rnd)",
+              "note": "P-62: Sunucu bağlantı başlatmaz."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "wan",
+              "to": "dmz (public_web)",
+              "note": "P-63: Yayın (FR-14)."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "dmz",
+              "to": "app_backend (server)",
+              "note": "P-64: Arka uç."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "dmz",
+              "to": "any",
+              "note": "P-65: —."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "itops,vpn_itops (10.255.100.0/24)",
+              "to": "mgmt (tüm siteler)",
+              "note": "P-70: Yönetim (FR-08) — tüm oturumlar loglanır."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "itops",
+              "to": "tüm iç zone'lar",
+              "note": "P-71: Destek/sorun giderme; dar ve loglu."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "itops",
+              "to": "wan",
+              "note": "P-72: —."
+            },
+            {
+              "action": "allow",
+              "direction": "forward",
+              "from": "mgmt",
+              "to": "ntp,syslog,dns,güncelleme alias'ı",
+              "note": "P-73: Cihazların gereksinimi."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "mgmt",
+              "to": "any (p-73 dışı)",
+              "note": "P-74: Yönetim düzlemi dışa konuşmaz."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "from": "tüm zone'lar (itops/vpn_itops hariç)",
+              "to": "mgmt,firewall yönetim portları",
+              "note": "P-75: Yönetim koruması (FR-29); anti-lockout yalnızca MGMT arayüzünde."
+            },
+            {
+              "action": "deny",
+              "direction": "forward",
+              "proto": "any",
+              "from": "any",
+              "to": "any",
+              "note": "Default deny: anything not listed is dropped and logged."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "remoteAccess": {
+    "type": "role-based-vpn",
+    "note": "IPsec VTI tunnels from every spoke to the Ankara hub over a transit block (10.255.0.0/16); IT-Ops reaches the MGMT zone only from its own IT-OPS zone or through a dedicated VPN-ITOPS."
+  },
+  "monitoring": {
+    "siem": "rsyslog collector in the SERVER/MGMT zones (central syslog in Ankara), traffic generated and checked with iperf3 in the lab; the design leaves a place for a central SIEM.",
+    "owner": "The IT and Network Operations team (IT-OPS zone, VLAN 200 in Ankara) owns monitoring and device management.",
+    "alertSink": "Central syslog receiver (UDP/TCP 514, TLS 6514) in the MGMT zone.",
+    "appVsSecurity": "Not separated in this documentation phase; QoS classes (BW-01..BW-08) cover bandwidth while per-rule logging covers security events."
+  },
+  "slug": "k1-fw-cok-lokasyonlu-ag"
+}
