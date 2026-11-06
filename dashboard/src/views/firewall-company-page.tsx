@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { ArrowLeftIcon, ArrowRightIcon, FireIcon, MapPinIcon, ShieldCheckIcon } from "@phosphor-icons/react";
+import { ArrowLeftIcon, ArrowRightIcon, FireIcon, MapPinIcon, ShieldCheckIcon, WarningDiamondIcon, GraphIcon } from "@phosphor-icons/react";
 import { AppShell } from "../shell/app-shell";
 import { TopBar } from "../shell/top-bar";
 import { COMPANIES } from "../firewall/companies.generated";
 import type { Branch, Company } from "../firewall/types";
 import { branchRole, copy, firewallPath, type FirewallLocale } from "../firewall/locale";
+import { auditCompany } from "../firewall/audit";
+import { GapsTab } from "./firewall-gaps";
 
 const fmt = (value: number, locale: FirewallLocale) => value.toLocaleString(locale === "tr" ? "tr-TR" : "en-US");
 const people = (branch: Branch) => Object.values(branch.population).reduce<number>((sum, value) => sum + (value ?? 0), 0);
@@ -83,6 +85,9 @@ function BranchDetail({ branch, locale }: { branch: Branch; locale: FirewallLoca
 export function FirewallCompanyPage({ company, locale = "en" }: { company: Company; locale?: FirewallLocale }) {
   const t = copy[locale];
   const [selectedId, setSelectedId] = useState(company.branches[0]?.id ?? "");
+  const [tab, setTab] = useState<"network" | "gaps">(() => (typeof location !== "undefined" && location.hash.startsWith("#gap") ? "gaps" : "network"));
+  const gaps = auditCompany(company).total;
+  const pick = (t: "network" | "gaps") => { setTab(t); history.replaceState(null, "", t === "gaps" ? "#gaps" : location.pathname + location.search); };
   const selected = company.branches.find((branch) => branch.id === selectedId) ?? company.branches[0];
   const next = COMPANIES[(COMPANIES.findIndex((item) => item.slug === company.slug) + 1) % COMPANIES.length];
   return (
@@ -96,6 +101,13 @@ export function FirewallCompanyPage({ company, locale = "en" }: { company: Compa
             <div className="fw-hero-count"><strong>{String(company.branches.length).padStart(2, "0")}</strong><span>{t.branches.toLocaleLowerCase(locale)}</span></div>
           </header>
 
+          <div className="fw-tabs" data-tab={tab} role="tablist" aria-label={t.companyViews}>
+            <span className="fw-tab-pill" aria-hidden="true" />
+            <button type="button" role="tab" className="fw-tab" aria-selected={tab === "network"} onClick={() => pick("network")}><GraphIcon size={15} weight="bold" /> {t.network}</button>
+            <button type="button" role="tab" className="fw-tab" aria-selected={tab === "gaps"} onClick={() => pick("gaps")}><WarningDiamondIcon size={15} weight="bold" /> {t.gaps} <b>{gaps}</b></button>
+          </div>
+
+          {tab === "gaps" ? <GapsTab company={company} locale={locale} /> : <>
           <section className="fw-map" aria-label={t.branches}>
             <div className="fw-map-heading"><div><span className="fw-eyebrow">01 / {t.overview}</span><h2>{t.branchComposition}</h2></div><span>{t.selectBranch}</span></div>
             <div className="fw-branch-grid">
@@ -104,6 +116,7 @@ export function FirewallCompanyPage({ company, locale = "en" }: { company: Compa
           </section>
 
           {selected && <BranchDetail branch={selected} locale={locale} />}
+          </>}
           <footer className="fw-footer"><a href={firewallPath(locale)}>{t.allDesigns}</a><a href={firewallPath(locale, next.slug)}>{t.next}: {next.name} <ArrowRightIcon size={15} /></a></footer>
         </main>
       </div>
