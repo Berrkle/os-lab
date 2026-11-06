@@ -1,35 +1,53 @@
 {
   "generatedBy": "firewall-lab/scripts/catalog.py",
   "summary": {
-    "companies": 2,
-    "branches": 5,
-    "firewalls": 6,
-    "rules": 33,
+    "companies": 3,
+    "branches": 9,
+    "firewalls": 12,
+    "rules": 62,
     "priceUsd": {
       "min": 700,
       "max": 12000,
       "total": 18399
     },
     "chosenByVendor": {
-      "Fortinet": 5,
+      "Fortinet": 8,
+      "Palo Alto Networks": 1,
+      "Cloudflare": 1,
+      "WatchGuard": 1,
       "Netgate": 1
     },
     "chosenByProduct": {
       "Fortinet FortiGate 60F": 3,
       "Fortinet FortiGate 100F": 1,
       "Fortinet FortiGate 600F": 1,
+      "Palo Alto Networks PA-3400 series (HA)": 1,
+      "Fortinet FortiGate 200F class (ISFW mode)": 1,
+      "Cloudflare Cloudflare WAF": 1,
+      "Fortinet FortiGate 1800F class (HA)": 1,
+      "Fortinet FortiGate 100F class": 1,
+      "WatchGuard Firebox T-series": 1,
       "Netgate pfSense Plus (Netgate 4200)": 1
     },
     "vendorsConsidered": {
-      "Fortinet": 6,
+      "Fortinet": 11,
+      "Sophos": 8,
       "Netgate": 6,
+      "Check Point": 6,
       "Deciso": 5,
-      "Sophos": 5,
+      "Palo Alto Networks": 5,
+      "WatchGuard": 3,
+      "Cisco": 3,
       "Palo Alto": 2,
       "MikroTik": 2,
       "Ubiquiti": 2,
-      "WatchGuard": 1,
-      "Check Point": 1
+      "Netgate / Deciso": 1,
+      "Cloudflare": 1,
+      "Amazon": 1,
+      "Akamai": 1,
+      "Imperva": 1,
+      "F5": 1,
+      "Juniper": 1
     }
   },
   "firewalls": [
@@ -275,6 +293,300 @@
           "vendor": "Check Point",
           "throughputGbps": 28,
           "priceUsd": 18000
+        }
+      ]
+    },
+    {
+      "company": "AnadoluNet Technology Holding",
+      "companySlug": "anadolunet-holding",
+      "sector": "Technology / Education",
+      "author": "B*** Ö***",
+      "branch": "Izmir HQ + Software Team",
+      "branchId": "izmir-hq",
+      "branchRole": "headquarters",
+      "location": "Izmir, Turkey",
+      "segment": "perimeter",
+      "product": "PA-3400 series (HA)",
+      "vendor": "Palo Alto Networks",
+      "throughputGbps": null,
+      "priceUsd": null,
+      "ruleCount": 8,
+      "actions": {
+        "allow": 5,
+        "deny": 3,
+        "reject": 0,
+        "limit": 0
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "FortiGate 400F / 600F class (HA)",
+          "vendor": "Fortinet",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Quantum 6000 series",
+          "vendor": "Check Point",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Secure Firewall 3100 series",
+          "vendor": "Cisco",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "XGS 5500 / 6500",
+          "vendor": "Sophos",
+          "throughputGbps": null,
+          "priceUsd": null
+        }
+      ]
+    },
+    {
+      "company": "AnadoluNet Technology Holding",
+      "companySlug": "anadolunet-holding",
+      "sector": "Technology / Education",
+      "author": "B*** Ö***",
+      "branch": "Izmir HQ + Software Team",
+      "branchId": "izmir-hq",
+      "branchRole": "headquarters",
+      "location": "Izmir, Turkey",
+      "segment": "software",
+      "product": "FortiGate 200F class (ISFW mode)",
+      "vendor": "Fortinet",
+      "throughputGbps": null,
+      "priceUsd": null,
+      "ruleCount": 2,
+      "actions": {
+        "allow": 1,
+        "deny": 1,
+        "reject": 0,
+        "limit": 0
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "PA-1400 series",
+          "vendor": "Palo Alto Networks",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Quantum 3000 series",
+          "vendor": "Check Point",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Secure Firewall 1200 / 3100",
+          "vendor": "Cisco",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "OPNsense / pfSense",
+          "vendor": "Netgate / Deciso",
+          "throughputGbps": null,
+          "priceUsd": null
+        }
+      ]
+    },
+    {
+      "company": "AnadoluNet Technology Holding",
+      "companySlug": "anadolunet-holding",
+      "sector": "Technology / Education",
+      "author": "B*** Ö***",
+      "branch": "Izmir HQ + Software Team",
+      "branchId": "izmir-hq",
+      "branchRole": "headquarters",
+      "location": "Izmir, Turkey",
+      "segment": "dmz",
+      "product": "Cloudflare WAF",
+      "vendor": "Cloudflare",
+      "throughputGbps": null,
+      "priceUsd": null,
+      "ruleCount": 2,
+      "actions": {
+        "allow": 1,
+        "deny": 1,
+        "reject": 0,
+        "limit": 0
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "AWS WAF",
+          "vendor": "Amazon",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "App & API Protector",
+          "vendor": "Akamai",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Imperva WAF",
+          "vendor": "Imperva",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Advanced WAF / Distributed Cloud",
+          "vendor": "F5",
+          "throughputGbps": null,
+          "priceUsd": null
+        }
+      ]
+    },
+    {
+      "company": "AnadoluNet Technology Holding",
+      "companySlug": "anadolunet-holding",
+      "sector": "Technology / Education",
+      "author": "B*** Ö***",
+      "branch": "AnadoluNet Academy",
+      "branchId": "academy",
+      "branchRole": "campus",
+      "location": "Eskisehir, Turkey",
+      "segment": "perimeter",
+      "product": "FortiGate 1800F class (HA)",
+      "vendor": "Fortinet",
+      "throughputGbps": null,
+      "priceUsd": null,
+      "ruleCount": 8,
+      "actions": {
+        "allow": 5,
+        "deny": 3,
+        "reject": 0,
+        "limit": 0
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "PA-5400 series",
+          "vendor": "Palo Alto Networks",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Quantum 9000 / 16000 series",
+          "vendor": "Check Point",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Secure Firewall 4200 series",
+          "vendor": "Cisco",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "SRX4000 series",
+          "vendor": "Juniper",
+          "throughputGbps": null,
+          "priceUsd": null
+        }
+      ]
+    },
+    {
+      "company": "AnadoluNet Technology Holding",
+      "companySlug": "anadolunet-holding",
+      "sector": "Technology / Education",
+      "author": "B*** Ö***",
+      "branch": "Bursa Office",
+      "branchId": "bursa",
+      "branchRole": "branch",
+      "location": "Bursa, Turkey",
+      "segment": "perimeter",
+      "product": "FortiGate 100F class",
+      "vendor": "Fortinet",
+      "throughputGbps": null,
+      "priceUsd": null,
+      "ruleCount": 5,
+      "actions": {
+        "allow": 3,
+        "deny": 2,
+        "reject": 0,
+        "limit": 0
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "XGS 2100 / 2300",
+          "vendor": "Sophos",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "PA-450",
+          "vendor": "Palo Alto Networks",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Firebox M-series",
+          "vendor": "WatchGuard",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Quantum Spark 1900",
+          "vendor": "Check Point",
+          "throughputGbps": null,
+          "priceUsd": null
+        }
+      ]
+    },
+    {
+      "company": "AnadoluNet Technology Holding",
+      "companySlug": "anadolunet-holding",
+      "sector": "Technology / Education",
+      "author": "B*** Ö***",
+      "branch": "Berlin Office",
+      "branchId": "berlin",
+      "branchRole": "branch",
+      "location": "Berlin, Germany",
+      "segment": "perimeter",
+      "product": "Firebox T-series",
+      "vendor": "WatchGuard",
+      "throughputGbps": null,
+      "priceUsd": null,
+      "ruleCount": 4,
+      "actions": {
+        "allow": 2,
+        "deny": 2,
+        "reject": 0,
+        "limit": 0
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "FortiGate 60F / 70F",
+          "vendor": "Fortinet",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "XGS 1xx series",
+          "vendor": "Sophos",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "PA-400 series",
+          "vendor": "Palo Alto Networks",
+          "throughputGbps": null,
+          "priceUsd": null
+        },
+        {
+          "product": "Quantum Spark 1600 / 1800",
+          "vendor": "Check Point",
+          "throughputGbps": null,
+          "priceUsd": null
         }
       ]
     },

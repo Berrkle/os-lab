@@ -90,3 +90,7 @@ pfSense/OPNsense generate underneath) **or** a vendor-neutral policy table you
 translate onto any appliance. Prototype in the throwaway guest, and wire block
 alerts to Telegram with [`ufw-logger`](https://github.com/keyvanarasteh/ufw-logger).
 This lab is a candidate midterm capability in the os-lab pipeline.
+
+## Contributors
+
+Students who contributed company designs are listed (names masked) in [CONTRIBUTORS.md](CONTRIBUTORS.md).
