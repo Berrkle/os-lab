@@ -4,5 +4,6 @@ node_modules/
 build/
 # GitHub Pages staging made by scripts/deploy-page.sh
 build-pages/
+build-pages.raw/
 # Freshness-check builds made by scripts/run-tests.sh
 .check-build.*/
