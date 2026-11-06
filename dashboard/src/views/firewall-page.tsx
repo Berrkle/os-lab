@@ -204,6 +204,9 @@ function CompanyPanel({ company }: { company: Company }) {
           {company.author.studentId ? ` · ${company.author.studentId}` : ""} · {company.author.course}
         </p>
         <p className="mt-2 max-w-3xl text-sm text-(--iux-muted-foreground)">{company.summary}</p>
+        <a className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-[#f36c21] hover:underline" href={`/firewall/${company.slug}/`}>
+          Explore the network <ArrowSquareOutIcon size={13} />
+        </a>
       </div>
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
