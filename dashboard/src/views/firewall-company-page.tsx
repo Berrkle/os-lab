@@ -4,12 +4,14 @@ import { AppShell } from "../shell/app-shell";
 import { TopBar } from "../shell/top-bar";
 import { COMPANIES } from "../firewall/companies.generated";
 import type { Branch, Company } from "../firewall/types";
+import { branchRole, copy, firewallPath, type FirewallLocale } from "../firewall/locale";
 
-const fmt = (value: number) => value.toLocaleString("en-US");
+const fmt = (value: number, locale: FirewallLocale) => value.toLocaleString(locale === "tr" ? "tr-TR" : "en-US");
 const people = (branch: Branch) => Object.values(branch.population).reduce<number>((sum, value) => sum + (value ?? 0), 0);
 const rules = (branch: Branch) => branch.firewalls.reduce((sum, firewall) => sum + firewall.rules.length, 0);
 
-function BranchNode({ branch, index, selected, onSelect }: { branch: Branch; index: number; selected: boolean; onSelect: () => void }) {
+function BranchNode({ branch, index, selected, onSelect, locale }: { branch: Branch; index: number; selected: boolean; onSelect: () => void; locale: FirewallLocale }) {
+  const t = copy[locale];
   return (
     <button
       type="button"
@@ -20,87 +22,89 @@ function BranchNode({ branch, index, selected, onSelect }: { branch: Branch; ind
       style={{ animationDelay: `${index * 85}ms` }}
     >
       <span className="fw-branch-line" aria-hidden="true" />
-      <span className="fw-branch-top"><span className="fw-index">{String(index + 1).padStart(2, "0")}</span><span className="fw-role">{branch.role}</span></span>
+      <span className="fw-branch-top"><span className="fw-index">{String(index + 1).padStart(2, "0")}</span><span className="fw-role">{branchRole(branch.role, locale)}</span></span>
       <strong>{branch.name}</strong>
       <span className="fw-location"><MapPinIcon size={12} /> {branch.location}</span>
       <span className="fw-branch-meter" aria-hidden="true">
         {branch.network.vlans.map((vlan) => <i key={vlan.id} title={`VLAN ${vlan.id}: ${vlan.name}`} />)}
       </span>
-      <span className="fw-branch-foot"><span>{branch.network.vlans.length} VLANs</span><span>{branch.firewalls.length} firewall{branch.firewalls.length === 1 ? "" : "s"}</span></span>
+      <span className="fw-branch-foot"><span>{branch.network.vlans.length} VLAN</span><span>{branch.firewalls.length} {locale === "en" && branch.firewalls.length !== 1 ? "firewalls" : t.firewall}</span></span>
     </button>
   );
 }
 
-function BranchDetail({ branch }: { branch: Branch }) {
+function BranchDetail({ branch, locale }: { branch: Branch; locale: FirewallLocale }) {
+  const t = copy[locale];
   return (
-    <section className="fw-detail" key={branch.id} aria-label={`${branch.name} network details`}>
+    <section className="fw-detail" key={branch.id} aria-label={`${branch.name} ${t.networkDetails}`}>
       <div className="fw-detail-heading">
-        <div><span className="fw-eyebrow">Selected branch / {branch.role}</span><h2>{branch.name}</h2><p>{branch.location} · {branch.network.cidr}</p></div>
-        <div className="fw-bandwidth"><span>Connection</span><strong>{fmt(branch.bandwidth.downMbps)} <small>↓</small> / {fmt(branch.bandwidth.upMbps)} <small>↑</small></strong><span>Mbps</span></div>
+        <div><span className="fw-eyebrow">{t.selectedBranch} / {branchRole(branch.role, locale)}</span><h2>{branch.name}</h2><p>{branch.location} · {branch.network.cidr}</p></div>
+        <div className="fw-bandwidth"><span>{t.connection}</span><strong>{fmt(branch.bandwidth.downMbps, locale)} <small>↓</small> / {fmt(branch.bandwidth.upMbps, locale)} <small>↑</small></strong><span>Mbps</span></div>
       </div>
 
       <div className="fw-numbers">
-        <div><strong>{fmt(people(branch))}</strong><span>people</span></div>
-        <div><strong>{branch.network.vlans.length}</strong><span>VLANs</span></div>
-        <div><strong>{branch.firewalls.length}</strong><span>firewalls</span></div>
-        <div><strong>{rules(branch)}</strong><span>rules</span></div>
+        <div><strong>{fmt(people(branch), locale)}</strong><span>{t.person}</span></div>
+        <div><strong>{branch.network.vlans.length}</strong><span>VLAN</span></div>
+        <div><strong>{branch.firewalls.length}</strong><span>{t.firewalls.toLocaleLowerCase(locale)}</span></div>
+        <div><strong>{rules(branch)}</strong><span>{t.rules.toLocaleLowerCase(locale)}</span></div>
       </div>
 
       <div className="fw-detail-grid">
         <div className="fw-piece">
-          <div className="fw-piece-title"><span>01</span><h3>Network segments</h3><span>{branch.network.dmz ? "DMZ present" : "Internal network"}</span></div>
+          <div className="fw-piece-title"><span>01</span><h3>{t.networkSegments}</h3><span>{branch.network.dmz ? t.dmzPresent : t.internalNetwork}</span></div>
           <div className="fw-vlans">
             {branch.network.vlans.map((vlan, index) => (
               <div className="fw-vlan" key={vlan.id} style={{ animationDelay: `${index * 65}ms` }}>
                 <span className="fw-vlan-id">{String(vlan.id).padStart(2, "0")}</span>
-                <span className="fw-vlan-main"><strong>{vlan.name}</strong><small>{vlan.note || "Segmented network"}</small></span>
+                <span className="fw-vlan-main"><strong>{vlan.name}</strong><small>{vlan.note || t.segmentedNetwork}</small></span>
                 <code>{vlan.cidr}</code>
               </div>
             ))}
           </div>
         </div>
         <div className="fw-piece">
-          <div className="fw-piece-title"><span>02</span><h3>Firewall layers</h3><span>{rules(branch)} rules total</span></div>
+          <div className="fw-piece-title"><span>02</span><h3>{t.firewallLayers}</h3><span>{rules(branch)} {t.totalRules}</span></div>
           <div className="fw-firewalls">
             {branch.firewalls.map((firewall, index) => (
               <div className="fw-firewall" key={`${firewall.segment}-${index}`} style={{ animationDelay: `${index * 80}ms` }}>
                 <div className="fw-firewall-icon"><ShieldCheckIcon size={18} weight="duotone" /></div>
                 <div><span className="fw-segment">{firewall.segment}</span><strong>{firewall.chosen.product}</strong><small>{firewall.chosen.vendor}{firewall.chosen.throughputGbps != null ? ` · ${firewall.chosen.throughputGbps} Gbps` : ""}</small></div>
-                <span className="fw-rule-count">{firewall.rules.length} rules</span>
+                <span className="fw-rule-count">{firewall.rules.length} {t.rule}{locale === "en" && firewall.rules.length !== 1 ? "s" : ""}</span>
               </div>
             ))}
           </div>
-          <p className="fw-drivers"><strong>Link drivers</strong> {branch.bandwidth.drivers.join(" · ")}</p>
+          <p className="fw-drivers"><strong>{t.linkDrivers}</strong> {branch.bandwidth.drivers.join(" · ")}</p>
         </div>
       </div>
     </section>
   );
 }
 
-export function FirewallCompanyPage({ company }: { company: Company }) {
+export function FirewallCompanyPage({ company, locale = "en" }: { company: Company; locale?: FirewallLocale }) {
+  const t = copy[locale];
   const [selectedId, setSelectedId] = useState(company.branches[0]?.id ?? "");
   const selected = company.branches.find((branch) => branch.id === selectedId) ?? company.branches[0];
   const next = COMPANIES[(COMPANIES.findIndex((item) => item.slug === company.slug) + 1) % COMPANIES.length];
   return (
     <AppShell activeId="firewall">
       <div className="iux min-h-screen">
-        <TopBar title={company.name} icon={<FireIcon size={20} weight="duotone" />} />
+        <TopBar title={company.name} icon={<FireIcon size={20} weight="duotone" />} locale={locale} />
         <main className="fw-page">
-          <div className="fw-back"><a href="/firewall/"><ArrowLeftIcon size={15} /> All companies</a><span>Firewall Lab / {company.slug}</span></div>
+          <div className="fw-back"><a href={firewallPath(locale)}><ArrowLeftIcon size={15} /> {t.allCompanies}</a><span>{t.lab} / {company.slug}</span><a href={firewallPath(locale === "en" ? "tr" : "en", company.slug)} lang={locale === "en" ? "tr" : "en"} aria-label={locale === "en" ? "Türkçe" : "English"}>{locale === "en" ? "TR" : "EN"}</a></div>
           <header className="fw-hero">
-            <div><span className="fw-eyebrow">BGT207 / Company network</span><h1>{company.name}</h1><p>{company.summary}</p><span className="fw-sector">{company.sector}</span></div>
-            <div className="fw-hero-count"><strong>{String(company.branches.length).padStart(2, "0")}</strong><span>branches</span></div>
+            <div><span className="fw-eyebrow">BGT207 / {t.companyNetwork}</span><h1>{company.name}</h1><p>{company.summary}</p><span className="fw-sector">{company.sector}</span></div>
+            <div className="fw-hero-count"><strong>{String(company.branches.length).padStart(2, "0")}</strong><span>{t.branches.toLocaleLowerCase(locale)}</span></div>
           </header>
 
-          <section className="fw-map" aria-label="Company branches">
-            <div className="fw-map-heading"><div><span className="fw-eyebrow">01 / Overview</span><h2>Branch composition</h2></div><span>Select a branch to inspect its design</span></div>
+          <section className="fw-map" aria-label={t.branches}>
+            <div className="fw-map-heading"><div><span className="fw-eyebrow">01 / {t.overview}</span><h2>{t.branchComposition}</h2></div><span>{t.selectBranch}</span></div>
             <div className="fw-branch-grid">
-              {company.branches.map((branch, index) => <BranchNode key={branch.id} branch={branch} index={index} selected={selected?.id === branch.id} onSelect={() => setSelectedId(branch.id)} />)}
+              {company.branches.map((branch, index) => <BranchNode key={branch.id} branch={branch} index={index} selected={selected?.id === branch.id} onSelect={() => setSelectedId(branch.id)} locale={locale} />)}
             </div>
           </section>
 
-          {selected && <BranchDetail branch={selected} />}
-          <footer className="fw-footer"><a href="/firewall/">All company designs</a><a href={`/firewall/${next.slug}/`}>Next: {next.name} <ArrowRightIcon size={15} /></a></footer>
+          {selected && <BranchDetail branch={selected} locale={locale} />}
+          <footer className="fw-footer"><a href={firewallPath(locale)}>{t.allDesigns}</a><a href={firewallPath(locale, next.slug)}>{t.next}: {next.name} <ArrowRightIcon size={15} /></a></footer>
         </main>
       </div>
     </AppShell>

@@ -11,15 +11,18 @@ export interface TopBarProps {
   title: string;
   back?: { href: string; label: string };
   icon?: ReactNode;
+  locale?: "en" | "tr";
 }
 
-export function TopBar({ title, back, icon }: TopBarProps) {
+export function TopBar({ title, back, icon, locale = "en" }: TopBarProps) {
   const { data: health, error } = healthStore.use();
   const { data: jobs } = jobsStore.use();
   const { data: logs } = androidLogsStore.use();
   const busy = Boolean(logs?.running) || (jobs ?? []).some((j) => j.state === "running");
   const online = health?.status === "ok" && !error;
-  const label = !online ? (error ? "Offline" : "Connecting…") : busy ? "Job running" : "Lab Active";
+  const label = !online
+    ? (error ? (locale === "tr" ? "Çevrimdışı" : "Offline") : (locale === "tr" ? "Bağlanıyor…" : "Connecting…"))
+    : busy ? (locale === "tr" ? "İş çalışıyor" : "Job running") : (locale === "tr" ? "Laboratuvar etkin" : "Lab Active");
   return (
     <header className="sticky top-0 z-20 border-b border-(--iux-border) bg-(--iux-background)/80 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 sm:px-6">

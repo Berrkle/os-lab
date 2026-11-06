@@ -18,6 +18,8 @@ backend: host detection, lab plans and jobs live in `console/oslab.py`.
 | `/jobs/` | Every lab job with its output; cancel running jobs |
 | `/firewall/` | Firewall Lab company directory and full manifest details |
 | `/firewall/<company>/` | One company's interactive branch composition, VLANs, firewall selections and rule counts |
+| `/tr/firewall/` | Turkish Firewall Lab company directory and manifest details |
+| `/tr/firewall/<company>/` | Turkish company network visualization; EN/TR links preserve the selected company |
 | `/android/…` | Android Lab workbench: overview, code & providers, workflows & DAG, execution & logs, analytics, routes & sitemap |
 | `/contribute/` | The contribution steps, compiled from `CONTRIBUTING.md` at build time |
 | `/legal/…` | Terms of Use, Acceptable Use, Privacy Notice and Third-Party Notices, compiled from `docs/legal/*.md` at build time |
