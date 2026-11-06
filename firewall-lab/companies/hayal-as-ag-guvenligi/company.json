@@ -7,7 +7,7 @@
     "course": "BGT207",
     "github": "yusufiyilmaz"
   },
-  "summary": "Hayal A.Ş. builds education software and runs its own academic campus. Six sites (Ankara HQ, Istanbul, London, a 10,000-student academic branch, a software team and a separate R&D building) each have their own line and firewall (FortiGate, Check Point in R&D for brand diversity), common VLANs (IT, staff, IoT, management), an encrypted VPN to Ankara and a Wazuh SIEM watched by a hybrid SOC.",
+  "summary": "Hayal A.Ş. builds education software and runs its own academic campus. Six sites (Ankara HQ, Istanbul, London, a 10,000-student academic branch, a software team and a separate R&D building) each have their own line and firewall (FortiGate, Check Point in R&D for brand diversity), common VLANs (IT, staff, IoT, management), an encrypted VPN to Ankara and a Wazuh SIEM watched by a hybrid SOC. Public web: only the company web site, in the Ankara DMZ behind Cloudflare WAF, which also gives DDoS protection. The grade and e-learning web application runs on the campus server VLAN and is not published to the internet; staff reach it from outside over VPN. The company has no mobile app and no public API.",
   "branches": [
     {
       "id": "ankara-hq",
@@ -76,7 +76,7 @@
             "product": "FortiGate 200F",
             "vendor": "Fortinet",
             "throughputGbps": 3.0,
-            "reason": "Chosen. Diğer şubelerdeki FortiGate'lerle aynı ekrandan yönetilir. Bütün şubelerin bağlandığı merkez olmaya uygun. 1 Gbps hattın 3 katı hız, büyüme payı var"
+            "reason": "Chosen. Diğer şubelerdeki FortiGate'lerle aynı ekrandan yönetilir. Bütün şubelerin bağlandığı merkez olmaya uygun. 1 Gbps hattın 3 katı hız, büyüme payı var. 2 adet, HA (aktif-pasif): biri bozulursa diğeri birkaç saniyede devralır"
           },
           "alternatives": [
             {
@@ -128,9 +128,9 @@
               "direction": "in",
               "proto": "tcp",
               "port": 443,
-              "from": "any",
+              "from": "cloudflare-waf",
               "to": "vlan40-dmz",
-              "note": "Only the company web site is reachable from the internet, and it sits in the DMZ."
+              "note": "The company web site sits in the DMZ behind Cloudflare WAF. Only Cloudflare addresses reach it, so nobody can go around the WAF."
             },
             {
               "action": "deny",
@@ -150,12 +150,19 @@
               "note": "Home workers connect by VPN with mandatory two-step verification; branches terminate their VPN here."
             },
             {
+              "action": "allow",
+              "direction": "out",
+              "proto": "tcp",
+              "port": "80,443",
+              "from": "vlan10-it,vlan20-employees",
+              "to": "internet",
+              "note": "IT and staff get web access; without this rule the default deny would cut them off. IoT and servers are not in this rule."
+            },
+            {
               "action": "deny",
               "direction": "in",
               "proto": "any",
-              "from": "any",
-              "to": "any",
-              "note": "Default deny: anything not allowed above is blocked and logged to the central SIEM."
+              "note": "Catch-all default deny, always the last rule: whatever no rule above allowed is blocked and logged to the central SIEM."
             }
           ]
         }
@@ -285,12 +292,37 @@
               "note": "IoT devices (VLAN 80) cannot reach the internet or staff PCs."
             },
             {
+              "action": "limit",
+              "direction": "out",
+              "proto": "tcp",
+              "port": "80,443",
+              "from": "vlan50-guest",
+              "to": "internet",
+              "note": "Guests get web access only, 50 Mbps in total, so they cannot fill the office line."
+            },
+            {
+              "action": "allow",
+              "direction": "out",
+              "proto": "tcp",
+              "port": "80,443",
+              "from": "vlan10-it,vlan20-employees",
+              "to": "internet",
+              "note": "IT and staff get web access; without this rule the default deny would cut them off."
+            },
+            {
+              "action": "allow",
+              "direction": "out",
+              "proto": "udp",
+              "port": "500,4500",
+              "from": "firewall",
+              "to": "ankara-hq",
+              "note": "The encrypted VPN tunnel to Ankara: without it the branch cannot reach shared servers and its logs cannot reach the SIEM."
+            },
+            {
               "action": "deny",
               "direction": "in",
               "proto": "any",
-              "from": "any",
-              "to": "any",
-              "note": "Default deny: anything not allowed above is blocked and logged to the central SIEM."
+              "note": "Catch-all default deny, always the last rule: whatever no rule above allowed is blocked and logged to the central SIEM."
             }
           ]
         }
@@ -428,12 +460,28 @@
               "note": "IoT devices cannot reach the internet or staff PCs."
             },
             {
+              "action": "allow",
+              "direction": "out",
+              "proto": "tcp",
+              "port": "80,443",
+              "from": "vlan50-guest",
+              "to": "internet",
+              "note": "Guests get web access only; the deny rule above keeps them away from the company network."
+            },
+            {
+              "action": "allow",
+              "direction": "out",
+              "proto": "tcp",
+              "port": "80,443",
+              "from": "vlan10-it,vlan20-employees",
+              "to": "internet",
+              "note": "IT and staff get web access; without this rule the default deny would cut them off."
+            },
+            {
               "action": "deny",
               "direction": "in",
               "proto": "any",
-              "from": "any",
-              "to": "any",
-              "note": "Default deny: anything not allowed above is blocked and logged to the central SIEM."
+              "note": "Catch-all default deny, always the last rule: whatever no rule above allowed is blocked and logged to the central SIEM."
             }
           ]
         }
@@ -445,7 +493,7 @@
       "role": "campus",
       "location": "Istanbul, Turkey",
       "population": {
-        "staff": 215,
+        "staff": 615,
         "students": 10000
       },
       "network": {
@@ -518,7 +566,7 @@
             "product": "FortiGate 600F",
             "vendor": "Fortinet",
             "throughputGbps": 10.5,
-            "reason": "Chosen. 10 Gbps hattı karşılıyor. Captive portal, kullanıcı başı hız sınırı ve kayıt tutma hazır geliyor. Diğer şubelerle aynı panel"
+            "reason": "Chosen. 10 Gbps hattı karşılıyor. Captive portal, kullanıcı başı hız sınırı ve kayıt tutma hazır geliyor. Diğer şubelerle aynı panel. 2 adet, HA (aktif-pasif): biri bozulursa diğeri birkaç saniyede devralır"
           },
           "alternatives": [
             {
@@ -583,20 +631,20 @@
               "note": "Students can never reach the database directly."
             },
             {
+              "action": "deny",
+              "direction": "out",
+              "proto": "any",
+              "from": "vlan70-student-wifi",
+              "to": "p2p",
+              "note": "Torrent traffic is blocked on the student network. It sits above the limit rule because the first matching rule wins."
+            },
+            {
               "action": "limit",
               "direction": "out",
               "proto": "any",
               "from": "vlan70-student-wifi",
               "to": "internet",
               "note": "Every student is limited to 5 Mbps so a few big downloads cannot fill the campus line."
-            },
-            {
-              "action": "deny",
-              "direction": "out",
-              "proto": "any",
-              "from": "vlan70-student-wifi",
-              "to": "p2p",
-              "note": "Torrent traffic is blocked on the student network."
             },
             {
               "action": "deny",
@@ -615,12 +663,28 @@
               "note": "IoT devices (cameras, turnstiles, printers) have no internet access."
             },
             {
+              "action": "allow",
+              "direction": "out",
+              "proto": "tcp",
+              "port": "80,443",
+              "from": "vlan10-it,vlan20-staff,vlan30-faculty,vlan50-labs",
+              "to": "internet",
+              "note": "IT, staff, faculty and labs get web access; without this rule the default deny would cut them off."
+            },
+            {
+              "action": "allow",
+              "direction": "out",
+              "proto": "udp",
+              "port": "500,4500",
+              "from": "firewall",
+              "to": "ankara-hq",
+              "note": "The encrypted VPN tunnel to Ankara: without it the branch cannot reach shared servers and its logs cannot reach the SIEM."
+            },
+            {
               "action": "deny",
               "direction": "in",
               "proto": "any",
-              "from": "any",
-              "to": "any",
-              "note": "Default deny: anything not allowed above is blocked and logged to the central SIEM."
+              "note": "Catch-all default deny, always the last rule: whatever no rule above allowed is blocked and logged to the central SIEM."
             }
           ]
         }
@@ -751,12 +815,28 @@
               "note": "Test servers and real production servers live in separate VLANs; tests cannot reach real systems."
             },
             {
+              "action": "allow",
+              "direction": "out",
+              "proto": "tcp",
+              "port": "80,443",
+              "from": "vlan10-it,vlan20-developers",
+              "to": "internet",
+              "note": "Web and package downloads for developers. The DLP profile on this rule stops source code being uploaded anywhere except the company GitHub account."
+            },
+            {
+              "action": "allow",
+              "direction": "out",
+              "proto": "udp",
+              "port": "500,4500",
+              "from": "firewall",
+              "to": "ankara-hq",
+              "note": "The encrypted VPN tunnel to Ankara: without it the branch cannot reach shared servers and its logs cannot reach the SIEM."
+            },
+            {
               "action": "deny",
               "direction": "in",
               "proto": "any",
-              "from": "any",
-              "to": "any",
-              "note": "Default deny: anything not allowed above is blocked and logged to the central SIEM."
+              "note": "Catch-all default deny, always the last rule: whatever no rule above allowed is blocked and logged to the central SIEM."
             }
           ]
         }
@@ -880,20 +960,27 @@
             },
             {
               "action": "allow",
-              "direction": "in",
+              "direction": "out",
               "proto": "tcp",
-              "port": "80,443",
-              "from": "internet",
-              "to": "sandbox",
-              "note": "Every downloaded file is tried in a sandbox before it reaches R&D PCs."
+              "port": 443,
+              "from": "vlan10-it,vlan20-researchers",
+              "to": "work-sites-allowlist",
+              "note": "R&D reaches only work-related sites on an allow list, through the web proxy. Every downloaded file is tried in the SandBlast sandbox before it reaches a PC."
+            },
+            {
+              "action": "allow",
+              "direction": "out",
+              "proto": "udp",
+              "port": "500,4500",
+              "from": "firewall",
+              "to": "ankara-hq",
+              "note": "The encrypted VPN tunnel to Ankara: without it the branch cannot reach shared servers and its logs cannot reach the SIEM."
             },
             {
               "action": "deny",
               "direction": "in",
               "proto": "any",
-              "from": "any",
-              "to": "any",
-              "note": "Default deny: anything not allowed above is blocked and logged to the central SIEM."
+              "note": "Catch-all default deny, always the last rule: whatever no rule above allowed is blocked and logged to the central SIEM."
             }
           ]
         }
@@ -905,10 +992,24 @@
     "note": "Branches connect to the Ankara hub by encrypted VPN; home workers use VPN with two-step verification; firewall admin screens are reachable only from the management VLAN."
   },
   "monitoring": {
-    "siem": "Wazuh SIEM in Ankara (any vendor's logs, including the R&D Check Point), Zabbix for line and device health, GLPI ticketing so no incident is forgotten.",
-    "owner": "The NOC job belongs to the Ankara IT team; the SOC (4 L1, 2 L2, 1 L3 and a SOC manager) owns security alerts.",
+    "siem": "Wazuh SIEM in Ankara (any vendor's logs, including the R&D Check Point), Zabbix for line and device health, GLPI ticketing so no incident is forgotten. Log retention: firewall and security logs are kept for 1 year, the last 90 days online; academic internet access logs are kept at least 2 years with a timestamp (Law 5651); London logs hold as little personal data as possible (UK GDPR).",
+    "owner": "The NOC job belongs to the Ankara IT team; the SOC (4 L1, 2 L2, 1 L3 and a SOC manager) owns security alerts. The Ankara IT team owns patching and backups: firmware is checked every 30 days in a maintenance window and within 72 hours for a flaw under active attack, following Fortinet and Check Point advisories; every firewall config is exported to the Ankara backup server each night and after every change, and a restore is tested every 3 months.",
     "alertSink": "SIEM alerts to the SOC by phone, e-mail and message; weekday 08:00-24:00 in-house SOC, nights and weekends an outsourced security firm, on-call person phoned for critical alerts.",
     "appVsSecurity": "NOC watches whether the network works; SOC watches attacks; handling follows the NIST four-phase incident process."
   },
-  "slug": "hayal-as-ag-guvenligi"
+  "slug": "hayal-as-ag-guvenligi",
+  "cveWatch": [
+    {
+      "id": "CVE-2026-24858",
+      "product": "FortiOS (all FortiGate branches)",
+      "status": "mitigated",
+      "note": "Temporary: admin login through FortiCloud SSO stays off, and admin screens open only from VLAN 99. Permanent: FortiOS goes to the fixed version in the Fortinet advisory in the next patch window."
+    },
+    {
+      "id": "CVE-2024-24919",
+      "product": "Check Point Quantum Spark 1800 (R&D)",
+      "status": "patched",
+      "note": "Temporary: no password-only VPN accounts, two-step verification on every login. Permanent: the Check Point hotfix for Quantum Spark is installed before go-live."
+    }
+  ]
 }

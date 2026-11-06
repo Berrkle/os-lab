@@ -18,6 +18,7 @@ Hayali bir şirket kuruyoruz ve bu şirketin tüm şubelerine adım adım güven
 - [Adım 3: Her şube için en iyi 5 güvenlik duvarı](#adım-3-her-şube-için-en-iyi-5-güvenlik-duvarı)
 - [Adım 4: Adım adım kurulum](#adım-4-adım-adım-kurulum)
 - [Adım 5: İzleme (monitoring)](#adım-5-i̇zleme-monitoring)
+- [Kural setleri ve işletme](#kural-setleri-ve-işletme)
 - [Durum](#durum)
 
 Terimlerin açıklamaları için: [SOZLUK.md](SOZLUK.md)
@@ -282,6 +283,60 @@ Ayrıntılar [IZLEME.md](IZLEME.md) dosyasında. Özetle:
 
 Her şubede neyi, neden ve nasıl koruduğumuzun toplu hâli: [RISKLER.md](RISKLER.md)
 
+## Kural setleri ve işletme
+
+Hocanın eksik listesinden sonra tasarımı bu başlıklarda tamamladık.
+
+### Kurallar nasıl okunur?
+
+Güvenlik duvarı kuralları yukarıdan aşağı okur, **eşleşen ilk kural** uygulanır. Her şubede sıra aynı:
+
+1. **Temel servisler:** DHCP, DNS ve NTP açılır. Açılmazsa cihazlar IP alamaz, ağ durur.
+2. **Yönetim:** Ayar ekranı sadece yönetim bölümünden (VLAN 99) açılır.
+3. **Yasaklar:** Misafir şirket ağına, öğrenci veritabanına, test sunucusu gerçek sistemlere giremez.
+4. **İzinler:** Çalışanların internet çıkışı ve Ankara'ya VPN. Son kural her şeyi kapattığı için bu izinler tek tek yazılır.
+5. **Son kural (default deny):** Yukarıda izin verilmeyen her şey engellenir ve kaydedilir.
+
+**Akademik şubede sıra neden değişti?** Torrent yasağı, öğrenci hız sınırının altındaydı. İlk eşleşen kural uygulandığı için torrent hız sınırı kuralına takılıp geçiyordu. Yasağı üste aldık.
+
+**Ar-Ge'de ne değişti?** İnternetten kum havuzuna izin veren kural yanlıştı, çünkü dışarıdan içeri kapı açıyordu. Yerine araştırmacıların sadece işle ilgili sitelere çıktığı kural geldi. İndirilen dosyalar yine kum havuzunda denenir.
+
+### Web siteleri ve uygulamalar
+
+| Ne? | Nerede? | Nasıl korunuyor? |
+|-----|---------|------------------|
+| Şirket web sitesi | Ankara DMZ (VLAN 40) | Önünde Cloudflare WAF var. DMZ'ye sadece Cloudflare adresleri ulaşır |
+| Not ve uzaktan eğitim sistemi | Akademik sunucu bölümü (VLAN 60) | İnternete açık değil. Kampüsten web ile, personel dışarıdan VPN ile girer |
+| Mobil uygulama ve açık API | Yok | |
+
+**WAF nedir?** Güvenlik duvarı kapıdaki adresi ve portu kontrol eder. WAF ise web sitesine gelen isteğin içine bakar, SQL injection gibi saldırıları durdurur. Cloudflare ayrıca DDoS saldırılarını da karşılar.
+
+### Yedekli çalışma
+
+Ankara ve Akademik şubede iki cihaz vardır (HA, aktif-pasif). Biri bozulursa diğeri birkaç saniyede devralır.
+
+### Kayıt saklama
+
+| Kayıt türü | Süre | Neden? |
+|------------|------|--------|
+| Akademik şube internet erişim kayıtları | En az 2 yıl, zaman damgalı | 5651 sayılı kanun |
+| Güvenlik duvarı ve güvenlik olayları | 1 yıl (son 90 gün hızlı erişilebilir) | Olay araştırması ve denetim |
+| Londra kayıtları | Gerektiği kadar, en az kişisel veriyle | UK GDPR |
+
+### Yedek ve güncelleme
+
+Bu işlerin sorumlusu Ankara BT ekibidir.
+
+- **Ayar yedeği:** Her gece ve her değişiklikten sonra cihaz ayarları Ankara'daki yedek sunucuya alınır. 3 ayda bir yedekten geri yükleme denenir.
+- **Güncelleme:** 30 günde bir firmware kontrol edilir, bakım saatinde yüklenir. Aktif saldırı altındaki bir açık varsa 72 saat içinde yüklenir.
+
+### Takip edilen açıklar (CVE)
+
+| CVE | Etkilenen | Geçici önlem | Kalıcı çözüm |
+|-----|-----------|--------------|--------------|
+| CVE-2026-24858 | FortiGate şubeleri | FortiCloud ile yönetici girişi kapalı, ayar ekranı sadece VLAN 99'dan açılır | Bir sonraki bakımda Fortinet'in düzelttiği sürüme geçilir |
+| CVE-2024-24919 | Ar-Ge Check Point | Sadece şifreyle VPN hesabı yok, her girişte iki adımlı doğrulama var | Check Point yaması kurulumdan önce yüklenir |
+
 ## Durum
 
 1. [x] Şirket yapısı ve şube klasörleri
@@ -289,7 +344,7 @@ Her şubede neyi, neden ve nasıl koruduğumuzun toplu hâli: [RISKLER.md](RISKL
 3. [x] Her şube için en iyi 5 güvenlik duvarı
 4. [x] Adım adım güvenlik duvarı kurulumu
 5. [x] İzleme (monitoring)
-6. [ ] Kural setleri (sonraki aşama)
+6. [x] Kural setleri
 
 
 ---
@@ -370,7 +425,7 @@ Saldırganın ilk denediği şey, bekçinin kendisini ele geçirmektir. Bu yüzd
 | **Uygulama kontrolü** | Torrent gibi istenmeyen uygulamaları tanır ve engeller |
 
 ### 8. Kurallar
-Temel prensip: **Varsayılan olarak her şey yasak**, sadece gereken trafiğe tek tek izin verilir. Kural setleri sonraki aşamada yazılacak.
+Temel prensip: **Varsayılan olarak her şey yasak**, sadece gereken trafiğe tek tek izin verilir. Her şubenin kuralları `company.json` dosyasında, mantığı [Kural setleri ve işletme](#kural-setleri-ve-işletme) bölümünde.
 
 ### 9. Ankara'ya şifreli bağlantı (VPN)
 Her şube, Ankara'daki sunuculara internet üzerinden **şifreli bir tünelle** (VPN) bağlanır. Arada biri dinlese bile bir şey anlayamaz.
