@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ChatsCircleIcon, ChalkboardTeacherIcon, WrenchIcon } from "@phosphor-icons/react";
+import { GapModal } from "./gap-modal";
 import { auditCompany, type Finding } from "../firewall/audit";
 import type { Company } from "../firewall/types";
 
@@ -35,7 +36,7 @@ function Ring({ score }: { score: number }) {
   );
 }
 
-function Card({ f, i, hot, setHot }: { f: Finding; i: number; hot: boolean; setHot: (v: number | null) => void }) {
+function Card({ f, i, hot, setHot, onImpact }: { f: Finding; i: number; hot: boolean; setHot: (v: number | null) => void; onImpact: () => void }) {
   const [open, setOpen] = useState(false);
   const Icon = f.source === "asked" ? ChatsCircleIcon : ChalkboardTeacherIcon;
   return (
@@ -65,6 +66,7 @@ function Card({ f, i, hot, setHot }: { f: Finding; i: number; hot: boolean; setH
         </ul>
       )}
       <div className="fwg-src"><Icon size={13} weight="duotone" /> {f.source === "asked" ? "Asked in the group" : "Taught in class"} · {f.ref}</div>
+      <button type="button" className="fwg-impact" onClick={onImpact}>Why it hurts →</button>
       <button type="button" className="fwg-more" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
         {open ? "Hide details" : f.instances && f.instances.length > 3 ? `All ${f.instances.length} · how to fix` : "How to fix"}
       </button>
@@ -85,6 +87,10 @@ export function GapsTab({ company }: { company: Company }) {
   const audit = auditCompany(company);
   const [hot, setHot] = useState<number | null>(null);
   const [all, setAll] = useState(false);
+  const [modal, setModal] = useState<Finding | null>(() => {
+    const m = typeof location !== "undefined" ? /^#gap-(\w+)$/.exec(location.hash) : null;
+    return m ? audit.findings.find((f) => f.id === m[1]) ?? null : null;
+  });
   const shown = all ? audit.findings : audit.findings.slice(0, 10);
   const asked = audit.findings.filter((f) => f.source === "asked").length;
   return (
@@ -134,13 +140,14 @@ export function GapsTab({ company }: { company: Company }) {
       )}
 
       <div className="fwg-grid">
-        {shown.map((f, i) => <Card key={f.id} f={f} i={i} hot={hot === i} setHot={setHot} />)}
+        {shown.map((f, i) => <Card key={f.id} f={f} i={i} hot={hot === i} setHot={setHot} onImpact={() => setModal(f)} />)}
       </div>
       {audit.findings.length > 10 && (
         <button type="button" className="fwg-all" onClick={() => setAll((v) => !v)}>
           {all ? "Show the top 10" : `Show all ${audit.total} gaps`}
         </button>
       )}
+      {modal ? <GapModal f={modal} onClose={() => setModal(null)} /> : null}
     </section>
   );
 }
