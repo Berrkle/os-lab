@@ -1,33 +1,35 @@
 {
   "generatedBy": "firewall-lab/scripts/catalog.py",
   "summary": {
-    "companies": 12,
-    "branches": 48,
-    "firewalls": 52,
-    "rules": 538,
+    "companies": 13,
+    "branches": 54,
+    "firewalls": 61,
+    "rules": 834,
     "priceUsd": {
       "min": 700,
       "max": 205357,
-      "total": 439026
+      "total": 663026
     },
     "chosenByVendor": {
-      "Fortinet": 35,
+      "Fortinet": 41,
+      "Palo Alto Networks": 5,
       "Netgate": 5,
       "Netfilter project": 5,
-      "Palo Alto Networks": 3,
       "Cloudflare": 2,
       "WatchGuard": 1,
-      "Check Point": 1
+      "Check Point": 1,
+      "Deciso (açık kaynak)": 1
     },
     "chosenByProduct": {
       "Fortinet FortiGate 60F": 6,
+      "Fortinet FortiGate 200F": 5,
       "Netfilter project nftables on Kali Linux (central router/firewall)": 5,
+      "Fortinet FortiGate 100F": 4,
       "Netgate pfSense CE 2.9": 4,
-      "Fortinet FortiGate 100F": 3,
-      "Fortinet FortiGate 200F": 3,
-      "Fortinet FortiGate 600F": 2,
+      "Fortinet FortiGate 600F": 3,
       "Fortinet FortiGate 200F (HA)": 2,
       "Fortinet Fortinet FortiGate 200F": 2,
+      "Palo Alto Networks Palo Alto PA-5420": 2,
       "Palo Alto Networks PA-3400 series (HA)": 1,
       "Fortinet FortiGate 200F class (ISFW mode)": 1,
       "Cloudflare Cloudflare WAF": 1,
@@ -52,15 +54,18 @@
       "Fortinet Fortinet FortiGate 400F": 1,
       "Fortinet Fortinet FortiGate 3500F": 1,
       "Netgate pfSense Plus (Netgate 4200)": 1,
-      "Fortinet FortiGate 80F": 1
+      "Fortinet FortiGate 80F": 1,
+      "Fortinet FortiGate-VM08 (AWS)": 1,
+      "Fortinet FortiGate 200F (ISFW)": 1,
+      "Deciso (açık kaynak) OPNsense (Deciso DEC3800)": 1
     },
     "vendorsConsidered": {
-      "Fortinet": 57,
-      "Palo Alto Networks": 39,
-      "Check Point": 34,
-      "Sophos": 32,
-      "Cisco": 25,
-      "Netgate": 22,
+      "Fortinet": 66,
+      "Palo Alto Networks": 47,
+      "Check Point": 42,
+      "Sophos": 36,
+      "Cisco": 33,
+      "Netgate": 23,
       "Deciso": 18,
       "Netfilter project": 5,
       "WatchGuard": 4,
@@ -71,13 +76,18 @@
       "Ubiquiti": 2,
       "Cloudflare": 2,
       "F5": 2,
+      "Juniper Networks": 2,
+      "Deciso (açık kaynak)": 2,
       "Netgate / Deciso": 1,
       "Amazon": 1,
       "Akamai": 1,
       "Imperva": 1,
       "OWASP / açık kaynak": 1,
       "Imperva (Thales)": 1,
-      "Forcepoint": 1
+      "Forcepoint": 1,
+      "Amazon Web Services": 1,
+      "IPFire (açık kaynak)": 1,
+      "Protectli + Linux": 1
     }
   },
   "firewalls": [
@@ -2626,6 +2636,447 @@
           "vendor": "Sophos",
           "throughputGbps": null,
           "priceUsd": null
+        }
+      ]
+    },
+    {
+      "company": "Şirket Ağ Güvenliği — Policy-as-Code Çok Şubeli Tasarım",
+      "companySlug": "sirket-ag-guvenligi-policy-as-code",
+      "sector": "Education",
+      "author": "Mahmut Çirka",
+      "branch": "Ankara Ofisi",
+      "branchId": "ankara-ofisi",
+      "branchRole": "headquarters",
+      "location": "Ankara, TR",
+      "segment": "perimeter",
+      "product": "FortiGate 600F",
+      "vendor": "Fortinet",
+      "throughputGbps": 10.5,
+      "priceUsd": 12000,
+      "ruleCount": 55,
+      "actions": {
+        "allow": 45,
+        "deny": 9,
+        "reject": 0,
+        "limit": 1
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "Palo Alto PA-3410",
+          "vendor": "Palo Alto Networks",
+          "throughputGbps": 5.0,
+          "priceUsd": 25000
+        },
+        {
+          "product": "Check Point Quantum 9300",
+          "vendor": "Check Point",
+          "throughputGbps": 6.0,
+          "priceUsd": 30000
+        },
+        {
+          "product": "Cisco Secure Firewall 3120",
+          "vendor": "Cisco",
+          "throughputGbps": 7.0,
+          "priceUsd": 30000
+        },
+        {
+          "product": "Sophos XGS 6500",
+          "vendor": "Sophos",
+          "throughputGbps": 6.0,
+          "priceUsd": 20000
+        }
+      ]
+    },
+    {
+      "company": "Şirket Ağ Güvenliği — Policy-as-Code Çok Şubeli Tasarım",
+      "companySlug": "sirket-ag-guvenligi-policy-as-code",
+      "sector": "Education",
+      "author": "Mahmut Çirka",
+      "branch": "İstanbul Ofisi",
+      "branchId": "istanbul-ofisi",
+      "branchRole": "branch",
+      "location": "İstanbul, TR",
+      "segment": "perimeter",
+      "product": "FortiGate 200F",
+      "vendor": "Fortinet",
+      "throughputGbps": 3.0,
+      "priceUsd": 5500,
+      "ruleCount": 42,
+      "actions": {
+        "allow": 31,
+        "deny": 11,
+        "reject": 0,
+        "limit": 0
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "Palo Alto PA-450",
+          "vendor": "Palo Alto Networks",
+          "throughputGbps": 1.7,
+          "priceUsd": 4500
+        },
+        {
+          "product": "Check Point Quantum 6200",
+          "vendor": "Check Point",
+          "throughputGbps": 1.5,
+          "priceUsd": 9000
+        },
+        {
+          "product": "Cisco Secure Firewall 1150",
+          "vendor": "Cisco",
+          "throughputGbps": 3.0,
+          "priceUsd": 6000
+        },
+        {
+          "product": "Sophos XGS 4300",
+          "vendor": "Sophos",
+          "throughputGbps": 3.0,
+          "priceUsd": 6500
+        }
+      ]
+    },
+    {
+      "company": "Şirket Ağ Güvenliği — Policy-as-Code Çok Şubeli Tasarım",
+      "companySlug": "sirket-ag-guvenligi-policy-as-code",
+      "sector": "Education",
+      "author": "Mahmut Çirka",
+      "branch": "Londra Ofisi",
+      "branchId": "londra-ofisi",
+      "branchRole": "branch",
+      "location": "London, UK",
+      "segment": "perimeter",
+      "product": "FortiGate 100F",
+      "vendor": "Fortinet",
+      "throughputGbps": 1.0,
+      "priceUsd": 3500,
+      "ruleCount": 36,
+      "actions": {
+        "allow": 26,
+        "deny": 10,
+        "reject": 0,
+        "limit": 0
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "Palo Alto PA-440",
+          "vendor": "Palo Alto Networks",
+          "throughputGbps": 1.0,
+          "priceUsd": 2000
+        },
+        {
+          "product": "Cisco Meraki MX85",
+          "vendor": "Cisco",
+          "throughputGbps": 0.75,
+          "priceUsd": 2500
+        },
+        {
+          "product": "Check Point Quantum Spark 1900",
+          "vendor": "Check Point",
+          "throughputGbps": 1.0,
+          "priceUsd": 3500
+        },
+        {
+          "product": "Sophos XGS 2300",
+          "vendor": "Sophos",
+          "throughputGbps": 1.0,
+          "priceUsd": 3000
+        }
+      ]
+    },
+    {
+      "company": "Şirket Ağ Güvenliği — Policy-as-Code Çok Şubeli Tasarım",
+      "companySlug": "sirket-ag-guvenligi-policy-as-code",
+      "sector": "Education",
+      "author": "Mahmut Çirka",
+      "branch": "Akademik Şube",
+      "branchId": "akademik-sube",
+      "branchRole": "campus",
+      "location": "Ankara, TR",
+      "segment": "perimeter",
+      "product": "Palo Alto PA-5420",
+      "vendor": "Palo Alto Networks",
+      "throughputGbps": 25,
+      "priceUsd": 90000,
+      "ruleCount": 41,
+      "actions": {
+        "allow": 34,
+        "deny": 5,
+        "reject": 0,
+        "limit": 2
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "Cisco Secure Firewall 4215",
+          "vendor": "Cisco",
+          "throughputGbps": 30,
+          "priceUsd": 110000
+        },
+        {
+          "product": "Juniper SRX4600",
+          "vendor": "Juniper Networks",
+          "throughputGbps": 20,
+          "priceUsd": 70000
+        },
+        {
+          "product": "Check Point Quantum 16200",
+          "vendor": "Check Point",
+          "throughputGbps": 11,
+          "priceUsd": 80000
+        },
+        {
+          "product": "FortiGate 1800F",
+          "vendor": "Fortinet",
+          "throughputGbps": 9.1,
+          "priceUsd": 45000
+        }
+      ]
+    },
+    {
+      "company": "Şirket Ağ Güvenliği — Policy-as-Code Çok Şubeli Tasarım",
+      "companySlug": "sirket-ag-guvenligi-policy-as-code",
+      "sector": "Education",
+      "author": "Mahmut Çirka",
+      "branch": "Akademik Şube",
+      "branchId": "akademik-sube",
+      "branchRole": "campus",
+      "location": "Ankara, TR",
+      "segment": "students",
+      "product": "Palo Alto PA-5420",
+      "vendor": "Palo Alto Networks",
+      "throughputGbps": 25,
+      "priceUsd": 90000,
+      "ruleCount": 15,
+      "actions": {
+        "allow": 9,
+        "deny": 6,
+        "reject": 0,
+        "limit": 0
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "Cisco Secure Firewall 4215",
+          "vendor": "Cisco",
+          "throughputGbps": 30,
+          "priceUsd": 110000
+        },
+        {
+          "product": "Juniper SRX4600",
+          "vendor": "Juniper Networks",
+          "throughputGbps": 20,
+          "priceUsd": 70000
+        },
+        {
+          "product": "Check Point Quantum 16200",
+          "vendor": "Check Point",
+          "throughputGbps": 11,
+          "priceUsd": 80000
+        },
+        {
+          "product": "FortiGate 1800F",
+          "vendor": "Fortinet",
+          "throughputGbps": 9.1,
+          "priceUsd": 45000
+        }
+      ]
+    },
+    {
+      "company": "Şirket Ağ Güvenliği — Policy-as-Code Çok Şubeli Tasarım",
+      "companySlug": "sirket-ag-guvenligi-policy-as-code",
+      "sector": "Education",
+      "author": "Mahmut Çirka",
+      "branch": "Yazılım Ekibi",
+      "branchId": "yazilim-ekibi",
+      "branchRole": "branch",
+      "location": "İstanbul, TR",
+      "segment": "perimeter",
+      "product": "FortiGate 200F",
+      "vendor": "Fortinet",
+      "throughputGbps": 3.0,
+      "priceUsd": 5500,
+      "ruleCount": 50,
+      "actions": {
+        "allow": 39,
+        "deny": 11,
+        "reject": 0,
+        "limit": 0
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "Palo Alto PA-460",
+          "vendor": "Palo Alto Networks",
+          "throughputGbps": 2.5,
+          "priceUsd": 6000
+        },
+        {
+          "product": "Check Point Quantum 6400",
+          "vendor": "Check Point",
+          "throughputGbps": 2.0,
+          "priceUsd": 12000
+        },
+        {
+          "product": "Cisco Secure Firewall 1150",
+          "vendor": "Cisco",
+          "throughputGbps": 3.0,
+          "priceUsd": 6000
+        },
+        {
+          "product": "Sophos XGS 3300",
+          "vendor": "Sophos",
+          "throughputGbps": 1.5,
+          "priceUsd": 5000
+        }
+      ]
+    },
+    {
+      "company": "Şirket Ağ Güvenliği — Policy-as-Code Çok Şubeli Tasarım",
+      "companySlug": "sirket-ag-guvenligi-policy-as-code",
+      "sector": "Education",
+      "author": "Mahmut Çirka",
+      "branch": "Yazılım Ekibi",
+      "branchId": "yazilim-ekibi",
+      "branchRole": "branch",
+      "location": "İstanbul, TR",
+      "segment": "cloud-prod",
+      "product": "FortiGate-VM08 (AWS)",
+      "vendor": "Fortinet",
+      "throughputGbps": 4.0,
+      "priceUsd": 9000,
+      "ruleCount": 13,
+      "actions": {
+        "allow": 8,
+        "deny": 4,
+        "reject": 0,
+        "limit": 1
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "Palo Alto VM-Series (VM-300)",
+          "vendor": "Palo Alto Networks",
+          "throughputGbps": 2.0,
+          "priceUsd": 15000
+        },
+        {
+          "product": "AWS Network Firewall",
+          "vendor": "Amazon Web Services",
+          "throughputGbps": 10,
+          "priceUsd": 3500
+        },
+        {
+          "product": "Check Point CloudGuard Network Security",
+          "vendor": "Check Point",
+          "throughputGbps": 3.0,
+          "priceUsd": 12000
+        },
+        {
+          "product": "Cisco Secure Firewall Threat Defense Virtual",
+          "vendor": "Cisco",
+          "throughputGbps": 3.0,
+          "priceUsd": 10000
+        }
+      ]
+    },
+    {
+      "company": "Şirket Ağ Güvenliği — Policy-as-Code Çok Şubeli Tasarım",
+      "companySlug": "sirket-ag-guvenligi-policy-as-code",
+      "sector": "Education",
+      "author": "Mahmut Çirka",
+      "branch": "Ar-Ge Ekibi",
+      "branchId": "arge-ekibi",
+      "branchRole": "branch",
+      "location": "Ankara, TR",
+      "segment": "rnd",
+      "product": "FortiGate 200F (ISFW)",
+      "vendor": "Fortinet",
+      "throughputGbps": 3.0,
+      "priceUsd": 5500,
+      "ruleCount": 34,
+      "actions": {
+        "allow": 23,
+        "deny": 11,
+        "reject": 0,
+        "limit": 0
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "Palo Alto PA-460",
+          "vendor": "Palo Alto Networks",
+          "throughputGbps": 2.5,
+          "priceUsd": 6000
+        },
+        {
+          "product": "Check Point Quantum 6400",
+          "vendor": "Check Point",
+          "throughputGbps": 2.0,
+          "priceUsd": 12000
+        },
+        {
+          "product": "Cisco Secure Firewall 1150",
+          "vendor": "Cisco",
+          "throughputGbps": 3.0,
+          "priceUsd": 6000
+        },
+        {
+          "product": "OPNsense (Deciso DEC3800)",
+          "vendor": "Deciso (açık kaynak)",
+          "throughputGbps": 1.5,
+          "priceUsd": 3000
+        }
+      ]
+    },
+    {
+      "company": "Şirket Ağ Güvenliği — Policy-as-Code Çok Şubeli Tasarım",
+      "companySlug": "sirket-ag-guvenligi-policy-as-code",
+      "sector": "Education",
+      "author": "Mahmut Çirka",
+      "branch": "Ar-Ge Ekibi",
+      "branchId": "arge-ekibi",
+      "branchRole": "branch",
+      "location": "Ankara, TR",
+      "segment": "rnd-isolated-lab",
+      "product": "OPNsense (Deciso DEC3800)",
+      "vendor": "Deciso (açık kaynak)",
+      "throughputGbps": 1.5,
+      "priceUsd": 3000,
+      "ruleCount": 10,
+      "actions": {
+        "allow": 7,
+        "deny": 3,
+        "reject": 0,
+        "limit": 0
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "pfSense Plus (Netgate 6100)",
+          "vendor": "Netgate",
+          "throughputGbps": 1.0,
+          "priceUsd": 800
+        },
+        {
+          "product": "FortiGate 40F",
+          "vendor": "Fortinet",
+          "throughputGbps": 0.6,
+          "priceUsd": 500
+        },
+        {
+          "product": "IPFire (mini cihaz)",
+          "vendor": "IPFire (açık kaynak)",
+          "throughputGbps": 0.5,
+          "priceUsd": 600
+        },
+        {
+          "product": "Linux nftables (Protectli VP2420)",
+          "vendor": "Protectli + Linux",
+          "throughputGbps": 1.0,
+          "priceUsd": 400
         }
       ]
     }
