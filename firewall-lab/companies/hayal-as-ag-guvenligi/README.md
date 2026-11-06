@@ -328,13 +328,13 @@ Ankara ve Akademik şubede iki cihaz vardır (HA, aktif-pasif). Biri bozulursa d
 Bu işlerin sorumlusu Ankara BT ekibidir.
 
 - **Ayar yedeği:** Her gece ve her değişiklikten sonra cihaz ayarları Ankara'daki yedek sunucuya alınır. 3 ayda bir yedekten geri yükleme denenir.
-- **Güncelleme:** 30 günde bir firmware kontrol edilir, bakım saatinde yüklenir. Aktif saldırı altındaki bir açık varsa 72 saat içinde yüklenir.
+- **Güncelleme:** Fortinet ve Check Point duyuruları otomatik takip edilir, güvenlik güncellemesi çıkar çıkmaz yüklenir. Ayrıca 30 günde bir bütün cihazların firmware'i kontrol edilir.
 
 ### Takip edilen açıklar (CVE)
 
 | CVE | Etkilenen | Geçici önlem | Kalıcı çözüm |
 |-----|-----------|--------------|--------------|
-| CVE-2026-24858 | FortiGate şubeleri | FortiCloud ile yönetici girişi kapalı, ayar ekranı sadece VLAN 99'dan açılır | Bir sonraki bakımda Fortinet'in düzelttiği sürüme geçilir |
+| CVE-2026-24858 | FortiGate şubeleri | FortiCloud ile yönetici girişi kapalı, ayar ekranı sadece VLAN 99'dan açılır | Fortinet'in düzelttiği sürüm çıkar çıkmaz yüklenir |
 | CVE-2024-24919 | Ar-Ge Check Point | Sadece şifreyle VPN hesabı yok, her girişte iki adımlı doğrulama var | Check Point yaması kurulumdan önce yüklenir |
 
 ### Fiyatlar

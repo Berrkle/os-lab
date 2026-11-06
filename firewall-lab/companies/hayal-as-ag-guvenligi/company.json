@@ -1023,7 +1023,7 @@
   },
   "monitoring": {
     "siem": "Wazuh SIEM in Ankara (any vendor's logs, including the R&D Check Point), Zabbix for line and device health, GLPI ticketing so no incident is forgotten. Log retention: firewall and security logs are kept for 1 year, the last 90 days online; academic internet access logs are kept at least 2 years with a timestamp (Law 5651); London logs hold as little personal data as possible (UK GDPR).",
-    "owner": "The NOC job belongs to the Ankara IT team; the SOC (4 L1, 2 L2, 1 L3 and a SOC manager) owns security alerts. The Ankara IT team owns patching and backups: firmware is checked every 30 days in a maintenance window and within 72 hours for a flaw under active attack, following Fortinet and Check Point advisories; every firewall config is exported to the Ankara backup server each night and after every change, and a restore is tested every 3 months.",
+    "owner": "The NOC job belongs to the Ankara IT team; the SOC (4 L1, 2 L2, 1 L3 and a SOC manager) owns security alerts. The Ankara IT team owns patching and backups: Fortinet and Check Point update notices are followed automatically and a security update is installed as soon as it is released; on top of that, the firmware of every device is checked every 30 days; every firewall config is exported to the Ankara backup server each night and after every change, and a restore is tested every 3 months.",
     "alertSink": "SIEM alerts to the SOC by phone, e-mail and message; weekday 08:00-24:00 in-house SOC, nights and weekends an outsourced security firm, on-call person phoned for critical alerts.",
     "appVsSecurity": "NOC watches whether the network works; SOC watches attacks; handling follows the NIST four-phase incident process."
   },
@@ -1032,8 +1032,8 @@
     {
       "id": "CVE-2026-24858",
       "product": "FortiOS (all FortiGate branches)",
-      "status": "mitigated",
-      "note": "Temporary: admin login through FortiCloud SSO stays off, and admin screens open only from VLAN 99. Permanent: FortiOS goes to the fixed version in the Fortinet advisory in the next patch window."
+      "status": "patched",
+      "note": "Temporary: admin login through FortiCloud SSO stays off, and admin screens open only from VLAN 99. Permanent: FortiOS is updated to the fixed version in the Fortinet advisory as soon as it is released."
     },
     {
       "id": "CVE-2024-24919",
