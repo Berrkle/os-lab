@@ -46,9 +46,24 @@ untracked `.env` or VM disk cannot ship. `--no-build` stages the committed `dash
 
 `app/scripts/release-mac.sh` builds a universal DMG, signs it (Developer ID), notarizes the app and the DMG, staples, verifies with `codesign`/`spctl`/`stapler`, and with `--publish` uploads it to the GitHub release `app-v<version>` with a SHA-256 file. Without `--publish` it uploads nothing; `--no-notarize` signs only. Credentials come from the environment, the git-ignored `secrets/` folder or the login keychain, never from the repo (`secrets/README.md`); the script refuses to run if a key or secrets file is tracked.
 
+## Release (Windows installers, Debian package)
+
+Run these on the machine that matches the platform; all three publish into the same GitHub release
+`app-v<version>` (whichever runs first creates it), each asset with a `.sha256` file.
+
+- `app\scripts\release-win.ps1 [-Publish] [-NoSign]` (PowerShell on Windows) builds the NSIS setup `.exe` and the WiX `.msi`
+  as `os-lab_<v>_windows_x64-setup.exe` / `.msi`. Authenticode signing is optional: it is used when a certificate
+  thumbprint or `.pfx` is configured (`secrets/README.md`), otherwise the installers are unsigned and SmartScreen warns.
+  `-Publish` uses `gh`, or the credential git already stores for pushes.
+- `app/scripts/release-deb.sh [--publish] [--install-deps]` (Debian/Ubuntu) builds `os-lab_<v>_linux_<arch>.deb`, checks that
+  it depends on `python3`, bundles the runtime and contains no secret-looking file. Nothing to sign.
+
+Like the macOS script, both refuse to run if anything under `secrets/` (except its README) or a key file is tracked.
+
 ## Not done yet
 
-- No auto-update (needs a signing key), code signing or notarization.
+- No auto-update (needs a signing key).
+- `release-win.ps1` and `release-deb.sh` have not been run yet (written on macOS; the .deb and Windows installers are untested).
 - Only built and run on macOS (aarch64); the Windows and Linux paths (`py -3`, `taskkill`, the
   supervisor's `ctypes` parent check) compile-time-gated but untested.
 - Phones are out of scope: labs need a desktop host.

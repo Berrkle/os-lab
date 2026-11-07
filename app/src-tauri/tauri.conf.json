@@ -29,6 +29,7 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "macOS": { "minimumSystemVersion": "12.0" }
+    "macOS": { "minimumSystemVersion": "12.0" },
+    "linux": { "deb": { "depends": ["python3 (>= 3.9)"] } }
   }
 }

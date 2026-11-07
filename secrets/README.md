@@ -1,7 +1,7 @@
 # secrets
 
 Release credentials live here **on the build machine only**. Everything in this folder except this
-README is git-ignored, and `app/scripts/release-mac.sh` refuses to run if anything else in it is tracked.
+README is git-ignored, and `release-mac.sh`, `release-win.ps1` and `release-deb.sh` refuse to run if anything else in it is tracked.
 
 ```text
 secrets/cupertino/
@@ -13,6 +13,17 @@ secrets/cupertino/
     developer-id-application.p12
     developer-id-application.p12.password
 ```
+
+```text
+secrets/windows/           # only for the optional Authenticode signing in release-win.ps1
+  thumbprint.txt           # SHA-1 thumbprint of a certificate already in the user's store (or a hardware token)
+  os-lab.pfx               # or the certificate with its private key...
+  os-lab.pfx.password      # ...and its password (imported into the user's store at build time)
+  timestamp-url.txt        # e.g. http://timestamp.digicert.com (that is also the default)
+```
+
+The Debian package is unsigned and needs nothing from here. Windows variables: `OSLAB_WIN_CERT_THUMBPRINT`,
+`OSLAB_WIN_TIMESTAMP_URL`, `OSLAB_SECRETS_WIN_DIR` (another folder laid out like `secrets/windows`).
 
 Resolution order for each value: environment variable → this folder → a sibling
 `../qLar/secrets` checkout (read-only, never copied) → the login keychain (signing identity only).
