@@ -58,6 +58,8 @@ say "version $VERSION, tag $TAG, arch $ARCH"
 cd "$APP_DIR"
 say "installing build tools"
 npm ci --no-audit --no-fund >/dev/null
+say "installing dashboard build tools"
+npm ci --no-audit --no-fund --prefix "$APP_DIR/../dashboard" >/dev/null
 say "staging the runtime and dashboard"
 node scripts/stage-runtime.mjs
 say "building the .deb"

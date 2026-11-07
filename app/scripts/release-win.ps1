@@ -82,6 +82,8 @@ else { Say 'Authenticode: not configured, the installers will be unsigned (Smart
 Set-Location $AppDir
 Say 'installing build tools'
 Run 'npm' @('ci', '--no-audit', '--no-fund')
+Say 'installing dashboard build tools'
+Run 'npm' @('ci', '--no-audit', '--no-fund', '--prefix', (Join-Path $Repo 'dashboard'))
 Say 'staging the runtime and dashboard'
 Run 'node' @('scripts/stage-runtime.mjs')
 
