@@ -35,6 +35,8 @@ import { AppSidebar, SidebarBadge, useSidebarCollapsed, type SidebarGroup } from
 import { Spotlight, type SpotlightCommand, type SpotlightMeta, type SpotlightRecord } from "./spotlight";
 import { toggleMode, useThemeMode } from "./theme";
 import { androidLogsStore, healthStore, hostStore, jobsStore, type LabId, type LabStatus } from "../lib/api";
+import { copy, firewallPath, type FirewallLocale } from "../firewall/locale";
+import { localeFromPath, localePath } from "../i18n/paths";
 
 export const REPO_URL = "https://github.com/keyvanarasteh/os-lab";
 
@@ -48,20 +50,25 @@ export const LAB_ICON: Record<LabId, (size?: number) => ReactNode> = {
 
 /** Where a section id leads. Pages are static files, so every section is a plain href. */
 export function sectionHref(id: string): string {
-  if (id === "host") return "/";
-  if (id === "jobs") return "/jobs/";
+  const localized = (path: string) => localePath(path, typeof window === "undefined" ? "en" : localeFromPath(window.location.pathname));
+  if (id === "host") return localized("/");
+  if (id === "jobs") return localized("/jobs/");
   if (id === "repo") return REPO_URL;
   if (id === "health") return "/api/health";
-  if (id === "legal") return "/legal/";
-  if (id === "contribute") return "/contribute/";
-  if (id === "firewall") return "/firewall/";
-  if (id.startsWith("legal-")) return `/legal/${id.slice(6)}/`;
-  if (id === "android-overview") return "/android/";
-  if (id.startsWith("android-")) return `/android/${id.slice(8)}/`;
-  if (id.startsWith("lab-")) return `/labs/${id.slice(4)}/`;
-  return "/";
+  if (id === "legal") return localized("/legal/");
+  if (id === "contribute") return localized("/contribute/");
+  if (id === "content") return localized("/content/");
+  if (id === "firewall") {
+    const locale = typeof window === "undefined" ? "en" : localeFromPath(window.location.pathname);
+    return firewallPath(locale);
+  }
+  if (id.startsWith("legal-")) return localized(`/legal/${id.slice(6)}/`);
+  if (id === "android-overview") return localized("/android/");
+  if (id.startsWith("android-")) return localized(`/android/${id.slice(8)}/`);
+  if (id.startsWith("lab-")) return localized(`/labs/${id.slice(4)}/`);
+  return localized("/");
 }
-export const labHref = (lab: LabId) => `/labs/${lab}/`;
+export const labHref = (lab: LabId) => localePath(`/labs/${lab}/`, typeof window === "undefined" ? "en" : localeFromPath(window.location.pathname));
 
 function StatePill({ lab }: { lab?: LabStatus }) {
   if (!lab) return null;
@@ -78,7 +85,7 @@ function RunningDot() {
   return <span className="ml-auto size-2 animate-pulse rounded-full bg-[#00d084]" aria-label="running" />;
 }
 
-function buildGroups(labs: LabStatus[] | undefined, running: Set<string>, androidRunning: boolean): SidebarGroup[] {
+function buildGroups(labs: LabStatus[] | undefined, running: Set<string>, androidRunning: boolean, locale: FirewallLocale): SidebarGroup[] {
   const lab = (id: LabId) => labs?.find((l) => l.id === id);
   const labItem = (id: LabId, label: string) => ({
     id: `lab-${id}`,
@@ -121,7 +128,7 @@ function buildGroups(labs: LabStatus[] | undefined, running: Set<string>, androi
         labItem("windows", "Windows Lab"),
         labItem("macos", "macOS Lab"),
         labItem("linux", "Linux Lab"),
-        { id: "firewall", label: "Firewall Lab", icon: <FireIcon size={16} /> }
+        { id: "firewall", label: copy[locale].lab, icon: <FireIcon size={16} /> }
       ]
     },
     {
@@ -254,6 +261,7 @@ export function AppShell({
   const { data: jobs } = jobsStore.use();
   const { data: health, error: healthError } = healthStore.use();
   const { data: androidLogs } = androidLogsStore.use();
+  const locale: FirewallLocale = typeof window === "undefined" ? "en" : localeFromPath(window.location.pathname);
 
   useEffect(() => {
     const drawer = drawerRef.current;
@@ -264,8 +272,8 @@ export function AppShell({
 
   const running = useMemo(() => new Set((jobs ?? []).filter((j) => j.state === "running").map((j) => j.lab)), [jobs]);
   const groups = useMemo(
-    () => buildGroups(host?.labs, running, Boolean(androidLogs?.running)),
-    [host?.labs, running, androidLogs?.running]
+    () => buildGroups(host?.labs, running, Boolean(androidLogs?.running), locale),
+    [host?.labs, running, androidLogs?.running, locale]
   );
   const meta = useMemo(buildMeta, []);
   const records = useMemo<SpotlightRecord[]>(
@@ -366,7 +374,7 @@ export function AppShell({
           { scope: "linux", description: "Linux Lab actions", icon: <CpuIcon size={16} /> }
         ]}
         onNavigate={(section, record) => {
-          if (record && section === "jobs") return go(`/jobs/#${record.id}`);
+          if (record && section === "jobs") return go(`${sectionHref("jobs")}#${record.id}`);
           if (record && section.startsWith("lab-")) return go(`${sectionHref(section)}#action=${record.id.split(":")[1]}`);
           go(sectionHref(section));
         }}

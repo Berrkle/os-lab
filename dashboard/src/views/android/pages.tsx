@@ -27,6 +27,7 @@ import {
 } from "@phosphor-icons/react";
 import { AppShell, LAB_ICON, labHref } from "../../shell/app-shell";
 import { TopBar } from "../../shell/top-bar";
+import { localeFromPath, localePath } from "../../i18n/paths";
 import {
   CodeShowcaseSwitcher,
   MinimalistHero,
@@ -128,7 +129,7 @@ export function OverviewPage() {
         headline="End-to-End Mobile Pentest Pipeline"
         subtitle="From static bytecode decompilation to runtime hooking and live telemetry interception."
         ctaText="View Execution Workflows"
-        onCtaClick={() => window.location.assign("/android/workflows/")}
+        onCtaClick={() => window.location.assign(localePath("/android/workflows/", localeFromPath(window.location.pathname)))}
       />
 
       <TipsNotesCard
