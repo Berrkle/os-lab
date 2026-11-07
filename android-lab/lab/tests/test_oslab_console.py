@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.join(REPO_ROOT, "console"))
 import oslab  # noqa: E402
 
 
-def make_host(os_name="linux", arch="x86_64", kvm=True, runtime="docker", tools=(), distros=()):
+def make_host(os_name="linux", arch="x86_64", kvm=True, runtime="docker", tools=(), distros=(), xcode=None):
     found = set(tools) | {"bash"}
     if runtime:
         found.add(runtime)
@@ -21,6 +21,7 @@ def make_host(os_name="linux", arch="x86_64", kvm=True, runtime="docker", tools=
         "kvm": {"present": kvm, "usable": kvm},
         "wsl": {"guest": False, "distributions": list(distros)},
         "runtime": runtime,
+        "xcode": xcode if xcode is not None else ({"installed": True, "iosRuntime": True, "iosDevice": True} if os_name == "macos" else None),
         "tools": [{"id": t, "label": label, "found": t in found, "path": None} for t, label in oslab.TOOLS],
     }
 
@@ -60,6 +61,31 @@ def test_macos_offers_native_simulator_and_static_android_only():
     assert not any(a["privileged"] for a in android["actions"])
 
 
+def test_native_macos_needs_full_xcode_and_available_ios_simulator():
+    for missing in ("installed", "iosRuntime", "iosDevice"):
+        xcode = {"installed": True, "iosRuntime": True, "iosDevice": True}
+        xcode[missing] = False
+        host = make_host(os_name="macos", kvm=False, tools=("xcrun", "brew"), xcode=xcode)
+        for lab in ("ios", "macos"):
+            status = oslab.lab_status(lab, host)
+            assert status["state"] == "needs-setup"
+            assert any(r["required"] and not r["found"] for r in status["requirements"])
+
+
+def test_container_engine_requires_reachable_api_and_compose(monkeypatch):
+    monkeypatch.setattr(oslab, "_which", lambda name: f"/usr/bin/{name}" if name in ("docker", "podman") else None)
+    calls = []
+    def fake_capture(args, timeout=5, decode="utf-8"):
+        calls.append(args)
+        if args[0] == "docker" and args[1] == "info":
+            return 1, "engine stopped"
+        return 0, "ok"
+    monkeypatch.setattr(oslab, "_capture", fake_capture)
+    assert oslab.container_runtime() == "podman"
+    assert ["docker", "compose", "version"] not in calls
+    assert ["podman", "compose", "version"] in calls
+
+
 def test_windows_host_uses_wsl2():
     without = states(make_host(os_name="windows", kvm=False, runtime=None, tools=("wsl",)))
     assert without["windows"] == "needs-setup"
@@ -75,6 +101,21 @@ def test_plan_builds_typed_labctl_command():
     assert p["args"][0].endswith("/labctl")
     assert p["args"][1:] == ["win", "start"]
     assert p["runnable"] and not p["privileged"]
+
+
+def test_every_advertised_local_action_resolves_to_a_bundled_entry_point():
+    for host in (make_host(), make_host(os_name="macos", kvm=False, tools=("xcrun", "brew"))):
+        for lab in oslab.LAB_ORDER:
+            status = oslab.lab_status(lab, host)
+            for action in status["actions"]:
+                request = {"lab": lab, "action": action["id"]}
+                if action["id"] == "profile" or (host["os"] == "macos" and lab == "android" and action["id"] in ("start", "restart")):
+                    request["profile"] = "lightweight"
+                if action["id"] == "resize":
+                    request["cpus"] = "2"
+                plan = oslab.plan(REPO_ROOT, request, host)
+                if plan["program"] == "bash":
+                    assert os.path.isfile(plan["args"][0]), (lab, action["id"], plan["args"][0])
 
 
 def test_plan_profile_and_resize_validation():

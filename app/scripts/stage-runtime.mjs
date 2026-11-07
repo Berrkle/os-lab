@@ -25,10 +25,20 @@ export const INCLUDE = ["labctl", "console", "android-lab", "linux-lab", "win-la
 export const REQUIRED = [
   "labctl", "console/oslab.py", "console/content.py", "android-lab/lab/web_ui.py",
   "android-lab/lab/scripts/setup-ubuntu.sh", "android-lab/lab/docker-compose.yml",
+  "android-lab/lab/scripts/preflight.sh", "android-lab/lab/scripts/install-service.sh",
+  "android-lab/lab/scripts/uninstall-service.sh", "android-lab/lab/.env.example",
   "win-lab/scripts/setup-ubuntu.sh", "win-lab/docker-compose.yml",
+  "win-lab/scripts/preflight.sh", "win-lab/scripts/backup.sh",
+  "win-lab/scripts/install-service.sh", "win-lab/scripts/uninstall-service.sh", "win-lab/.env.example",
   "linux-lab/scripts/setup-ubuntu.sh", "linux-lab/docker-compose.yml",
+  "linux-lab/scripts/preflight.sh", "linux-lab/scripts/backup.sh",
+  "linux-lab/scripts/install-service.sh", "linux-lab/scripts/uninstall-service.sh", "linux-lab/.env.example",
   "ios-lab/scripts/setup-ubuntu.sh", "ios-lab/docker-compose.yml",
-  "ios-lab/mac/setup-mac.sh", "docs/legal/PRIVACY.md",
+  "ios-lab/scripts/preflight.sh", "ios-lab/scripts/backup.sh",
+  "ios-lab/scripts/install-service.sh", "ios-lab/scripts/uninstall-service.sh", "ios-lab/.env.example",
+  "ios-lab/mac/setup-mac.sh", "ios-lab/mac/doctor-mac.sh", "ios-lab/mac/run-simulator.sh",
+  "ios-lab/mac/stop-simulator.sh", "ios-lab/mac/appium.sh", "ios-lab/mac/config.env.example",
+  "docs/legal/PRIVACY.md",
 ];
 
 // Even tracked, these never ship: credentials, private notes, VM guest data.

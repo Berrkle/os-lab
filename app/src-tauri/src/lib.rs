@@ -50,23 +50,50 @@ fn copy_files_dir(from: &Path, to: &Path) -> Result<(), String> {
     if fs::read_dir(&to).map_err(|e| e.to_string())?.next().is_some() {
         return Err("Choose an empty folder for the os-lab files.".into());
     }
-    fn copy_tree(from: &Path, to: &Path) -> Result<(), String> {
+    fn copy_tree(from: &Path, to: &Path, old_root: &Path, new_root: &Path) -> Result<(), String> {
         for entry in fs::read_dir(from).map_err(|e| e.to_string())? {
             let entry = entry.map_err(|e| e.to_string())?;
             let kind = entry.file_type().map_err(|e| e.to_string())?;
             let dest = to.join(entry.file_name());
             if kind.is_dir() {
                 fs::create_dir(&dest).map_err(|e| format!("Could not create {}: {e}", dest.display()))?;
-                copy_tree(&entry.path(), &dest)?;
+                copy_tree(&entry.path(), &dest, old_root, new_root)?;
             } else if kind.is_file() {
                 fs::copy(entry.path(), &dest).map_err(|e| format!("Could not copy {}: {e}", dest.display()))?;
+            } else if kind.is_symlink() {
+                let link = fs::read_link(entry.path()).map_err(|e| e.to_string())?;
+                let resolved = link.canonicalize().unwrap_or_else(|_| link.clone());
+                let link = if link.is_absolute() && resolved.starts_with(old_root) {
+                    new_root.join(resolved.strip_prefix(old_root).map_err(|e| e.to_string())?)
+                } else { link };
+                #[cfg(unix)]
+                std::os::unix::fs::symlink(&link, &dest).map_err(|e| format!("Could not copy link {}: {e}", dest.display()))?;
+                #[cfg(windows)]
+                {
+                    let source = entry.path();
+                    let make = if source.is_dir() { std::os::windows::fs::symlink_dir } else { std::os::windows::fs::symlink_file };
+                    make(&link, &dest).map_err(|e| format!("Could not copy link {}: {e}", dest.display()))?;
+                }
             } else {
-                return Err(format!("Cannot move files folder because {} is a link or special file.", entry.path().display()));
+                return Err(format!("Cannot move special file {}.", entry.path().display()));
             }
         }
         Ok(())
     }
-    copy_tree(&from, &to)
+    copy_tree(&from, &to, &from, &to)?;
+    // The managed interpreter record contains an absolute path, unlike the copied files.
+    let record = from.join("python-path.txt");
+    if let Ok(saved) = fs::read_to_string(record) {
+        let path = PathBuf::from(saved.trim());
+        let path = path.canonicalize().unwrap_or(path);
+        if let Ok(relative) = path.strip_prefix(&from) {
+            if relative.starts_with("python") && to.join(relative).is_file() {
+                fs::write(to.join("python-path.txt"), to.join(relative).display().to_string())
+                    .map_err(|e| format!("Could not update managed Python path: {e}"))?;
+            }
+        }
+    }
+    Ok(())
 }
 
 fn log_dir(app: &AppHandle) -> Result<PathBuf, String> {
@@ -353,10 +380,20 @@ mod files_dir_tests {
         let from = base.join("from");
         let to = base.join("to");
         fs::create_dir_all(from.join("os-lab/android-lab/storage")).unwrap();
+        fs::create_dir_all(from.join("python/bin")).unwrap();
         fs::create_dir_all(&to).unwrap();
         fs::write(from.join("os-lab/android-lab/storage/disk.img"), "state").unwrap();
+        fs::write(from.join("python/bin/python3"), "interpreter").unwrap();
+        fs::write(from.join("python-path.txt"), from.join("python/bin/python3").display().to_string()).unwrap();
+        #[cfg(unix)]
+        std::os::unix::fs::symlink(from.join("python/bin/python3"), from.join("python/bin/python")).unwrap();
         copy_files_dir(&from, &to).unwrap();
+        let canonical_to = to.canonicalize().unwrap();
         assert_eq!(fs::read_to_string(to.join("os-lab/android-lab/storage/disk.img")).unwrap(), "state");
+        assert_eq!(fs::read_to_string(to.join("python-path.txt")).unwrap(), canonical_to.join("python/bin/python3").display().to_string());
+        assert_eq!(python_runtime::saved_python(&to).unwrap(), canonical_to.join("python/bin/python3").display().to_string());
+        #[cfg(unix)]
+        assert_eq!(fs::read_link(to.join("python/bin/python")).unwrap(), canonical_to.join("python/bin/python3"));
         assert!(copy_files_dir(&from, &to).unwrap_err().contains("empty folder"));
         assert!(copy_files_dir(&from, &from.join("os-lab")).unwrap_err().contains("separate folder"));
         let _ = fs::remove_dir_all(base);

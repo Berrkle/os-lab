@@ -47,8 +47,8 @@
   };
   var ct = containerStrings[language] || containerStrings.en;
   var existingEngine = {
-    en: "Docker or Podman is installed, but its engine is not running or its connection is unavailable. Start your existing engine (for example Colima or a Podman machine), then retry. You can continue to labs that do not need containers.",
-    tr: "Docker veya Podman kurulu, ancak motor çalışmıyor ya da bağlantısı kullanılamıyor. Mevcut motorunuzu (örneğin Colima veya Podman makinesi) başlatıp yeniden deneyin. Konteyner gerektirmeyen laboratuvarlara devam edebilirsiniz."
+    en: "Docker or Podman is installed, but its engine or Compose command is unavailable. Start or reconnect your engine (for example Colima or a Podman machine), check that `docker compose version` or `podman compose version` works, then retry. You can continue to labs that do not need containers.",
+    tr: "Docker veya Podman kurulu, ancak motoru ya da Compose komutu kullanılamıyor. Motorunuzu (örneğin Colima veya Podman makinesi) başlatıp bağlayın, `docker compose version` veya `podman compose version` komutunu kontrol edin ve yeniden deneyin. Konteyner gerektirmeyen laboratuvarlara devam edebilirsiniz."
   };
   $("retry").textContent = t.retry;
   $("choose").textContent = t.choose;

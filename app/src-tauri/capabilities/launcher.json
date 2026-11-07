@@ -12,6 +12,8 @@
     "allow-console-choose-root",
     "allow-console-reset-root",
     "allow-console-logs",
+    "allow-console-files-dir",
+    "allow-console-choose-files-dir",
     "allow-python-install",
     "allow-container-status",
     "allow-container-get"

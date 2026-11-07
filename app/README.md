@@ -55,9 +55,10 @@ untracked `.env` or VM disk cannot ship. Staging fails if a required lab entry p
 The installer contains the lab scripts and Compose definitions, not the host tools or guest
 payloads they operate. The console needs Python 3.9+ (the Debian package declares this
 dependency, and the app can get a managed copy on other hosts). Container labs need a working
-Docker or Podman installation and pull their images
+Docker or Podman engine with Compose and pull their images
 separately; VM labs also need the host virtualization support and guest media their Doctor page
-reports. Native iOS simulation needs Xcode and a Simulator runtime. The app can run from its
+reports. Native iOS simulation needs full Xcode, an iOS Simulator runtime and an available device;
+Appium and XCUITest are needed for automation. The app can run from its
 bundled copy without a Git checkout, and the dashboard shows each lab's setup requirements.
 
 If no suitable Python is installed, the launcher offers **Get Python**. Release builds include a
@@ -66,9 +67,9 @@ app's data folder on request, without changing the system Python or `PATH`. The 
 stage this helper before building. An existing Python 3.9+ installation still works without a
 download.
 
-On macOS and Windows, if neither Docker nor Podman responds, the launcher offers **Get container
-runtime** when no CLI is installed. If a CLI exists but its engine does not respond, the launcher
-asks you to start or reconnect that engine and retry; Docker Desktop is optional. The download
+On macOS and Windows, if neither Docker nor Podman responds with Compose, the launcher offers **Get container
+runtime** when no CLI is installed. If a CLI exists but its engine or Compose command does not respond, the launcher
+asks you to start or reconnect that engine, or install Compose, and retry; Docker Desktop is optional. The download
 action fetches Docker Desktop 4.98.0 for the host architecture, verifies the SHA-256
 published in Docker's release notes, and opens the installer. The user completes Docker's
 interactive installation and licensing, enables host virtualization if needed, then retries.

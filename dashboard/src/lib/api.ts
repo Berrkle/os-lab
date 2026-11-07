@@ -33,6 +33,7 @@ export interface HostInfo {
   kvm: { present: boolean; usable: boolean };
   wsl: { guest: boolean; distributions: string[] };
   runtime: string | null;
+  xcode: { installed: boolean; iosRuntime: boolean; iosDevice: boolean } | null;
   python: string;
   root: string;
   tools: HostTool[];
