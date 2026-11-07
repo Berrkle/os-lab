@@ -25,6 +25,14 @@ folder on first launch and after an update. A sync never overwrites or removes `
 `config.env`, `storage/`, `artifacts/` and the other state names listed in `runtime.rs`; only the
 dashboard build is replaced wholesale.
 
+Use **File → Files folder…** to choose an empty folder for the app's writable files on macOS,
+Windows or Linux. The app copies its current data there before saving the choice. The bundled
+runtime (`os-lab/`), managed Python, downloaded installers, content updates and console logs then
+use that folder. Keep it available when launching the app; selecting another empty folder copies
+the current files again. The setting itself remains in Tauri's default app settings location so
+the app can find the chosen folder on the next launch. `OSLAB_ROOT` and `OSLAB_CONTENT_DIR`, when
+set, still override the runtime checkout and content location respectively.
+
 ## Develop and build
 
 Needs Node 22+, Rust 1.85+ and Python 3.9+.
@@ -59,7 +67,9 @@ stage this helper before building. An existing Python 3.9+ installation still wo
 download.
 
 On macOS and Windows, if neither Docker nor Podman responds, the launcher offers **Get container
-runtime**. It downloads Docker Desktop 4.98.0 for the host architecture, verifies the SHA-256
+runtime** when no CLI is installed. If a CLI exists but its engine does not respond, the launcher
+asks you to start or reconnect that engine and retry; Docker Desktop is optional. The download
+action fetches Docker Desktop 4.98.0 for the host architecture, verifies the SHA-256
 published in Docker's release notes, and opens the installer. The user completes Docker's
 interactive installation and licensing, enables host virtualization if needed, then retries.
 **Continue to dashboard** remains available for labs that do not need containers. On Linux, the
@@ -98,7 +108,7 @@ copy. See `lat.md/content.md`; publish with `scripts/publish-content.sh --publis
 ## Not done yet
 
 - No auto-update (needs a signing key).
-- `release-win.ps1` built and published the unsigned 0.1.0 Windows installers; installing and launching them is still untested. `release-deb.sh` has built and published the 0.1.0 `.deb` on Ubuntu (amd64); installing and launching it is still untested.
+- The 0.2.1 macOS DMG was signed, notarized and published. The 0.2.1 Windows and Debian installers were also published; installing and launching those builds is still untested.
 - Only built and run on macOS (aarch64); the Windows and Linux paths (`py -3`, `taskkill`, the
   supervisor's `ctypes` parent check) compile-time-gated but untested.
 - Phones are out of scope: labs need a desktop host.

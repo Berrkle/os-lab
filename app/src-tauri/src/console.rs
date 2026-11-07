@@ -88,7 +88,7 @@ impl Console {
         healthy(port).then(|| url_for(port))
     }
 
-    pub fn start(&self, root: &Path, source: Source, log: &Path, data_dir: &Path) -> Result<Started, String> {
+    pub fn start(&self, root: &Path, source: Source, log: &Path, data_dir: &Path, content_dir: &Path) -> Result<Started, String> {
         if let Some(url) = self.running_url() {
             return Ok(Started {
                 url,
@@ -120,6 +120,7 @@ impl Console {
         cmd.current_dir(root)
             .env("PYTHONUNBUFFERED", "1")
             .env("PYTHONIOENCODING", "utf-8")
+            .env("OSLAB_CONTENT_DIR", content_dir)
             .stdin(Stdio::null())
             .stdout(Stdio::from(out))
             .stderr(Stdio::from(err));

@@ -5,7 +5,7 @@
   var invoke = window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke;
   var $ = function (id) { return document.getElementById(id); };
   var statusEl = $("status"), spinner = $("spinner"), problem = $("problem");
-  var detail = $("detail"), where = $("where"), resetBtn = $("reset"), pythonBtn = $("python");
+  var detail = $("detail"), where = $("where"), filesWhere = $("files-where"), resetBtn = $("reset"), pythonBtn = $("python");
   var containerBtn = $("container"), continueBtn = $("continue"), consoleInfo = null;
   var language = (navigator.languages || [navigator.language || "en"])
     .map(function (value) { return value.toLowerCase().split("-")[0]; })
@@ -13,7 +13,7 @@
   document.documentElement.lang = language;
   document.documentElement.dir = language === "fa" || language === "ar" ? "rtl" : "ltr";
   var strings = {
-    en: { starting: "Starting the console…", opening: "Opening the dashboard…", failed: "The os-lab console could not start.", bridge: "The Tauri bridge is missing; open this app from its window, not a browser.", retry: "Retry", choose: "Use my os-lab checkout…", reset: "Use bundled copy" },
+    en: { starting: "Starting the console…", opening: "Opening the dashboard…", failed: "The os-lab console could not start.", bridge: "The Tauri bridge is missing; open this app from its window, not a browser.", retry: "Retry", choose: "Use my os-lab checkout…", reset: "Use bundled copy", files: "Change files folder…", filesLabel: "Files folder" },
     tr: { starting: "Konsol başlatılıyor…", opening: "Pano açılıyor…", failed: "os-lab konsolu başlatılamadı.", bridge: "Tauri bağlantısı bulunamadı; bu uygulamayı tarayıcı yerine kendi penceresinde açın.", retry: "Yeniden dene", choose: "Kendi os-lab kopyamı kullan…", reset: "Paketlenmiş kopyayı kullan" },
     de: { starting: "Konsole wird gestartet…", opening: "Dashboard wird geöffnet…", failed: "Die os-lab-Konsole konnte nicht gestartet werden.", bridge: "Die Tauri-Verbindung fehlt. Öffne diese App im eigenen Fenster, nicht im Browser.", retry: "Erneut versuchen", choose: "Meine os-lab-Arbeitskopie verwenden…", reset: "Mitgelieferte Kopie verwenden" },
     fr: { starting: "Démarrage de la console…", opening: "Ouverture du tableau de bord…", failed: "La console os-lab n’a pas pu démarrer.", bridge: "La connexion Tauri est absente. Ouvrez cette application dans sa fenêtre, et non dans un navigateur.", retry: "Réessayer", choose: "Utiliser ma copie de travail os-lab…", reset: "Utiliser la copie intégrée" },
@@ -23,6 +23,7 @@
     ar: { starting: "جارٍ تشغيل وحدة التحكم…", opening: "جارٍ فتح لوحة المعلومات…", failed: "تعذّر تشغيل وحدة تحكم os-lab.", bridge: "اتصال Tauri غير موجود؛ افتح هذا التطبيق في نافذته الخاصة، وليس في المتصفح.", retry: "إعادة المحاولة", choose: "استخدام نسخة العمل الخاصة بي من os-lab…", reset: "استخدام النسخة المضمّنة" }
   };
   var t = strings[language] || strings.en;
+  if (!t.files) { t.files = strings.en.files; t.filesLabel = strings.en.filesLabel; }
   var pythonStrings = {
     en: ["Get Python", "Getting Python for os-lab…"],
     tr: ["Python'u edin", "os-lab için Python indiriliyor…"],
@@ -45,9 +46,14 @@
     ar: ["الحصول على بيئة الحاويات", "المتابعة إلى لوحة المعلومات", "تحتاج مختبرات VM وAndroid إلى بيئة حاويات. احصل على مُثبّت Docker Desktop المتحقق منه وأكمل الإعداد ثم أعد المحاولة.", "جارٍ تنزيل Docker Desktop…", "فُتح مُثبّت Docker Desktop. أكمل الإعداد ثم أعد المحاولة."]
   };
   var ct = containerStrings[language] || containerStrings.en;
+  var existingEngine = {
+    en: "Docker or Podman is installed, but its engine is not running or its connection is unavailable. Start your existing engine (for example Colima or a Podman machine), then retry. You can continue to labs that do not need containers.",
+    tr: "Docker veya Podman kurulu, ancak motor çalışmıyor ya da bağlantısı kullanılamıyor. Mevcut motorunuzu (örneğin Colima veya Podman makinesi) başlatıp yeniden deneyin. Konteyner gerektirmeyen laboratuvarlara devam edebilirsiniz."
+  };
   $("retry").textContent = t.retry;
   $("choose").textContent = t.choose;
   resetBtn.textContent = t.reset;
+  $("files").textContent = t.files;
   pythonBtn.textContent = pt[0];
   containerBtn.textContent = ct[0];
   continueBtn.textContent = ct[1];
@@ -89,12 +95,13 @@
     consoleInfo = null;
     show(t.starting, false);
     if (!invoke) { return fail(t.bridge); }
+    invoke("console_files_dir").then(function (path) { filesWhere.textContent = t.filesLabel + ": " + path; }, fail);
     invoke("console_start").then(function (info) {
       consoleInfo = info;
       where.textContent = info.source + ": " + info.root;
       resetBtn.hidden = info.source !== "chosen";
-      invoke("container_status").then(function (ready) {
-        if (ready === false) showContainerSetup(ct[2], true);
+      invoke("container_status").then(function (status) {
+        if (status && !status.ready) showContainerSetup(status.cli_present ? (existingEngine[language] || existingEngine.en) : ct[2], !status.cli_present);
         else openDashboard();
       }, openDashboard);
     }, fail);
@@ -116,5 +123,18 @@
   resetBtn.addEventListener("click", function () {
     invoke("console_reset_root").then(start, fail);
   });
-  start();
+  $("files").addEventListener("click", function () {
+    var button = $("files");
+    button.disabled = true;
+    invoke("console_choose_files_dir").then(function (path) {
+      button.disabled = false;
+      if (path) start();
+    }, function (err) { button.disabled = false; fail(err); });
+  });
+  if (new URLSearchParams(window.location.search).get("settings") === "files") {
+    show(t.filesLabel, true);
+    detail.textContent = "";
+    if (invoke) invoke("console_files_dir").then(function (path) { filesWhere.textContent = t.filesLabel + ": " + path; }, fail);
+    else fail(t.bridge);
+  } else start();
 })();
