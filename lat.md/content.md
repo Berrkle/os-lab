@@ -56,6 +56,15 @@ sequence number is the commit count, so it only goes up.
 Tests: [[android-lab/lab/tests/test_content.py]] and the content cases in
 [[android-lab/lab/tests/test_web_ui.py]].
 
+## In the dashboard
+
+The "Content updates" panel on the host page ([[dashboard/src/views/content-panel.tsx]]) shows the
+state and drives check, update (hooks only when the checkbox is ticked) and reset.
+
+[[dashboard/src/firewall/live.ts]] replaces the seeded companies with the downloaded ones at run time
+when a pack is installed, and [[dashboard/src/views/not-found-page.tsx]] draws a company that has no
+prerendered page from the pack. Without a console or a downloaded pack, the seed is used.
+
 ## Proof and the info page
 
 Contributors can show their change works with a verification report and an optional

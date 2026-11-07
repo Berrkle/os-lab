@@ -15,6 +15,7 @@ import { AppShell, LAB_ICON, labHref } from "../shell/app-shell";
 import { TopBar } from "../shell/top-bar";
 import { MinimalistHero } from "../apk-lab/components";
 import { Badge, Empty, Section, Skeleton } from "../components/ui";
+import { ContentPanel } from "./content-panel";
 import { formatBytes, hostStore, type HostInfo, type LabStatus } from "../lib/api";
 
 export function stateBadge(state: LabStatus["state"]) {
@@ -190,6 +191,8 @@ export default function HostPage() {
               <Section icon={<PackageIcon size={16} />} title="Host tools" description={`Found on PATH for ${host.root}.`}>
                 <Tools host={host} />
               </Section>
+
+              <ContentPanel />
 
               <Section icon={<CpuIcon size={16} />} title="Providers" description="How each kind of guest would run on this host.">
                 <ul className="divide-y divide-(--iux-border)">
