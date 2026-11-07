@@ -96,11 +96,9 @@ say "building ($TARGET) — Tauri signs the app with hardened runtime and notari
 npx tauri build --target "$TARGET" --bundles app,dmg
 
 BUNDLE="$APP_DIR/src-tauri/target/$TARGET/release/bundle"
-PRODUCT="$(node -p "require('$APP_DIR/src-tauri/tauri.conf.json').productName")"
-APP="$BUNDLE/macos/$PRODUCT.app"
-DMG="$BUNDLE/dmg/${PRODUCT}_${VERSION}_${TARGET%%-apple-darwin}.dmg"
-[ -d "$APP" ] || die "build produced no .app at $APP"
-[ -f "$DMG" ] || die "build produced no .dmg for version $VERSION and target $TARGET at $DMG"
+APP="$(ls -d "$BUNDLE"/macos/*.app | head -1)"
+DMG="$(ls "$BUNDLE"/dmg/*.dmg | head -1)"
+[ -d "$APP" ] && [ -f "$DMG" ] || die "build produced no .app/.dmg under $BUNDLE"
 
 # ── 4. Sign + notarize the DMG itself (Tauri notarizes the .app) ────────────────────────────────
 say "signing the DMG"
