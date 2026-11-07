@@ -571,7 +571,7 @@ Kurallar yazılmakla kalmadı, iki ayrı yöntemle sınandı. Beklenen sonuçlar
 
 ## 10. Kaynaklar
 
-Değerlere 6 Kasım 2026'da bakıldı.
+Değerlere 6 Kasım 2026'da bakıldı. Check Point fiyatları 7 Kasım 2026'da okundu.
 
 - **Fortinet:** [60F](https://www.fortinet.com/content/dam/fortinet/assets/data-sheets/pdf/fortigate-fortiwifi-60f-series.pdf), [70G](https://www.fortinet.com/content/dam/fortinet/assets/data-sheets/pdf/fortigate-fortiwifi-70g-series.pdf), [120G](https://www.fortinet.com/content/dam/fortinet/assets/data-sheets/pdf/fortigate-120g-series.pdf), [200G](https://www.fortinet.com/content/dam/fortinet/assets/data-sheets/pdf/fortigate-200g-series.pdf), [400F](https://www.fortinet.com/content/dam/fortinet/assets/data-sheets/pdf/fortigate-400f-series.pdf), [900G](https://www.fortinet.com/content/dam/fortinet/assets/data-sheets/pdf/fortigate-900g-series.pdf), [1000F](https://www.fortinet.com/content/dam/fortinet/assets/data-sheets/pdf/fortigate-1000f-series.pdf)
 - **Palo Alto:** Model değerleri satıcı sayfalarından alındı: [PA-410](https://www.hitachi-solutions.co.jp/paloalto/products/lineup/pa410.html), [PA-460](https://www.hitachi-solutions.co.jp/paloalto/products/lineup/pa460.html), [PA-3410](https://www.hitachi-solutions.co.jp/paloalto/products/lineup/pa3410.html), [PA-3440](https://www.hitachi-solutions.co.jp/paloalto/products/lineup/pa3440.html). Üreticinin [seri karşılaştırması](https://www.paloaltonetworks.com/resources/infographics/hwfw-upgrade) daha düşük değerler veriyor (PA-400 serisi 2,1; PA-3400 serisi 12,8). Değerler yazılım sürümüne göre değişebildiği için PA-460 ve PA-3440 aralık olarak gösterildi.
