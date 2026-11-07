@@ -19,7 +19,17 @@ const repo = resolve(here, "..", "..");
 const out = resolve(here, "..", "src-tauri", "resources", "os-lab");
 
 // Tracked top-level paths the console and the labs need at run time.
-export const INCLUDE = ["labctl", "console", "android-lab", "linux-lab", "win-lab", "ios-lab", "firewall-lab", "LICENSE"];
+export const INCLUDE = ["labctl", "console", "android-lab", "linux-lab", "win-lab", "ios-lab", "firewall-lab", "docs/legal", "LICENSE"];
+
+// These are the entry points used by the installed console and every supported lab path.
+export const REQUIRED = [
+  "labctl", "console/oslab.py", "console/content.py", "android-lab/lab/web_ui.py",
+  "android-lab/lab/scripts/setup-ubuntu.sh", "android-lab/lab/docker-compose.yml",
+  "win-lab/scripts/setup-ubuntu.sh", "win-lab/docker-compose.yml",
+  "linux-lab/scripts/setup-ubuntu.sh", "linux-lab/docker-compose.yml",
+  "ios-lab/scripts/setup-ubuntu.sh", "ios-lab/docker-compose.yml",
+  "ios-lab/mac/setup-mac.sh", "docs/legal/PRIVACY.md",
+];
 
 // Even tracked, these never ship: credentials, private notes, VM guest data.
 const NEVER = [
@@ -38,6 +48,11 @@ export function allowed(path) {
 
 export function select(tracked) {
   return tracked.filter((p) => allowed(p) && INCLUDE.some((root) => p === root || p.startsWith(root + "/")));
+}
+
+export function missingRequired(selected) {
+  const files = new Set(selected);
+  return REQUIRED.filter((path) => !files.has(path) || !existsSync(join(repo, path)));
 }
 
 function trackedFiles() {
@@ -78,13 +93,17 @@ function main() {
 function stage(dist) {
   if (!existsSync(join(dist, "index.html"))) throw new Error(`no dashboard build at ${dist}`);
 
+  const selected = trackedFiles();
+  const missing = missingRequired(selected);
+  if (missing.length) throw new Error(`required bundled files are missing: ${missing.join(", ")}`);
+
   rmSync(out, { recursive: true, force: true });
   mkdirSync(out, { recursive: true });
 
   let count = 0;
-  for (const rel of trackedFiles()) {
+  for (const rel of selected) {
     const from = join(repo, rel);
-    if (!existsSync(from)) continue; // tracked but deleted in the working tree
+    if (!existsSync(from)) throw new Error(`tracked bundled file is missing: ${rel}`);
     const to = join(out, rel);
     mkdirSync(dirname(to), { recursive: true });
     copyFileSync(from, to); // copyFileSync keeps the mode, so labctl stays executable
