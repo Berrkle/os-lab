@@ -100,9 +100,9 @@ Say 'building the NSIS and MSI installers'
 try { Run 'npx' $tauriArgs } finally { if ($overlay) { Remove-Item -Force $overlay -ErrorAction SilentlyContinue } }
 
 $bundle = Join-Path $AppDir 'src-tauri\target\release\bundle'
-$nsis = Get-ChildItem (Join-Path $bundle 'nsis') -Filter '*-setup.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
-$msi = Get-ChildItem (Join-Path $bundle 'msi') -Filter '*.msi' -ErrorAction SilentlyContinue | Select-Object -First 1
-if (-not $nsis -or -not $msi) { Die "build produced no setup .exe and .msi under $bundle" }
+$nsis = Get-ChildItem (Join-Path $bundle 'nsis') -Filter "*_${Version}_*-setup.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+$msi = Get-ChildItem (Join-Path $bundle 'msi') -Filter "*_${Version}_*.msi" -ErrorAction SilentlyContinue | Select-Object -First 1
+if (-not $nsis -or -not $msi) { Die "build produced no $Version setup .exe and .msi under $bundle" }
 
 # 4. Verify what will ship ----------------------------------------------------------------------
 Say 'verifying'
@@ -138,6 +138,8 @@ foreach ($a in $assets) {
 if (-not $Publish) { Say 'dry run: nothing uploaded (use -Publish)'; exit 0 }
 
 $notes = "os-lab desktop app $Version. One installer per platform, each with a .sha256 file. Needs Python 3.9+ on PATH."
+# gh writes to stderr for 'not logged in' and 'release not found'; that must not abort under Stop.
+$ErrorActionPreference = 'Continue'
 if (Get-Command gh -ErrorAction SilentlyContinue) { & gh auth status 2>$null | Out-Null; $haveGh = ($LASTEXITCODE -eq 0) } else { $haveGh = $false }
 
 if ($haveGh) {
@@ -154,6 +156,7 @@ if ($haveGh) {
   $credLines = "url=https://github.com/$Slug`n`n" | git credential fill 2>$null
   $token = ($credLines | Where-Object { $_ -match '^password=' }) -replace '^password=', ''
   if (-not $token) { Die 'neither a logged-in gh CLI nor a stored GitHub credential was found' }
+  $ErrorActionPreference = 'Stop'
   $h = @{ Authorization = "Bearer $token"; Accept = 'application/vnd.github+json'; 'X-GitHub-Api-Version' = '2022-11-28' }
   try { $rel = Invoke-RestMethod -Uri "https://api.github.com/repos/$Slug/releases/tags/$Tag" -Headers $h }
   catch {
