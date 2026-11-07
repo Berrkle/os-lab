@@ -139,6 +139,19 @@ def test_job_nonzero_exit_reports_error():
     assert job.error == "Command exited with status 7. See output below."
 
 
+def test_job_worker_start_failure_does_not_leave_running_job(monkeypatch):
+    def fail(_thread):
+        raise RuntimeError("thread unavailable")
+    monkeypatch.setattr(oslab.threading.Thread, "start", fail)
+    service = oslab.JobService(REPO_ROOT)
+    plan = {"lab": "macos", "action": "setup", "program": sys.executable,
+            "args": ["-c", "pass"], "timeoutSec": 5, "display": "test", "runnable": True}
+    job = service.start(plan)
+    assert job.state == "failed"
+    assert job.error == "Could not start the job worker: thread unavailable"
+    assert job.finished_at is not None
+
+
 def test_plan_builds_typed_labctl_command():
     p = oslab.plan(REPO_ROOT, {"lab": "windows", "action": "start"}, make_host())
     assert p["program"] == "bash"

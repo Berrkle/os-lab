@@ -774,7 +774,12 @@ class JobService:
             for old in sorted(self.jobs.values(), key=lambda j: j.started_at)[:-50]:
                 if old.state != "running":
                     self.jobs.pop(old.id, None)
-        threading.Thread(target=self._run, args=(job, plan_), daemon=True).start()
+        try:
+            threading.Thread(target=self._run, args=(job, plan_), daemon=True).start()
+        except RuntimeError as e:
+            job.state = "failed"
+            job.error = f"Could not start the job worker: {e}"
+            job.finished_at = time.time()
         return job
 
     def _run(self, job: Job, plan_: dict) -> None:
@@ -816,6 +821,13 @@ class JobService:
         except Exception as e:
             if job.state == "running":
                 job.state = "failed"
+            if job.proc and job.proc.poll() is None:
+                self._signal(job)
+                try:
+                    job.exit_code = job.proc.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    job.proc.kill()
+                    job.exit_code = job.proc.wait()
             error = str(e)
             for value in redact:
                 error = error.replace(value, "[redacted]")
