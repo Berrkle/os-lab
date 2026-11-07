@@ -1,0 +1,34 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "os-lab",
+  "version": "0.1.0",
+  "identifier": "com.keyvanarasteh.oslab",
+  "build": {
+    "frontendDist": "../ui"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "publisher": "Keyvan Arasteh",
+    "copyright": "© 2026 Keyvan Arasteh",
+    "category": "DeveloperTool",
+    "shortDescription": "os-lab: Android, Windows, Linux, iOS/macOS and Firewall labs",
+    "longDescription": "os-lab desktop app: host overview, every lab with previewed actions, jobs, the Firewall Lab company directory and the Android Lab workbench, in one native window.",
+    "resources": { "resources/os-lab/": "os-lab/" },
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "macOS": { "minimumSystemVersion": "12.0" }
+  }
+}

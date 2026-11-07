@@ -1,0 +1,33 @@
+[package]
+name = "os-lab-app"
+version = "0.1.0"
+description = "os-lab desktop app: the dashboard in a native window, backed by the os-lab console"
+authors = ["Keyvan Arasteh"]
+license = "Apache-2.0"
+edition = "2021"
+rust-version = "1.85"
+
+[lib]
+name = "os_lab_app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-opener = "2"
+tauri-plugin-store = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-single-instance = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+url = "2"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+# No `strip` here: on current macOS toolchains Cargo's strip corrupts proc-macro dylibs
+# ("mis-aligned LINKEDIT string pool", E0463). The bundler strips the shipped binary itself.
