@@ -34,7 +34,7 @@ if [ "$INSTALL_DEPS" = 1 ]; then
   sudo apt-get install -y build-essential curl wget file pkg-config libssl-dev libxdo-dev \
     libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev
 fi
-for t in node npm cargo dpkg dpkg-deb sha256sum git; do command -v "$t" >/dev/null || die "$t not found"; done
+for t in node npm cargo dpkg dpkg-deb sha256sum git tar; do command -v "$t" >/dev/null || die "$t not found"; done
 pkg-config --exists webkit2gtk-4.1 \
   || die "libwebkit2gtk-4.1-dev is missing; run again with --install-deps, or see https://v2.tauri.app/start/prerequisites/#linux"
 if [ "$PUBLISH" = 1 ]; then command -v gh >/dev/null && gh auth status >/dev/null 2>&1 || die "--publish needs the gh CLI, logged in"; fi
@@ -62,6 +62,7 @@ say "installing dashboard build tools"
 npm ci --no-audit --no-fund --prefix "$APP_DIR/../dashboard" >/dev/null
 say "staging the runtime and dashboard"
 node scripts/stage-runtime.mjs
+node scripts/stage-python-helper.mjs
 say "building the .deb"
 npx tauri build --bundles deb
 

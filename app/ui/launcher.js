@@ -5,7 +5,7 @@
   var invoke = window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke;
   var $ = function (id) { return document.getElementById(id); };
   var statusEl = $("status"), spinner = $("spinner"), problem = $("problem");
-  var detail = $("detail"), where = $("where"), resetBtn = $("reset");
+  var detail = $("detail"), where = $("where"), resetBtn = $("reset"), pythonBtn = $("python");
   var language = (navigator.languages || [navigator.language || "en"])
     .map(function (value) { return value.toLowerCase().split("-")[0]; })
     .find(function (value) { return ["en", "tr", "de", "fr", "es", "it", "fa", "ar"].indexOf(value) !== -1; }) || "en";
@@ -22,9 +22,21 @@
     ar: { starting: "جارٍ تشغيل وحدة التحكم…", opening: "جارٍ فتح لوحة المعلومات…", failed: "تعذّر تشغيل وحدة تحكم os-lab.", bridge: "اتصال Tauri غير موجود؛ افتح هذا التطبيق في نافذته الخاصة، وليس في المتصفح.", retry: "إعادة المحاولة", choose: "استخدام نسخة العمل الخاصة بي من os-lab…", reset: "استخدام النسخة المضمّنة" }
   };
   var t = strings[language] || strings.en;
+  var pythonStrings = {
+    en: ["Get Python", "Getting Python for os-lab…"],
+    tr: ["Python'u edin", "os-lab için Python indiriliyor…"],
+    de: ["Python laden", "Python für os-lab wird geladen…"],
+    fr: ["Obtenir Python", "Téléchargement de Python pour os-lab…"],
+    es: ["Obtener Python", "Descargando Python para os-lab…"],
+    it: ["Scarica Python", "Download di Python per os-lab…"],
+    fa: ["دریافت پایتون", "پایتون برای os-lab دریافت می‌شود…"],
+    ar: ["الحصول على Python", "جارٍ تنزيل Python لـ os-lab…"]
+  };
+  var pt = pythonStrings[language] || pythonStrings.en;
   $("retry").textContent = t.retry;
   $("choose").textContent = t.choose;
   resetBtn.textContent = t.reset;
+  pythonBtn.textContent = pt[0];
 
   function show(message, isError) {
     statusEl.textContent = message;
@@ -34,8 +46,10 @@
 
   function fail(err) {
     show(t.failed, true);
-    detail.textContent = String(err && err.message ? err.message : err);
-    invoke("console_logs").then(function (log) {
+    var message = String(err && err.message ? err.message : err);
+    pythonBtn.hidden = message.indexOf("Python 3.9 or newer was not found") === -1;
+    detail.textContent = message;
+    if (invoke) invoke("console_logs").then(function (log) {
       if (log) detail.textContent += "\n\n— console.log —\n" + log;
     }, function () {});
   }
@@ -52,6 +66,10 @@
   }
 
   $("retry").addEventListener("click", start);
+  pythonBtn.addEventListener("click", function () {
+    show(pt[1], false);
+    invoke("python_install").then(start, fail);
+  });
   $("choose").addEventListener("click", function () {
     invoke("console_choose_root").then(function (path) { if (path) start(); }, fail);
   });

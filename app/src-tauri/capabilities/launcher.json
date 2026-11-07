@@ -11,6 +11,7 @@
     "allow-console-restart",
     "allow-console-choose-root",
     "allow-console-reset-root",
-    "allow-console-logs"
+    "allow-console-logs",
+    "allow-python-install"
   ]
 }

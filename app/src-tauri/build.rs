@@ -9,6 +9,7 @@ fn main() {
             "console_choose_root",
             "console_reset_root",
             "console_logs",
+            "python_install",
         ]),
     ))
     .expect("failed to run tauri-build");

@@ -88,7 +88,7 @@ impl Console {
         healthy(port).then(|| url_for(port))
     }
 
-    pub fn start(&self, root: &Path, source: Source, log: &Path) -> Result<Started, String> {
+    pub fn start(&self, root: &Path, source: Source, log: &Path, data_dir: &Path) -> Result<Started, String> {
         if let Some(url) = self.running_url() {
             return Ok(Started {
                 url,
@@ -99,7 +99,7 @@ impl Console {
             });
         }
         self.stop();
-        let python = find_python()?;
+        let python = find_python(data_dir)?;
         let port = free_port()?;
         let script = root.join("android-lab").join("lab").join("web_ui.py");
         if let Some(parent) = log.parent() {
@@ -200,22 +200,23 @@ pub fn healthy(port: u16) -> bool {
 }
 
 /// The first Python 3.9+ on PATH. On Windows the `py` launcher comes first.
-pub fn find_python() -> Result<String, String> {
-    let candidates: &[&str] = if cfg!(windows) { &["py", "python", "python3"] } else { &["python3", "python"] };
-    for name in candidates {
+pub fn find_python(data_dir: &Path) -> Result<String, String> {
+    let managed = crate::python_runtime::saved_python(data_dir);
+    let host: &[&str] = if cfg!(windows) { &["py", "python", "python3"] } else { &["python3", "python"] };
+    for name in managed.iter().map(String::as_str).chain(host.iter().copied()) {
         let mut cmd = Command::new(name);
-        if *name == "py" {
+        if name == "py" {
             cmd.arg("-3");
         }
         cmd.args(["-c", "import sys; print(sys.version_info >= (3, 9))"]);
         hide_window(&mut cmd);
         if let Ok(out) = cmd.output() {
             if out.status.success() && String::from_utf8_lossy(&out.stdout).trim() == "True" {
-                return Ok(if *name == "py" { "py".to_string() } else { name.to_string() });
+                return Ok(name.to_string());
             }
         }
     }
-    Err("Python 3.9 or newer was not found on PATH. The os-lab console is a Python program; install Python 3 (python.org, or your package manager) and press Retry.".to_string())
+    Err("Python 3.9 or newer was not found. Choose Get Python to install a managed copy for os-lab, then retry.".to_string())
 }
 
 pub fn tail(path: &Path, lines: usize) -> String {

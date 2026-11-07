@@ -36,7 +36,7 @@ function Need($cmd) { if (-not (Get-Command $cmd -ErrorAction SilentlyContinue))
 function Run($exe, [string[]]$a) { & $exe @a; if ($LASTEXITCODE -ne 0) { Die "$exe $($a -join ' ') failed ($LASTEXITCODE)" } }
 
 if (-not $IsWindows -and $PSVersionTable.PSEdition -eq 'Core') { Die 'Windows only (WiX builds the .msi on Windows)' }
-foreach ($c in 'node', 'npm', 'cargo', 'git') { Need $c }
+foreach ($c in 'node', 'npm', 'cargo', 'git', 'tar') { Need $c }
 
 $Version = (& node -p "require('$($AppDir -replace '\\','/')/src-tauri/tauri.conf.json').version").Trim()
 $Tag = "app-v$Version"
@@ -86,6 +86,7 @@ Say 'installing dashboard build tools'
 Run 'npm' @('ci', '--no-audit', '--no-fund', '--prefix', (Join-Path $Repo 'dashboard'))
 Say 'staging the runtime and dashboard'
 Run 'node' @('scripts/stage-runtime.mjs')
+Run 'node' @('scripts/stage-python-helper.mjs')
 
 $tauriArgs = @('tauri', 'build', '--bundles', 'nsis,msi')
 $overlay = $null
