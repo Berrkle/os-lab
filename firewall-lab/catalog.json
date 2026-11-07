@@ -3,18 +3,18 @@
   "summary": {
     "companies": 15,
     "branches": 62,
-    "firewalls": 71,
-    "rules": 1323,
+    "firewalls": 73,
+    "rules": 1337,
     "priceUsd": {
       "min": 0,
       "max": 205357,
-      "total": 982294
+      "total": 1064336.0899999999
     },
     "chosenByVendor": {
       "Fortinet": 53,
       "Palo Alto Networks": 5,
       "Netfilter project": 5,
-      "Cloudflare": 2,
+      "Cloudflare": 4,
       "Açık kaynak": 2,
       "WatchGuard": 1,
       "Check Point": 1,
@@ -53,7 +53,9 @@
       "Fortinet FortiGate 100F (HA)": 1,
       "Check Point Check Point Quantum Spark 1800": 1,
       "Fortinet FortiGate 120G (2 × HA, aktif-pasif)": 1,
+      "Cloudflare Cloudflare WAF, Business planı (1 alan adı: Ankara kurumsal web sitesi ve web servisleri)": 1,
       "Fortinet FortiGate 900G (2 × HA, aktif-pasif)": 1,
+      "Cloudflare Cloudflare WAF, Business planı (1 alan adı: kampüs LMS, web sitesi ve öğrenci portalının internete açık uçları)": 1,
       "Fortinet FortiGate 400F (HA)": 1,
       "Palo Alto Networks Palo Alto Networks PA-5410": 1,
       "Fortinet Fortinet FortiGate 1000F": 1,
@@ -68,24 +70,26 @@
       "Deciso (açık kaynak) OPNsense (Deciso DEC3800)": 1
     },
     "vendorsConsidered": {
-      "Fortinet": 77,
+      "Fortinet": 79,
       "Palo Alto Networks": 55,
       "Check Point": 54,
       "Sophos": 46,
       "Cisco": 38,
       "Netgate": 20,
       "Deciso": 15,
+      "Cloudflare": 8,
       "WatchGuard": 5,
       "Juniper": 5,
       "Netfilter project": 5,
-      "Cloudflare": 4,
       "F5": 4,
+      "Amazon Web Services": 3,
       "SonicWall": 3,
       "Palo Alto": 2,
       "MikroTik": 2,
       "Ubiquiti": 2,
       "Açık kaynak": 2,
       "Barracuda": 2,
+      "Microsoft": 2,
       "Juniper Networks": 2,
       "Deciso (açık kaynak)": 2,
       "Netgate / Deciso": 1,
@@ -95,7 +99,6 @@
       "OWASP / açık kaynak": 1,
       "Imperva (Thales)": 1,
       "Forcepoint": 1,
-      "Amazon Web Services": 1,
       "IPFire (açık kaynak)": 1,
       "Protectli + Linux": 1
     }
@@ -1878,11 +1881,11 @@
       "product": "FortiGate 120G (2 × HA, aktif-pasif)",
       "vendor": "Fortinet",
       "throughputGbps": 2.8,
-      "priceUsd": null,
-      "ruleCount": 35,
+      "priceUsd": 8567.08,
+      "ruleCount": 36,
       "actions": {
         "allow": 26,
-        "deny": 8,
+        "deny": 9,
         "reject": 0,
         "limit": 1
       },
@@ -1892,25 +1895,74 @@
           "product": "PA-1410",
           "vendor": "Palo Alto Networks",
           "throughputGbps": 4.5,
-          "priceUsd": null
+          "priceUsd": 21589.2
         },
         {
           "product": "Secure Firewall 1230",
           "vendor": "Cisco",
           "throughputGbps": 9,
-          "priceUsd": null
+          "priceUsd": 21817.98
         },
         {
           "product": "Quantum Spark 1900",
           "vendor": "Check Point",
           "throughputGbps": 4,
-          "priceUsd": null
+          "priceUsd": 15856.0
         },
         {
           "product": "XGS 2300",
           "vendor": "Sophos",
           "throughputGbps": 5.9,
-          "priceUsd": null
+          "priceUsd": 7926.78
+        }
+      ]
+    },
+    {
+      "company": "K1-FW — Çok Lokasyonlu Kurumsal Ağ ve Güvenlik Duvarı",
+      "companySlug": "k1-fw-cok-lokasyonlu-ag",
+      "sector": "Education / Software",
+      "author": "H*** A*** K***",
+      "branch": "Ankara Ofisi (genel merkez, VPN hub)",
+      "branchId": "ankara-hq",
+      "branchRole": "headquarters",
+      "location": "Ankara, Türkiye",
+      "segment": "web-waf",
+      "product": "Cloudflare WAF, Business planı (1 alan adı: Ankara kurumsal web sitesi ve web servisleri)",
+      "vendor": "Cloudflare",
+      "throughputGbps": null,
+      "priceUsd": 2400,
+      "ruleCount": 6,
+      "actions": {
+        "allow": 3,
+        "deny": 2,
+        "reject": 0,
+        "limit": 1
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "Cloudflare WAF, Pro planı",
+          "vendor": "Cloudflare",
+          "throughputGbps": null,
+          "priceUsd": 240
+        },
+        {
+          "product": "FortiWeb 400F (cihaz WAF)",
+          "vendor": "Fortinet",
+          "throughputGbps": 0.5,
+          "priceUsd": 25181.6
+        },
+        {
+          "product": "AWS WAF (CloudFront önünde)",
+          "vendor": "Amazon Web Services",
+          "throughputGbps": null,
+          "priceUsd": 360
+        },
+        {
+          "product": "Azure Front Door Premium (WAF dahil)",
+          "vendor": "Microsoft",
+          "throughputGbps": null,
+          "priceUsd": 3960
         }
       ]
     },
@@ -1927,7 +1979,7 @@
       "product": "FortiGate 90G",
       "vendor": "Fortinet",
       "throughputGbps": 2.2,
-      "priceUsd": null,
+      "priceUsd": 2827.56,
       "ruleCount": 40,
       "actions": {
         "allow": 28,
@@ -1941,25 +1993,25 @@
           "product": "PA-1410",
           "vendor": "Palo Alto Networks",
           "throughputGbps": 4.5,
-          "priceUsd": null
+          "priceUsd": 10794.6
         },
         {
           "product": "XGS 2300",
           "vendor": "Sophos",
           "throughputGbps": 5.9,
-          "priceUsd": null
+          "priceUsd": 3963.39
         },
         {
           "product": "Quantum Spark 1900",
           "vendor": "Check Point",
           "throughputGbps": 4,
-          "priceUsd": null
+          "priceUsd": 7928.0
         },
         {
           "product": "OPNsense DEC3850 v2",
           "vendor": "Deciso",
           "throughputGbps": 2,
-          "priceUsd": null
+          "priceUsd": 1871.42
         }
       ]
     },
@@ -1976,7 +2028,7 @@
       "product": "FortiGate 70G",
       "vendor": "Fortinet",
       "throughputGbps": 1.3,
-      "priceUsd": null,
+      "priceUsd": 1214.67,
       "ruleCount": 29,
       "actions": {
         "allow": 21,
@@ -1990,25 +2042,25 @@
           "product": "PA-445",
           "vendor": "Palo Alto Networks",
           "throughputGbps": 1.25,
-          "priceUsd": null
+          "priceUsd": 2909.99
         },
         {
           "product": "XGS 118",
           "vendor": "Sophos",
           "throughputGbps": 3.25,
-          "priceUsd": null
+          "priceUsd": 1062.03
         },
         {
           "product": "Quantum Spark 1900",
           "vendor": "Check Point",
           "throughputGbps": 4,
-          "priceUsd": null
+          "priceUsd": 7928.0
         },
         {
           "product": "Netgate 4200 (pfSense Plus)",
           "vendor": "Netgate",
           "throughputGbps": null,
-          "priceUsd": null
+          "priceUsd": 829.0
         }
       ]
     },
@@ -2025,11 +2077,11 @@
       "product": "FortiGate 900G (2 × HA, aktif-pasif)",
       "vendor": "Fortinet",
       "throughputGbps": 30,
-      "priceUsd": null,
-      "ruleCount": 48,
+      "priceUsd": 64632.78,
+      "ruleCount": 49,
       "actions": {
         "allow": 32,
-        "deny": 14,
+        "deny": 15,
         "reject": 0,
         "limit": 2
       },
@@ -2039,25 +2091,74 @@
           "product": "PA-3430",
           "vendor": "Palo Alto Networks",
           "throughputGbps": 15,
-          "priceUsd": null
+          "priceUsd": 100170.0
         },
         {
           "product": "Secure Firewall 4215",
           "vendor": "Cisco",
           "throughputGbps": 65,
-          "priceUsd": null
+          "priceUsd": 348475.98
         },
         {
           "product": "Quantum Force 19100",
           "vendor": "Check Point",
           "throughputGbps": 35,
-          "priceUsd": null
+          "priceUsd": 232458.56
         },
         {
           "product": "XGS 4300",
           "vendor": "Sophos",
           "throughputGbps": 28,
-          "priceUsd": null
+          "priceUsd": 22738.5
+        }
+      ]
+    },
+    {
+      "company": "K1-FW — Çok Lokasyonlu Kurumsal Ağ ve Güvenlik Duvarı",
+      "companySlug": "k1-fw-cok-lokasyonlu-ag",
+      "sector": "Education / Software",
+      "author": "H*** A*** K***",
+      "branch": "Akademik Kampüs (Ar-Ge ekibi dahil)",
+      "branchId": "academic-campus",
+      "branchRole": "campus",
+      "location": "Türkiye (şehir senaryoda belirtilmedi)",
+      "segment": "web-waf",
+      "product": "Cloudflare WAF, Business planı (1 alan adı: kampüs LMS, web sitesi ve öğrenci portalının internete açık uçları)",
+      "vendor": "Cloudflare",
+      "throughputGbps": null,
+      "priceUsd": 2400,
+      "ruleCount": 6,
+      "actions": {
+        "allow": 3,
+        "deny": 2,
+        "reject": 0,
+        "limit": 1
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "Cloudflare WAF, Pro planı",
+          "vendor": "Cloudflare",
+          "throughputGbps": null,
+          "priceUsd": 240
+        },
+        {
+          "product": "FortiWeb 400F (cihaz WAF)",
+          "vendor": "Fortinet",
+          "throughputGbps": 0.5,
+          "priceUsd": 25181.6
+        },
+        {
+          "product": "AWS WAF (CloudFront önünde)",
+          "vendor": "Amazon Web Services",
+          "throughputGbps": null,
+          "priceUsd": 360
+        },
+        {
+          "product": "Azure Front Door Premium (WAF dahil)",
+          "vendor": "Microsoft",
+          "throughputGbps": null,
+          "priceUsd": 3960
         }
       ]
     },

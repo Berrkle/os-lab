@@ -8,7 +8,7 @@
     "course": "BGT207",
     "github": "frudotz"
   },
-  "summary": "Kurgusal bir eğitim ve yazılım kurumu: Ankara genel merkez ve VPN hub, İstanbul ofisi ve yazılım ekibi, Londra satış ofisi ve 10.000 öğrencili akademik kampüs (toplam 11.397 kişi). Tek 10.0.0.0/8 planı (ikinci oktet lokasyon, üçüncü oktet VLAN), her lokasyonda yerel internet çıkışı, ana + yedek hat ve default deny çalışan bir firewall; lokasyonlar Ankara merkezli IPsec IKEv2 hub-and-spoke ile bağlı. Üretim için FortiGate ailesi seçildi (Ankara 2 × 120G HA, İstanbul 90G, Londra 70G, Akademik 2 × 900G HA); laboratuvar/simülasyon için GNS3 + pfSense CE 2.9 kullanılacak. Bütün personel ve Mbps değerleri tasarım varsayımıdır, ölçüm değildir; firewall kapasiteleri üretici datasheet değeridir. Durum: tasarım ve dokümantasyon tamamlandı, laboratuvar henüz kurulmadı, hiçbir cihaz yapılandırılmadı veya test edilmedi.",
+  "summary": "Kurgusal bir eğitim ve yazılım kurumu: Ankara genel merkez ve VPN hub, İstanbul ofisi ve yazılım ekibi, Londra satış ofisi ve 10.000 öğrencili akademik kampüs (toplam 11.397 kişi). Tek 10.0.0.0/8 planı (ikinci oktet lokasyon, üçüncü oktet VLAN), her lokasyonda yerel internet çıkışı, ana + yedek hat ve default deny çalışan bir firewall; lokasyonlar Ankara merkezli IPsec IKEv2 hub-and-spoke ile bağlı. Üretim için FortiGate ailesi seçildi (Ankara 2 × 120G HA, İstanbul 90G, Londra 70G, Akademik 2 × 900G HA); laboratuvar/simülasyon için GNS3 + pfSense CE 2.9 kullanılacak. Ankara ve Akademik DMZ'deki herkese açık web/LMS servisleri Cloudflare WAF arkasındadır; origin'e yalnızca Cloudflare'dan gelen mTLS bağlantısı kabul edilir. Bütün personel ve Mbps değerleri tasarım varsayımıdır, ölçüm değildir; firewall kapasiteleri üretici datasheet değeridir. Durum: tasarım ve dokümantasyon tamamlandı, laboratuvar henüz kurulmadı, hiçbir cihaz yapılandırılmadı veya test edilmedi.",
   "branches": [
     {
       "id": "ankara-hq",
@@ -91,32 +91,37 @@
             "product": "FortiGate 120G (2 × HA, aktif-pasif)",
             "vendor": "Fortinet",
             "throughputGbps": 2.8,
-            "reason": "Seçildi (datasheet, erişim 2026-11-06): Threat Protection 2,8 Gbps ≥ 1 Gbps ana hat, IPsec 35 Gbps (3 tünel + uzaktan erişim VPN'i burada sonlanır), 3 M oturum, yerleşik SD-WAN ile ana/yedek hat. HA, merkezi servislerin (DNS, kimlik, ERP, izleme) tek arıza noktası olmasını önler. Bir üst model 200G (TP 6 Gbps) bu hat için gereksiz maliyet. Bu üretim cihazıdır. Laboratuvarda aynı VLAN ve kural mantığı GNS3 üzerindeki pfSense CE 2.9 ile temsil edilecek (lab henüz kurulmadı, hiçbir cihaz yapılandırılmadı)."
+            "reason": "Seçildi (datasheet, erişim 2026-11-06): Threat Protection 2,8 Gbps ≥ 1 Gbps ana hat, IPsec 35 Gbps (3 tünel + uzaktan erişim VPN'i burada sonlanır), 3 M oturum, yerleşik SD-WAN ile ana/yedek hat. HA, merkezi servislerin (DNS, kimlik, ERP, izleme) tek arıza noktası olmasını önler. Bir üst model 200G (TP 6 Gbps) bu hat için gereksiz maliyet. Bu üretim cihazıdır. Laboratuvarda aynı VLAN ve kural mantığı GNS3 üzerindeki pfSense CE 2.9 ile temsil edilecek (lab henüz kurulmadı, hiçbir cihaz yapılandırılmadı). Fiyat: HA çifti, 2 × FG-120G donanım (birim 4.283,54 USD satış, liste 5.787 USD; AVFirewalls.com (erişim 2026-11-07)). 1 yıl UTP paketiyle FG-120G-BDL-950-12 birim 6.437,96 USD, çift 12.875,92 USD.",
+            "priceUsd": 8567.08
           },
           "alternatives": [
             {
               "product": "PA-1410",
               "vendor": "Palo Alto Networks",
               "throughputGbps": 4.5,
-              "reason": "En güçlü uygulama tanıma, Panorama ile merkezi yönetim; ancak IPsec 4,1 Gbps ile hub için FortiGate'ten düşük, maliyet yüksek."
+              "reason": "En güçlü uygulama tanıma, Panorama ile merkezi yönetim; ancak IPsec 4,1 Gbps ile hub için FortiGate'ten düşük, maliyet yüksek. Fiyat: HA çifti, 2 × PAN-PA-1410 donanım, abonelik hariç (birim 10.794,60 USD, Network Devices Inc; yalnızca arama sonucu özetinden, sayfa açılamadı, teklifle doğrulanmalı).",
+              "priceUsd": 21589.2
             },
             {
               "product": "Secure Firewall 1230",
               "vendor": "Cisco",
               "throughputGbps": 9,
-              "reason": "FW+AVC+IPS 9 Gbps ile yüksek IPS kapasitesi; ancak yalnızca aktif-pasif HA ve karmaşık yönetim katmanı."
+              "reason": "FW+AVC+IPS 9 Gbps ile yüksek IPS kapasitesi; ancak yalnızca aktif-pasif HA ve karmaşık yönetim katmanı. Fiyat: HA çifti, 2 × CSF1230-TD-K9 (FTD yazılımıyla donanım; Threat/Malware/URL abonelikleri ayrı), birim 10.908,99 USD (CDW; arama sonucu özetinden, teklifle doğrulanmalı).",
+              "priceUsd": 21817.98
             },
             {
               "product": "Quantum Spark 1900",
               "vendor": "Check Point",
               "throughputGbps": 4,
-              "reason": "Kolay kurulum, güçlü tehdit önleme; Spark serisi KOBİ odaklı, hub rolü için sınırlı."
+              "reason": "Kolay kurulum, güçlü tehdit önleme; Spark serisi KOBİ odaklı, hub rolü için sınırlı. Fiyat: HA çifti, 2 × CPAP-SG1900-SNBT (cihaz + 1 yıl SandBlast aboneliği), birim 7.928 USD CDW liste fiyatı (sayfada doğrulandı).",
+              "priceUsd": 15856.0
             },
             {
               "product": "XGS 2300",
               "vendor": "Sophos",
               "throughputGbps": 5.9,
-              "reason": "Uygun fiyat ve kolay yönetim; farklı üretici seçilirse dört lokasyonun tek arayüzden yönetimi kaybolur."
+              "reason": "Uygun fiyat ve kolay yönetim; farklı üretici seçilirse dört lokasyonun tek arayüzden yönetimi kaybolur. Fiyat: HA çifti, 2 × XG2CTCHUS (yalnızca donanım), birim 3.963,39 USD CDW liste fiyatı (sayfada doğrulandı).",
+              "priceUsd": 7926.78
             }
           ],
           "rules": [
@@ -344,9 +349,18 @@
               "direction": "in",
               "proto": "tcp",
               "port": 443,
-              "from": "internet",
-              "to": "Ankara DMZ (10.10.25.0/24) web/LMS ön yüzü",
-              "note": "README §8 kural 20 / P-63: yayınlanan tek servis HTTPS 443; IPS profili açık, port yönlendirme ile DMZ'ye. Yönetim arayüzleri asla internete açılmaz."
+              "from": "Cloudflare IP aralıkları (cloudflare.com/ips, IPv4+IPv6 adres grubu)",
+              "to": "Ankara DMZ (10.10.25.0/24) web/LMS origin",
+              "note": "README §8 kural 20 / P-63, WAF eklendikten sonra: yayınlanan servis HTTPS 443 yalnızca Cloudflare WAF'tan gelir; IPS profili açık kalır. Bağlantı Full (strict) TLS ve Authenticated Origin Pulls (mTLS) ile korunur. Adres grubu Cloudflare'ın yayımladığı listeden düzenli güncellenir."
+            },
+            {
+              "action": "deny",
+              "direction": "in",
+              "proto": "tcp",
+              "port": 443,
+              "from": "internet (Cloudflare dışı bütün adresler)",
+              "to": "Ankara DMZ (10.10.25.0/24) web/LMS origin",
+              "note": "WAF atlatmayı önler: origin IP'si öğrenilse bile internetten doğrudan 443 bağlantısı reddedilir ve loglanır; trafik WAF'tan geçmek zorundadır."
             },
             {
               "action": "allow",
@@ -423,6 +437,96 @@
               "proto": "any",
               "to": "any",
               "note": "README §8 kural 24 / P-99: son kural, default deny + log. Yukarıda açıkça izin verilmeyen her şey burada reddedilir."
+            }
+          ]
+        },
+        {
+          "segment": "web-waf",
+          "chosen": {
+            "product": "Cloudflare WAF, Business planı (1 alan adı: Ankara kurumsal web sitesi ve web servisleri)",
+            "vendor": "Cloudflare",
+            "priceUsd": 2400,
+            "reason": "Seçildi: WAF hizmetidir, firewall değildir; ağ firewall'u FortiGate olarak kalır. Cloudflare Managed Ruleset ve OWASP Core Ruleset, 100 özel WAF kuralı, 5 rate limiting kuralı (giriş sayfası koruması), %100 uptime SLA ve L3/4/7 DDoS emme kapasitesi sunar. Saldırı trafiği hattımıza ulaşmadan kenarda düşer. Ankara DMZ'deki kurumsal web sitesi ve web servislerinin önündedir. Fiyat: yıllık faturada 200 USD/ay × 12 = 2.400 USD/yıl, alan adı (zone) başına abonelik; aylık faturada 250 USD/ay (https://www.cloudflare.com/plans/ (erişim 2026-11-07)). Donanım fiyatıyla karşılaştırılmaz."
+          },
+          "alternatives": [
+            {
+              "product": "Cloudflare WAF, Pro planı",
+              "vendor": "Cloudflare",
+              "priceUsd": 240,
+              "reason": "Aynı Managed ve OWASP kural setleri, ancak yalnızca 20 özel kural, 2 rate limiting kuralı ve uptime SLA yok; Ankara için kesinti garantisi gerektiği için seçilmedi. Fiyat: yıllık faturada 20 USD/ay = 240 USD/yıl, alan adı başına (https://www.cloudflare.com/plans/ (erişim 2026-11-07))."
+            },
+            {
+              "product": "FortiWeb 400F (cihaz WAF)",
+              "vendor": "Fortinet",
+              "throughputGbps": 0.5,
+              "priceUsd": 25181.6,
+              "reason": "FortiGate ile aynı üretici ve yerinde (on-prem) TLS sonlandırma avantajı; ancak 500 Mbps WAF kapasitesi, tek cihaz HA vermez ve hacimsel DDoS hattımıza girmeden durdurulamaz. Fiyat: FWB-400F-BDL-934-12 (donanım + 1 yıl FortiCare Premium + Standard Bundle) 25.181,60 USD satış, liste 34.020 USD; yalnızca donanım 17.409,50 USD (AVFirewalls.com, erişim 2026-11-07)."
+            },
+            {
+              "product": "AWS WAF (CloudFront önünde)",
+              "vendor": "Amazon Web Services",
+              "priceUsd": 360,
+              "reason": "Kullanım bazlı ucuz WAF; ancak doğrudan şirket içi origin'e bağlanmaz, önüne CloudFront dağıtımı gerekir ve yönetilen kural setleri ayrı ücretlendirilir. Fiyat: 5 USD/web ACL/ay + 1 USD/kural/ay + 0,60 USD/1 milyon istek; AWS'nin kendi örneği (19 kural, 10 milyon istek) 30 USD/ay ≈ 360 USD/yıl. Bu bir tahmindir, gerçek tutar istek hacmine bağlıdır (https://aws.amazon.com/waf/pricing/, erişim 2026-11-07)."
+            },
+            {
+              "product": "Azure Front Door Premium (WAF dahil)",
+              "vendor": "Microsoft",
+              "priceUsd": 3960,
+              "reason": "WAF ve yönetilen kural setleri Premium katmana dahil; ancak taban ücret yüksek ve istek ile veri çıkışı ayrıca ücretlendirilir, kurumun Azure altyapısı yok. Fiyat: 330 USD/ay taban ücret × 12 = 3.960 USD/yıl; 10 bin istek başına 0,015 USD ve GB başına çıkış ücreti hariç (https://azure.microsoft.com/en-us/pricing/details/frontdoor/, erişim 2026-11-07)."
+            }
+          ],
+          "rules": [
+            {
+              "action": "deny",
+              "direction": "in",
+              "proto": "tcp",
+              "port": 443,
+              "from": "internet",
+              "to": "Cloudflare kenarı: Ankara kurumsal web sitesi ve web servisleri (yönetilen kural eşleşmesi)",
+              "note": "Cloudflare Managed Ruleset ve OWASP Core Ruleset engelleme modunda: SQL injection, XSS, RCE gibi uygulama katmanı saldırıları origin'e hiç ulaşmadan kenarda düşer. Ağ firewall'u bunu yapamaz, çünkü saldırı izinli 443 üzerinden gelir."
+            },
+            {
+              "action": "limit",
+              "direction": "in",
+              "proto": "tcp",
+              "port": 443,
+              "from": "internet",
+              "to": "Cloudflare kenarı: Ankara kurumsal web sitesi ve web servisleri giriş/oturum açma yolları",
+              "note": "Rate limiting kuralı: kaba kuvvet ve kimlik bilgisi doldurma (credential stuffing) denemelerini IP başına sınırlar. Web servislerindeki yönetici ve kullanıcı giriş sayfaları için. Eşik, ilk izleme verisiyle belirlenecek."
+            },
+            {
+              "action": "allow",
+              "direction": "in",
+              "proto": "tcp",
+              "port": 443,
+              "from": "internet",
+              "to": "Cloudflare kenarı: Ankara kurumsal web sitesi ve web servisleri",
+              "note": "Ziyaretçiler HTTPS ile Cloudflare kenarına gelir; DNS kaydı proxy modunda olduğu için origin IP'si yayınlanmaz. Kenarda L3/4/7 DDoS koruması uygulanır."
+            },
+            {
+              "action": "allow",
+              "direction": "in",
+              "proto": "tcp",
+              "port": 80,
+              "from": "internet",
+              "to": "Cloudflare kenarı: Ankara kurumsal web sitesi ve web servisleri (HTTP)",
+              "note": "Yalnızca 'Always Use HTTPS' yönlendirmesi: 80'e gelen istek 443'e çevrilir, origin'e HTTP gönderilmez."
+            },
+            {
+              "action": "allow",
+              "direction": "in",
+              "proto": "tcp",
+              "port": 443,
+              "from": "Cloudflare IP aralıkları (cloudflare.com/ips)",
+              "to": "Ankara DMZ web origin (10.10.25.0/24)",
+              "note": "Kenardan origin'e: SSL modu Full (strict), origin'de Cloudflare Origin CA sertifikası ve Authenticated Origin Pulls (mTLS). mTLS şarttır, çünkü Cloudflare IP aralıkları bütün Cloudflare müşterileri tarafından paylaşılır; yalnızca IP kısıtı başka bir Cloudflare hesabından gelen atlatmayı engellemez."
+            },
+            {
+              "action": "deny",
+              "direction": "in",
+              "proto": "any",
+              "to": "any",
+              "note": "Son kural: WAF segmentinde yukarıda izin verilmeyen her şey reddedilir. Origin'e Cloudflare dışından gelen trafik perimeter FortiGate'te ayrıca reddedilir."
             }
           ]
         }
@@ -510,32 +614,37 @@
             "product": "FortiGate 90G",
             "vendor": "Fortinet",
             "throughputGbps": 2.2,
-            "reason": "Seçildi (datasheet, erişim 2026-11-06): Threat Protection 2,2 Gbps, 1 Gbps hattın iki katından fazla; yazılım ekibinin git/paket indirme burst'lerini karşılar. IPsec 25 Gbps, 3 M oturum, kurumun geri kalanıyla aynı yönetim ve VPN yapısı. HA kurulmadı: bilinçli cihaz arızası riski kabulü, Ankara'da soğuk yedek 90G ve FortiManager konfigürasyon yedeği ile sınırlandırılır (RTO hedefi ≤ 8 saat). Bu üretim cihazıdır. Laboratuvarda aynı VLAN ve kural mantığı GNS3 üzerindeki pfSense CE 2.9 ile temsil edilecek (lab henüz kurulmadı, hiçbir cihaz yapılandırılmadı)."
+            "reason": "Seçildi (datasheet, erişim 2026-11-06): Threat Protection 2,2 Gbps, 1 Gbps hattın iki katından fazla; yazılım ekibinin git/paket indirme burst'lerini karşılar. IPsec 25 Gbps, 3 M oturum, kurumun geri kalanıyla aynı yönetim ve VPN yapısı. HA kurulmadı: bilinçli cihaz arızası riski kabulü, Ankara'da soğuk yedek 90G ve FortiManager konfigürasyon yedeği ile sınırlandırılır (RTO hedefi ≤ 8 saat). Bu üretim cihazıdır. Laboratuvarda aynı VLAN ve kural mantığı GNS3 üzerindeki pfSense CE 2.9 ile temsil edilecek (lab henüz kurulmadı, hiçbir cihaz yapılandırılmadı). Fiyat: 1 × FG-90G donanım 2.827,56 USD satış (liste 3.820 USD; AVFirewalls.com (erişim 2026-11-07)). 1 yıl UTP paketiyle FG-90G-BDL-950-12 4.314,11 USD.",
+            "priceUsd": 2827.56
           },
           "alternatives": [
             {
               "product": "PA-1410",
               "vendor": "Palo Alto Networks",
               "throughputGbps": 4.5,
-              "reason": "Geliştirici araçları için ayrıntılı uygulama kuralları; maliyet ve farklı yönetim konsolu."
+              "reason": "Geliştirici araçları için ayrıntılı uygulama kuralları; maliyet ve farklı yönetim konsolu. Fiyat: 1 × PAN-PA-1410 donanım, abonelik hariç, 10.794,60 USD (Network Devices Inc; arama sonucu özetinden, teklifle doğrulanmalı).",
+              "priceUsd": 10794.6
             },
             {
               "product": "XGS 2300",
               "vendor": "Sophos",
               "throughputGbps": 5.9,
-              "reason": "Yüksek TP ve uygun fiyat; yönetim birliği kaybolur."
+              "reason": "Yüksek TP ve uygun fiyat; yönetim birliği kaybolur. Fiyat: 1 × XG2CTCHUS (yalnızca donanım) 3.963,39 USD CDW liste fiyatı (sayfada doğrulandı).",
+              "priceUsd": 3963.39
             },
             {
               "product": "Quantum Spark 1900",
               "vendor": "Check Point",
               "throughputGbps": 4,
-              "reason": "Basit kurulum; KOBİ odaklı yönetim."
+              "reason": "Basit kurulum; KOBİ odaklı yönetim. Fiyat: 1 × CPAP-SG1900-SNBT (cihaz + 1 yıl SandBlast) 7.928 USD CDW liste fiyatı (sayfada doğrulandı).",
+              "priceUsd": 7928.0
             },
             {
               "product": "OPNsense DEC3850 v2",
               "vendor": "Deciso",
               "throughputGbps": 2,
-              "reason": "Açık kaynak, lisans ücreti yok, lab mantığıyla aynı (IPS ~2 Gbps, Suricata); ticari tehdit istihbaratı, uygulama tanıma ve merkezi yönetim zayıf, destek sınırlı."
+              "reason": "Açık kaynak, lisans ücreti yok, lab mantığıyla aynı (IPS ~2 Gbps, Suricata); ticari tehdit istihbaratı, uygulama tanıma ve merkezi yönetim zayıf, destek sınırlı. Fiyat: 1 × DEC3850, resmi mağaza 1.599 EUR (mağazanın USD görünümü 1.871,42 USD); 1 yıl Business Edition dahil. Mağaza ürünün yerini DEC3852'nin (1.898 EUR) aldığını belirtiyor.",
+              "priceUsd": 1871.42
             }
           ],
           "rules": [
@@ -952,31 +1061,36 @@
             "product": "FortiGate 70G",
             "vendor": "Fortinet",
             "throughputGbps": 1.3,
-            "reason": "Seçildi (datasheet, erişim 2026-11-06): Threat Protection 1,3 Gbps, 200 Mbps hattı kat kat karşılar; IPsec 7,1 Gbps. Yerinde BT personeli olmadığı için zero-touch kurulum ve merkezden yönetim belirleyici; 4G/5G yedek hat desteği (FortiExtender). 70F datasheet bağlantısı artık 71F'yi gösterdiği için güncel G serisi tercih edildi. Tek cihaz: RTO hedefi ≤ 1–2 iş günü. Bu üretim cihazıdır. Laboratuvarda aynı VLAN ve kural mantığı GNS3 üzerindeki pfSense CE 2.9 ile temsil edilecek (lab henüz kurulmadı, hiçbir cihaz yapılandırılmadı)."
+            "reason": "Seçildi (datasheet, erişim 2026-11-06): Threat Protection 1,3 Gbps, 200 Mbps hattı kat kat karşılar; IPsec 7,1 Gbps. Yerinde BT personeli olmadığı için zero-touch kurulum ve merkezden yönetim belirleyici; 4G/5G yedek hat desteği (FortiExtender). 70F datasheet bağlantısı artık 71F'yi gösterdiği için güncel G serisi tercih edildi. Tek cihaz: RTO hedefi ≤ 1–2 iş günü. Bu üretim cihazıdır. Laboratuvarda aynı VLAN ve kural mantığı GNS3 üzerindeki pfSense CE 2.9 ile temsil edilecek (lab henüz kurulmadı, hiçbir cihaz yapılandırılmadı). Fiyat: 1 × FG-70G donanım 1.214,67 USD satış (liste 1.641 USD; AVFirewalls.com (erişim 2026-11-07)). 1 yıl UTP paketiyle FG-70G-BDL-950-12 1.814,67 USD.",
+            "priceUsd": 1214.67
           },
           "alternatives": [
             {
               "product": "PA-445",
               "vendor": "Palo Alto Networks",
               "throughputGbps": 1.25,
-              "reason": "Güçlü tehdit önleme; ancak satış sonu 22 Mart 2027, yerine PA-500 serisi önerilir."
+              "reason": "Güçlü tehdit önleme; ancak satış sonu 22 Mart 2027, yerine PA-500 serisi önerilir. Fiyat: 1 × PAN-PA-445 donanım, abonelik hariç, 2.909,99 USD (Zones; sayfada doğrulandı).",
+              "priceUsd": 2909.99
             },
             {
               "product": "XGS 118",
               "vendor": "Sophos",
               "throughputGbps": 3.25,
-              "reason": "Sophos Central bulut yönetimi, kolay kullanım; yönetim birliği kaybolur."
+              "reason": "Sophos Central bulut yönetimi, kolay kullanım; yönetim birliği kaybolur. Fiyat: 1 × XG118Z00ZZPCUS (yalnızca donanım) 1.062,03 USD CDW liste fiyatı; 1 yıl Xstream Protection paketi XX118Z12ZZPCUS 1.554,99 USD (Newegg).",
+              "priceUsd": 1062.03
             },
             {
               "product": "Quantum Spark 1900",
               "vendor": "Check Point",
               "throughputGbps": 4,
-              "reason": "Bulut yönetim seçeneği; 30 kişilik ofis için büyük."
+              "reason": "Bulut yönetim seçeneği; 30 kişilik ofis için büyük. Fiyat: 1 × CPAP-SG1900-SNBT (cihaz + 1 yıl SandBlast) 7.928 USD CDW liste fiyatı (sayfada doğrulandı).",
+              "priceUsd": 7928.0
             },
             {
               "product": "Netgate 4200 (pfSense Plus)",
               "vendor": "Netgate",
-              "reason": "Düşük maliyet, lab ürünüyle aynı yazılım ailesi; tehdit koruması throughput'u yayımlanmamış (Suricata eklentisi), ticari tehdit koruması yok, uzaktan yönetim ve destek zayıf."
+              "reason": "Düşük maliyet, lab ürünüyle aynı yazılım ailesi; tehdit koruması throughput'u yayımlanmamış (Suricata eklentisi), ticari tehdit koruması yok, uzaktan yönetim ve destek zayıf. Fiyat: 1 × Netgate 4200 MAX 829 USD, resmi Netgate mağazası (pfSense Plus ve TAC Lite dahil; TAC Professional yıllık 399 USD ayrı).",
+              "priceUsd": 829.0
             }
           ],
           "rules": [
@@ -1349,32 +1463,37 @@
             "product": "FortiGate 900G (2 × HA, aktif-pasif)",
             "vendor": "Fortinet",
             "throughputGbps": 30,
-            "reason": "Seçildi (datasheet, erişim 2026-11-06): Threat Protection 30 Gbps, 10 Gbps hattın 3 katı ve yurtlu kampüs senaryosunu (S3, 2 × 10 Gbps) da karşılar; 28 M oturum (~20.000 öğrenci cihazı), IPsec 55 Gbps. Kampüs kurumun trafiğinin ~%85'ini taşır ve sınav döneminde kesinti kabul edilemez, bu yüzden HA zorunlu. FortiGate 1000F (TP 13 Gbps) S3'te, 400F (TP 9 Gbps) bugün yetersiz. Bu üretim cihazıdır. Laboratuvarda aynı VLAN ve kural mantığı GNS3 üzerindeki pfSense CE 2.9 ile temsil edilecek (lab henüz kurulmadı, hiçbir cihaz yapılandırılmadı)."
+            "reason": "Seçildi (datasheet, erişim 2026-11-06): Threat Protection 30 Gbps, 10 Gbps hattın 3 katı ve yurtlu kampüs senaryosunu (S3, 2 × 10 Gbps) da karşılar; 28 M oturum (~20.000 öğrenci cihazı), IPsec 55 Gbps. Kampüs kurumun trafiğinin ~%85'ini taşır ve sınav döneminde kesinti kabul edilemez, bu yüzden HA zorunlu. FortiGate 1000F (TP 13 Gbps) S3'te, 400F (TP 9 Gbps) bugün yetersiz. Bu üretim cihazıdır. Laboratuvarda aynı VLAN ve kural mantığı GNS3 üzerindeki pfSense CE 2.9 ile temsil edilecek (lab henüz kurulmadı, hiçbir cihaz yapılandırılmadı). Fiyat: HA çifti, 2 × FG-900G donanım (birim 32.316,39 USD satış, liste 43.659 USD; AVFirewalls.com (erişim 2026-11-07)). 1 yıl UTP paketiyle FG-900G-BDL-950-12 birim 52.881,37 USD, çift 105.762,74 USD.",
+            "priceUsd": 64632.78
           },
           "alternatives": [
             {
               "product": "PA-3430",
               "vendor": "Palo Alto Networks",
               "throughputGbps": 15,
-              "reason": "App-ID ve tehdit önlemede güçlü; 2,5 M oturum 20.000 cihaz için sınırda, maliyet yüksek."
+              "reason": "App-ID ve tehdit önlemede güçlü; 2,5 M oturum 20.000 cihaz için sınırda, maliyet yüksek. Fiyat: HA çifti, 2 × PAN-PA-3430 donanım, abonelik hariç, birim 50.085 USD (Network Devices Inc; arama sonucu özetinden, CDW teklif istiyor; teklifle doğrulanmalı).",
+              "priceUsd": 100170.0
             },
             {
               "product": "Secure Firewall 4215",
               "vendor": "Cisco",
               "throughputGbps": 65,
-              "reason": "FW+AVC+IPS 65 Gbps ile çok yüksek kapasite, Cisco kampüs switch'leriyle uyum; FMC yönetim katmanı karmaşık, bu ölçek için pahalı."
+              "reason": "FW+AVC+IPS 65 Gbps ile çok yüksek kapasite, Cisco kampüs switch'leriyle uyum; FMC yönetim katmanı karmaşık, bu ölçek için pahalı. Fiyat: HA çifti, 2 × FPR4215-NGFW-K9 donanım, abonelik hariç, birim 174.237,99 USD (Zones; sayfada doğrulandı).",
+              "priceUsd": 348475.98
             },
             {
               "product": "Quantum Force 19100",
               "vendor": "Check Point",
               "throughputGbps": 35,
-              "reason": "Güçlü merkezi politika yönetimi; en pahalı aday ve kurumsal karışım TP değeri 14,1 Gbps'e düşüyor."
+              "reason": "Güçlü merkezi politika yönetimi; en pahalı aday ve kurumsal karışım TP değeri 14,1 Gbps'e düşüyor. Fiyat: HA çifti, 2 × CPAP-SG19100-SNBT (cihaz + 1 yıl SandBlast), birim 116.229,28 USD (Tecisoft; küçük satıcı, teklifle doğrulanmalı).",
+              "priceUsd": 232458.56
             },
             {
               "product": "XGS 4300",
               "vendor": "Sophos",
               "throughputGbps": 28,
-              "reason": "Kolay arayüz, iyi fiyat/performans; aktif-aktif modda VPN ve UDP trafiği dağıtılmaz."
+              "reason": "Kolay arayüz, iyi fiyat/performans; aktif-aktif modda VPN ve UDP trafiği dağıtılmaz. Fiyat: HA çifti, 2 × XG4CTCHUS (yalnızca donanım), birim 11.369,25 USD CDW liste fiyatı (sayfada doğrulandı).",
+              "priceUsd": 22738.5
             }
           ],
           "rules": [
@@ -1721,9 +1840,18 @@
               "direction": "in",
               "proto": "tcp",
               "port": 443,
-              "from": "internet",
-              "to": "Akademik DMZ (10.40.25.0/24) web/LMS ön yüzü",
-              "note": "README §8 kural 20 / P-63: yayınlanan tek servis HTTPS 443; IPS profili açık, port yönlendirme ile DMZ'ye. Yönetim arayüzleri asla internete açılmaz."
+              "from": "Cloudflare IP aralıkları (cloudflare.com/ips, IPv4+IPv6 adres grubu)",
+              "to": "Akademik DMZ (10.40.25.0/24) web/LMS origin",
+              "note": "README §8 kural 20 / P-63, WAF eklendikten sonra: yayınlanan servis HTTPS 443 yalnızca Cloudflare WAF'tan gelir; IPS profili açık kalır. Bağlantı Full (strict) TLS ve Authenticated Origin Pulls (mTLS) ile korunur. Adres grubu Cloudflare'ın yayımladığı listeden düzenli güncellenir."
+            },
+            {
+              "action": "deny",
+              "direction": "in",
+              "proto": "tcp",
+              "port": 443,
+              "from": "internet (Cloudflare dışı bütün adresler)",
+              "to": "Akademik DMZ (10.40.25.0/24) web/LMS origin",
+              "note": "WAF atlatmayı önler: origin IP'si öğrenilse bile internetten doğrudan 443 bağlantısı reddedilir ve loglanır; trafik WAF'tan geçmek zorundadır."
             },
             {
               "action": "allow",
@@ -1793,6 +1921,96 @@
               "note": "README §8 kural 24 / P-99: son kural, default deny + log. Yukarıda açıkça izin verilmeyen her şey burada reddedilir."
             }
           ]
+        },
+        {
+          "segment": "web-waf",
+          "chosen": {
+            "product": "Cloudflare WAF, Business planı (1 alan adı: kampüs LMS, web sitesi ve öğrenci portalının internete açık uçları)",
+            "vendor": "Cloudflare",
+            "priceUsd": 2400,
+            "reason": "Seçildi: WAF hizmetidir, firewall değildir; ağ firewall'u FortiGate olarak kalır. Cloudflare Managed Ruleset ve OWASP Core Ruleset, 100 özel WAF kuralı, 5 rate limiting kuralı (giriş sayfası koruması), %100 uptime SLA ve L3/4/7 DDoS emme kapasitesi sunar. Saldırı trafiği hattımıza ulaşmadan kenarda düşer. Akademik DMZ'deki LMS, web sitesi ve öğrenci portalının internete yayınlanan uçlarının önündedir. Kampüs içinden LMS'e giden trafik WAF'a çıkmaz, iç ağdan doğrudan sunucuya gider. Fiyat: yıllık faturada 200 USD/ay × 12 = 2.400 USD/yıl, alan adı (zone) başına abonelik; aylık faturada 250 USD/ay (https://www.cloudflare.com/plans/ (erişim 2026-11-07)). Donanım fiyatıyla karşılaştırılmaz."
+          },
+          "alternatives": [
+            {
+              "product": "Cloudflare WAF, Pro planı",
+              "vendor": "Cloudflare",
+              "priceUsd": 240,
+              "reason": "Aynı Managed ve OWASP kural setleri, ancak yalnızca 20 özel kural, 2 rate limiting kuralı ve uptime SLA yok; Akademik Kampüs için kesinti garantisi gerektiği için seçilmedi. Fiyat: yıllık faturada 20 USD/ay = 240 USD/yıl, alan adı başına (https://www.cloudflare.com/plans/ (erişim 2026-11-07))."
+            },
+            {
+              "product": "FortiWeb 400F (cihaz WAF)",
+              "vendor": "Fortinet",
+              "throughputGbps": 0.5,
+              "priceUsd": 25181.6,
+              "reason": "FortiGate ile aynı üretici ve yerinde (on-prem) TLS sonlandırma avantajı; ancak 500 Mbps WAF kapasitesi, tek cihaz HA vermez ve hacimsel DDoS hattımıza girmeden durdurulamaz. Fiyat: FWB-400F-BDL-934-12 (donanım + 1 yıl FortiCare Premium + Standard Bundle) 25.181,60 USD satış, liste 34.020 USD; yalnızca donanım 17.409,50 USD (AVFirewalls.com, erişim 2026-11-07)."
+            },
+            {
+              "product": "AWS WAF (CloudFront önünde)",
+              "vendor": "Amazon Web Services",
+              "priceUsd": 360,
+              "reason": "Kullanım bazlı ucuz WAF; ancak doğrudan şirket içi origin'e bağlanmaz, önüne CloudFront dağıtımı gerekir ve yönetilen kural setleri ayrı ücretlendirilir. Fiyat: 5 USD/web ACL/ay + 1 USD/kural/ay + 0,60 USD/1 milyon istek; AWS'nin kendi örneği (19 kural, 10 milyon istek) 30 USD/ay ≈ 360 USD/yıl. Bu bir tahmindir, gerçek tutar istek hacmine bağlıdır (https://aws.amazon.com/waf/pricing/, erişim 2026-11-07)."
+            },
+            {
+              "product": "Azure Front Door Premium (WAF dahil)",
+              "vendor": "Microsoft",
+              "priceUsd": 3960,
+              "reason": "WAF ve yönetilen kural setleri Premium katmana dahil; ancak taban ücret yüksek ve istek ile veri çıkışı ayrıca ücretlendirilir, kurumun Azure altyapısı yok. Fiyat: 330 USD/ay taban ücret × 12 = 3.960 USD/yıl; 10 bin istek başına 0,015 USD ve GB başına çıkış ücreti hariç (https://azure.microsoft.com/en-us/pricing/details/frontdoor/, erişim 2026-11-07)."
+            }
+          ],
+          "rules": [
+            {
+              "action": "deny",
+              "direction": "in",
+              "proto": "tcp",
+              "port": 443,
+              "from": "internet",
+              "to": "Cloudflare kenarı: kampüs LMS, web sitesi ve öğrenci portalının internete açık uçları (yönetilen kural eşleşmesi)",
+              "note": "Cloudflare Managed Ruleset ve OWASP Core Ruleset engelleme modunda: SQL injection, XSS, RCE gibi uygulama katmanı saldırıları origin'e hiç ulaşmadan kenarda düşer. Ağ firewall'u bunu yapamaz, çünkü saldırı izinli 443 üzerinden gelir."
+            },
+            {
+              "action": "limit",
+              "direction": "in",
+              "proto": "tcp",
+              "port": 443,
+              "from": "internet",
+              "to": "Cloudflare kenarı: kampüs LMS, web sitesi ve öğrenci portalının internete açık uçları giriş/oturum açma yolları",
+              "note": "Rate limiting kuralı: kaba kuvvet ve kimlik bilgisi doldurma (credential stuffing) denemelerini IP başına sınırlar. Sınav dönemlerinde LMS giriş sayfası en çok hedef alınan yoldur. Eşik, ilk izleme verisiyle belirlenecek."
+            },
+            {
+              "action": "allow",
+              "direction": "in",
+              "proto": "tcp",
+              "port": 443,
+              "from": "internet",
+              "to": "Cloudflare kenarı: kampüs LMS, web sitesi ve öğrenci portalının internete açık uçları",
+              "note": "Ziyaretçiler HTTPS ile Cloudflare kenarına gelir; DNS kaydı proxy modunda olduğu için origin IP'si yayınlanmaz. Kenarda L3/4/7 DDoS koruması uygulanır."
+            },
+            {
+              "action": "allow",
+              "direction": "in",
+              "proto": "tcp",
+              "port": 80,
+              "from": "internet",
+              "to": "Cloudflare kenarı: kampüs LMS, web sitesi ve öğrenci portalının internete açık uçları (HTTP)",
+              "note": "Yalnızca 'Always Use HTTPS' yönlendirmesi: 80'e gelen istek 443'e çevrilir, origin'e HTTP gönderilmez."
+            },
+            {
+              "action": "allow",
+              "direction": "in",
+              "proto": "tcp",
+              "port": 443,
+              "from": "Cloudflare IP aralıkları (cloudflare.com/ips)",
+              "to": "Akademik DMZ web/LMS origin (10.40.25.0/24)",
+              "note": "Kenardan origin'e: SSL modu Full (strict), origin'de Cloudflare Origin CA sertifikası ve Authenticated Origin Pulls (mTLS). mTLS şarttır, çünkü Cloudflare IP aralıkları bütün Cloudflare müşterileri tarafından paylaşılır; yalnızca IP kısıtı başka bir Cloudflare hesabından gelen atlatmayı engellemez."
+            },
+            {
+              "action": "deny",
+              "direction": "in",
+              "proto": "any",
+              "to": "any",
+              "note": "Son kural: WAF segmentinde yukarıda izin verilmeyen her şey reddedilir. Origin'e Cloudflare dışından gelen trafik perimeter FortiGate'te ayrıca reddedilir."
+            }
+          ]
         }
       ]
     }
@@ -1801,6 +2019,14 @@
     "type": "role-based-vpn",
     "note": "Siteler arası: Ankara hub, İstanbul/Londra/Akademik spoke olmak üzere üç route-based (VTI) IPsec IKEv2 tüneli; AES-256-GCM, SHA-256, DH grup 19/20, DPD; her tünel hem ana hem yedek hat üzerinden kurulur. Transit 10.255.0.0/30, .4/30, .8/30. Üretimde X.509 sertifika, lab'da tünel başına farklı PSK. VTI'da any-any yok: spoke'lar arası trafik hub'da aynı zone kurallarıyla denetlenir. Uzaktan erişim: Ankara'da sonlanan rol bazlı VPN, MFA (RADIUS/LDAP); havuz 10.255.100.0/22, rol başına /24 (IT-Ops .100, Staff .101, Dev .102) ve havuz kullanıcının normal VLAN kurallarını alır; split tunnel yalnızca 10.0.0.0/8. Öğrencilere VPN verilmez. İnternete açık SSH veya yönetim arayüzü yoktur; HTTP ve Telnet kapalı."
   },
+  "cveWatch": [
+    {
+      "id": "CVE-2025-61624",
+      "product": "FortiOS / FortiGate ürün ailesi (70G, 90G, 120G, 900G); Fortinet PSIRT FG-IR-26-122",
+      "status": "mitigated",
+      "note": "Açıklık: FortiOS yönetim CLI'ında path traversal (CWE-22). Okuma-yazma yetkili bir yönetici hesabı, özel hazırlanmış CLI komutlarıyla dosya yazıp silebilir ve root'a yükselebilir. CVSS: Fortinet 5,4/6,0, NVD 6,5. CISA KEV'e 2026-10-16'da eklendi; aktif istismar bildiriliyor. Etkilenen FortiOS sürümleri: 7.6.0–7.6.4, 7.4.0–7.4.9; 7.2, 7.0 ve 6.4'ün bütün sürümleri. Düzeltilmiş sürümler: 7.6.5+ veya 7.4.10+; 7.2/7.0/6.4 için düzeltme yok, sabit bir sürüme geçmek gerekir. Kaynak: Fortinet CNA kaydı (cve.org), NVD, CISA KEV, GovCERT.HK A26-10-30. FortiGuard sayfası 2026-11-07'de açılamadı. Etkilenme durumu: cihazlar henüz kurulmadı ve FortiOS sürümü belirlenmedi, bu yüzden etkilenip etkilenmediği doğrulanmadı. 'mitigated' durumu tasarım düzeyindeki azaltmayı ifade eder, yama uygulandı anlamına gelmez. Geçici önlem (tasarımda var): yönetim arayüzleri internete kapalıdır; yalnızca IT-OPS (10.10.200.0/24) ve VPN-ITOPS'tan, MFA ile ve loglu olarak erişilir. Ek önlemler: yönetici hesapları en az yetkiye indirilir, read-write profiller sınırlı tutulur, yönetici parolaları döndürülür, Wazuh'ta yeni yönetici hesabı ve mesai dışı giriş alarmı (§9.2) kullanılır. Yapılandırma revizyonlarında '../' içeren system.auto-script nesneleri FortiManager ile aranır (Unit 42 tespit önerisi). Kalıcı çözüm: devreye almadan önce dört modelin hepsine 7.4.10+ veya 7.6.5+ yüklenir (iki sürümün sürüm notlarında da bu modeller destekleniyor). Sürüm, kurulum kabul kontrol listesinde FortiManager ile doğrulanır. HA çiftlerinde önce pasif üye, bakım penceresinde yükseltilir. Sonrasında Fortinet PSIRT duyuruları ve CISA KEV aylık takip edilir."
+    }
+  ],
   "monitoring": {
     "siem": "NOC: Zabbix (cihaz durumu, WAN/VPN erişilebilirliği, alarm ve eskalasyon) + Grafana (NOC panoları). SOC: Wazuh (merkezi log ve SIEM: firewall logları, IPS olayları, yönetici girişleri, sunucu güvenlik olayları). FortiAnalyzer: FortiGate trafik analizi ve güvenlik logları; FortiManager: merkezi firewall yönetimi, yapılandırma değişikliği takibi ve konfigürasyon yedeği (config backup; her gece ve her değişiklikten sonra). Yöntemler: SNMPv3 (1 dk), ICMP (30 sn), Syslog (TLS 6514), NetFlow/sFlow ve FortiGate trafik logları. Hepsi Ankara SERVER VLAN'ında çalışır. Her lokasyonda izleme toplayıcı VM: Zabbix proxy (ProxyOfflineBuffer 72 saat) ve rsyslog (checkpoint'li disk kuyruğu, 7 gün yerel kopya); seçilen modellerde dahili log diski olmadığı için eksiksiz log kopyası toplayıcı → Wazuh yolundan gelir. Merkezde loglar 1 yıl saklanır. Ankara bağımlılığı: Zabbix, lokasyonların genel WAN IP'lerine tünelden bağımsız da ping atar; FortiGate alert email ikinci alarm yoludur; Zabbix, Wazuh ve FortiManager/FortiAnalyzer yapılandırmaları her gece, izleme VM'leri haftalık Akademik'e yedeklenir; uzun Ankara kesintisinde ≤ 4 saatte Akademik hipervizöründe açılır, geri yükleme (restore) testi üç ayda bir.",
     "owner": "Ankara BT ve Ağ Operasyonları (IT-OPS, VLAN 200, 15 kişi). NOC rolü: 3 ağ mühendisi (Zabbix/Grafana; WAN, VPN, firewall, switch, AP ve kapasite raporu); sunucu tarafı 5 sistem yöneticisi. SOC rolü: 2 güvenlik uzmanı (Wazuh/FortiAnalyzer; IPS, yönetici girişi denetimi, aylık kural gözden geçirmesi). Yapılandırma değişikliği alarmı: SOC + BT müdürü. Olay yöneticisi ve eskalasyon: BT müdürü. 1. seviye: 4 kişilik yardım masası. Mesai dışında ağ mühendisleri ve güvenlik uzmanları arasından haftalık dönüşümlü tek nöbetçi yalnızca kritik alarmlara bakar. NOC ve SOC ayrı ekip değil, birer görevdir.",

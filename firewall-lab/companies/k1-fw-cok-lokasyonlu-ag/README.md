@@ -186,6 +186,9 @@ flowchart TB
         C_FW --- C_V
     end
     NET --- A_FW & I_FW & L_FW & C_FW
+    CF{{"Cloudflare WAF (Business)<br/>Ankara web · Akademik LMS/web"}}
+    NET -. "ziyaretçi HTTPS 443" .-> CF
+    CF -. "yalnızca Cloudflare IP + mTLS, 443" .-> A_FW & C_FW
     I_FW <-. "IPsec IKEv2 VTI" .-> A_FW
     L_FW <-. "IPsec IKEv2 VTI" .-> A_FW
     C_FW <-. "IPsec IKEv2 VTI" .-> A_FW
@@ -195,7 +198,51 @@ flowchart TB
 
 **Uzaktan erişim (rol bazlı VPN).** Ankara'da sonlanır ve MFA ister. Havuz 10.255.100.0/22, rol başına /24: IT-Ops `.100`, Staff `.101`, Dev `.102`. Kullanıcının rolü havuzunu, havuz da uygulanacak zone kurallarını belirler. Split tunnel: yalnızca 10.0.0.0/8 tünelden gider. Öğrencilere VPN verilmez. **İnternete açık SSH veya yönetim arayüzü yoktur.** HTTP ve Telnet kapalıdır.
 
-**DMZ.** Ankara ve Akademik'te vardır. İnternetten yalnızca **TCP 443** (IPS açık) DMZ ön yüzüne yönlendirilir. DMZ iç ağa yalnızca uygulamanın arka uç portundan, tek bir hosta erişir. Örnekleyici portlar 5432/8443'tür ve uygulama seçilince netleşecek. Geri kalan her şey reddedilir.
+**DMZ.** Ankara ve Akademik'te vardır. DMZ iç ağa yalnızca uygulamanın arka uç portundan, tek bir hosta erişir. Örnekleyici portlar 5432/8443'tür ve uygulama seçilince netleşecek. Geri kalan her şey reddedilir.
+
+### 6.1 WAF mimarisi (PR #41 geri bildirimiyle eklendi)
+
+Normal bir firewall uygulama katmanındaki saldırıyı (SQL injection, XSS, PHP RCE gibi) durduramaz, çünkü saldırı izinli 443 portundan gelir. Bu yüzden internete açık web ve LMS servislerinin önüne bir **WAF (Web Application Firewall)** eklendi:
+
+```
+İnternet → Cloudflare WAF → FortiGate (perimeter, IPS açık) → DMZ → Web/LMS sunucusu
+```
+
+| Lokasyon | Korunan servis | WAF | Origin |
+|---|---|---|---|
+| **Ankara** | Kurumsal web sitesi ve web servisleri | Cloudflare WAF, Business planı (1 alan adı) | Ankara DMZ 10.10.25.0/24 |
+| **Akademik Kampüs** | LMS, web sitesi ve öğrenci portalının internete yayınlanan uçları | Cloudflare WAF, Business planı (1 alan adı) | Akademik DMZ 10.40.25.0/24 |
+
+- **WAF ile firewall ayrıdır.** Cloudflare yalnızca HTTP/HTTPS trafiğini denetler. VPN, VLAN izolasyonu ve internet çıkışı FortiGate'te kalır. `company.json`'da WAF, her iki lokasyonda ayrı bir **`web-waf`** segmentidir ve kendi ilk 5'i, fiyatları ve kuralları vardır.
+- **Kenardaki kurallar:**
+  - Cloudflare Managed Ruleset ve OWASP Core Ruleset engelleme modundadır.
+  - Giriş sayfalarına rate limiting uygulanır. Akademik'te sınav dönemlerinde en çok hedef alınan yol LMS girişidir.
+  - HTTP yalnızca HTTPS'e yönlendirilir.
+  - L3/4/7 DDoS saldırıları hattımıza ulaşmadan kenarda düşer.
+- **Kampüs içi trafik WAF'a çıkmaz.** Öğrenciler ve personel LMS'e iç ağdan doğrudan erişir (§8 kural 3), bu yüzden WAN kesintisinde LMS ve sınavlar çalışmaya devam eder.
+
+**Origin koruması ve WAF atlatma.** Bir WAF, saldırgan origin sunucusuna doğrudan bağlanabiliyorsa işe yaramaz. Bunu önlemek için dört katman kullanılır:
+
+1. **DNS proxy modu:** web ve LMS kayıtları Cloudflare üzerinden yayınlanır, origin IP'si DNS'te görünmez.
+2. **FortiGate'te yalnızca Cloudflare IP aralıkları:** DMZ'ye 443 yalnızca [cloudflare.com/ips](https://www.cloudflare.com/ips/) listesindeki IPv4/IPv6 aralıklarından kabul edilir. Hemen altındaki kural internetten doğrudan 443'ü reddeder ve loglar. Adres grubu Cloudflare'ın yayımladığı listeden düzenli güncellenir.
+3. **Authenticated Origin Pulls (mTLS):** Cloudflare IP aralıkları bütün Cloudflare müşterileri tarafından paylaşılır. Yalnızca IP kısıtı, başka bir Cloudflare hesabından gelen atlatmayı engellemez. Bu yüzden origin, yalnızca Cloudflare'ın istemci sertifikasını sunan bağlantıları kabul eder. Bu özellik bütün planlarda vardır ve Full / Full (strict) modlarıyla çalışır ([belge](https://developers.cloudflare.com/ssl/origin-configuration/authenticated-origin-pull/)).
+4. **Uçtan uca TLS:** SSL modu **Full (strict)** seçilir ve origin'de **Cloudflare Origin CA** sertifikası kullanılır ([belge](https://developers.cloudflare.com/ssl/origin-configuration/origin-ca/)). Cloudflare Origin CA sertifikalarının süresi dolmadan önce bildirim göndermez. Bu yüzden bitiş tarihi Zabbix'te izlenir.
+
+Origin IP'si yine de sızarsa (örneğin eski bir DNS kaydından), 2. ve 3. katman doğrudan erişimi engeller. Gerekirse origin'in genel IP'si değiştirilir. Cloudflare Tunnel (yalnızca dışa bağlantı) değerlendirildi. Ancak Authenticated Origin Pulls ile birlikte çalışmadığı ve mevcut DMZ + IPS mantığını değiştireceği için seçilmedi.
+
+### 6.2 WAF ürünleri: ilk beş (fiyat erişimi 2026-11-07)
+
+| # | Ürün | Fiyat (USD) | Fiyat neyi kapsıyor | Neden seçildi / seçilmedi |
+|---|---|---:|---|---|
+| ★1 | **Cloudflare WAF, Business** | **2.400 / yıl** (her lokasyon) | Abonelik: yıllık faturada 200 USD/ay, alan adı başına. Aylık faturada 250 USD/ay | Managed + OWASP kural setleri, 100 özel kural, 5 rate limiting kuralı, %100 uptime SLA, DDoS emme |
+| 2 | Cloudflare WAF, Pro | 240 / yıl | Abonelik: yıllık faturada 20 USD/ay, alan adı başına | Aynı kural setleri; ama 20 özel kural, 2 rate limiting kuralı ve SLA yok |
+| 3 | FortiWeb 400F (cihaz) | 25.181,60 | FWB-400F-BDL-934-12: donanım + 1 yıl Standard Bundle (satış; liste 34.020). Yalnızca donanım 17.409,50 | Aynı üretici, yerinde TLS; ama 500 Mbps kapasite, tek cihaz HA vermez, hacimsel DDoS hattımıza girer |
+| 4 | AWS WAF (CloudFront önünde) | ≈ 360 / yıl (tahmin) | 5 USD/ACL/ay + 1 USD/kural/ay + 0,60 USD/1 M istek. AWS'nin örneği: 30 USD/ay | Ucuz; ama şirket içi origin için önüne CloudFront gerekir, tutar istek hacmine bağlıdır |
+| 5 | Azure Front Door Premium | 3.960 / yıl (taban ücret) | 330 USD/ay taban; istek ve çıkış trafiği ayrıca ücretlendirilir | WAF dahil; ama taban ücret yüksek, kurumun Azure altyapısı yok |
+
+**İki lokasyonun yıllık WAF maliyeti:** 2 × 2.400 = **4.800 USD/yıl** (iki alan adı varsayımıyla). Kaynaklar: [Cloudflare planları](https://www.cloudflare.com/plans/), [Cloudflare WAF](https://www.cloudflare.com/application-services/products/waf/), [WAF kural limitleri](https://developers.cloudflare.com/waf/custom-rules/), [AWS WAF fiyatları](https://aws.amazon.com/waf/pricing/), [Azure Front Door fiyatları](https://azure.microsoft.com/en-us/pricing/details/frontdoor/), [FortiWeb 400F (AVFirewalls)](https://www.avfirewalls.com/FortiWeb-400F.asp).
+
+Imperva Cloud WAF, Akamai App & API Protector ve F5 Distributed Cloud WAAP güçlü adaylardır. Ancak herkese açık fiyatları olmadığı (yalnızca teklif) için ilk beşe alınmadı.
 
 ## 7. Firewall ürünleri ve modelleri
 
@@ -238,9 +285,62 @@ Neden bu modeller:
 - **İstanbul 90G:** 2,2 Gbps TP, yazılım ekibinin burst trafiğini 1 Gbps hatta güvenle karşılar.
 - **Londra 70G:** Yerinde BT personeli yoktur. Zero-touch kurulum, merkezden yönetim ve 4G/5G yedek desteği belirleyicidir. PA-445'in satış sonu tarihi 22 Mart 2027'dir.
 
-Her alternatifin "neden seçilmedi" gerekçesi `company.json` içindeki `alternatives[].reason` alanındadır. **Fiyatlar araştırılmadı.** Kaynak tasarımda fiyat ve lisans maliyeti olmadığı için `priceUsd` alanı uydurulmadı ve boş bırakıldı.
+Her alternatifin "neden seçilmedi" gerekçesi `company.json` içindeki `alternatives[].reason` alanındadır.
 
-### 7.4 İstanbul ve Londra: tek firewall riski
+### 7.4 Fiyatlar (PR #41 geri bildirimiyle eklendi; erişim 2026-11-07)
+
+**Kurallar:**
+- Bütün fiyatlar **USD**, **vergi hariç** ve **tek cihaz** içindir.
+- HA lokasyonlarında (Ankara, Akademik) `priceUsd` = **iki cihazın toplamıdır**. Alternatifler de HA çifti olarak fiyatlandı, böylece karşılaştırma adil kalır.
+- `priceUsd` her üründe ayrı yazılan satıcı fiyatıdır. Kapsamı (yalnızca donanım ya da abonelik dahil) her ürünün `reason` alanında ve aşağıdaki tabloda belirtilir.
+- Bunlar **teklif değildir**. Satın almadan önce yetkili satıcıdan teklif alınmalıdır.
+- "Özet" işaretli fiyatlar yalnızca arama sonucu özetinden alındı; satıcı sayfası açılamadı.
+
+**Seçilen FortiGate'ler** (tek kaynak: [AVFirewalls.com](https://avfirewalls.com/FortiGate-120G.asp); liste = Fortinet MSRP, satış = satıcı fiyatı):
+
+| Lokasyon | Model | Adet | Donanım, birim (satış / liste) | Donanım + 1 yıl UTP, birim (satış / liste) | **Lokasyon toplamı, donanım** (`priceUsd`) | Lokasyon toplamı, + 1 yıl UTP |
+|---|---|---:|---:|---:|---:|---:|
+| Ankara | FG-120G | 2 (HA) | 4.283,54 / 5.787,00 | 6.437,96 / 8.697,60 | **8.567,08** | 12.875,92 |
+| İstanbul | FG-90G | 1 | 2.827,56 / 3.820,00 | 4.314,11 / 5.828,30 | **2.827,56** | 4.314,11 |
+| Londra | FG-70G | 1 | 1.214,67 / 1.641,00 | 1.814,67 / 2.451,60 | **1.214,67** | 1.814,67 |
+| Akademik | FG-900G | 2 (HA) | 32.316,39 / 43.659,00 | 52.881,37 / 71.442,00 | **64.632,78** | 105.762,74 |
+| **Toplam** | | 6 cihaz | | | **77.242,09** | **124.767,44** |
+
+- **Paket kapsamı:** UTP paketi `FG-xxx-BDL-950-12` donanım, 1 yıl FortiCare Premium ve FortiGuard UTP içerir. Paketsiz bir FortiGate'te IPS/antivirüs imzaları güncellenmez. Bu yüzden ilk yıl bütçesi sağdaki sütundur.
+- **Diğer maliyetler:** HA çiftinde her iki cihaza da abonelik gerekir. Ankara'daki **soğuk yedek 90G** (§7.5) bu toplamlara dahil değildir; ek 2.827,56 USD (donanım) tutar.
+- **Kapsam dışı:** FortiManager, FortiAnalyzer, Cloudflare WAF (§6.2) ve sonraki yılların yenileme bedelleri.
+
+**Alternatifler** (HA lokasyonlarında 2 cihaz):
+
+| Lokasyon | Ürün / SKU | `priceUsd` | Kapsam | Kaynak |
+|---|---|---:|---|---|
+| Ankara | Palo Alto PA-1410 (PAN-PA-1410) | 21.589,20 | 2 × 10.794,60; donanım | Network Devices Inc (özet) |
+| Ankara | Cisco Secure Firewall 1230 (CSF1230-TD-K9) | 21.817,98 | 2 × 10.908,99; donanım + FTD yazılımı, abonelik hariç | CDW (özet) |
+| Ankara | Check Point Spark 1900 (CPAP-SG1900-SNBT) | 15.856,00 | 2 × 7.928; cihaz + 1 yıl SandBlast | [CDW liste](https://www.cdw.com/product/check-point-quantum-spark-1900-security-appliance-with-1-year-sandblast/7853778) |
+| Ankara | Sophos XGS 2300 (XG2CTCHUS) | 7.926,78 | 2 × 3.963,39; donanım | [CDW liste](https://www.cdw.com/product/sophos-xgs-2300-security-appliance/6535228) |
+| İstanbul | Palo Alto PA-1410 | 10.794,60 | donanım | Network Devices Inc (özet) |
+| İstanbul | Sophos XGS 2300 | 3.963,39 | donanım | CDW liste |
+| İstanbul | Check Point Spark 1900 | 7.928,00 | cihaz + 1 yıl SandBlast | CDW liste |
+| İstanbul | Deciso DEC3850 | 1.871,42 | 1.599 EUR (mağazanın USD görünümü); 1 yıl Business Edition dahil. Yerini DEC3852 aldı | [OPNsense mağazası](https://shop.opnsense.com/product/dec3850-opnsense-rack-security-appliance/) |
+| Londra | Palo Alto PA-445 (PAN-PA-445) | 2.909,99 | donanım | [Zones](https://www.zones.com/site/product/index.html?id=110975690) |
+| Londra | Sophos XGS 118 (XG118Z00ZZPCUS) | 1.062,03 | donanım; 1 yıl Xstream paketi 1.554,99 (Newegg) | [CDW liste](https://www.cdw.com/product/sophos-xgs-118-2nd-generation-security-appliance/8132502) |
+| Londra | Check Point Spark 1900 | 7.928,00 | cihaz + 1 yıl SandBlast | CDW liste |
+| Londra | Netgate 4200 MAX | 829,00 | pfSense Plus + TAC Lite dahil | [Netgate mağazası](https://shop.netgate.com/products/netgate-4200-max-pfsense-security-gateway) |
+| Akademik | Palo Alto PA-3430 (PAN-PA-3430) | 100.170,00 | 2 × 50.085; donanım (CDW teklif istiyor) | Network Devices Inc (özet) |
+| Akademik | Cisco Secure Firewall 4215 (FPR4215-NGFW-K9) | 348.475,98 | 2 × 174.237,99; donanım | [Zones](https://www.zones.com/site/product/index.html?id=113600328) |
+| Akademik | Check Point Force 19100 (CPAP-SG19100-SNBT) | 232.458,56 | 2 × 116.229,28; cihaz + 1 yıl SandBlast | [Tecisoft](https://www.tecisoft.com/products/check-point-quantum-force-19100-base-security-appliance-with-1-year-sandblast-snbt-security-subscription-package) |
+| Akademik | Sophos XGS 4300 (XG4CTCHUS) | 22.738,50 | 2 × 11.369,25; donanım | [CDW liste](https://www.cdw.com/product/sophos-xgs-4300-security-appliance/6552772) |
+
+Fiyatların kapsamı ürünler arasında farklıdır. Check Point ve Deciso fiyatlarına bir yıllık abonelik dahildir, diğerleri yalnızca donanımdır. Bu yüzden tablo bir bütçe karşılaştırmasıdır, birebir teklif kıyası değildir. **Fiyatlar seçimi değiştirmedi, ancak FortiGate her lokasyonda en ucuz seçenek değildir.** Donanım fiyatına göre daha ucuz olanlar:
+
+- Ankara'da Sophos XGS 2300.
+- İstanbul'da Deciso DEC3850.
+- Londra'da Netgate 4200 ve Sophos XGS 118.
+- Akademik'te Sophos XGS 4300. Burada fark en büyüktür: FortiGate çiftinin yaklaşık üçte biri.
+
+Seçim §7.2'deki ölçütlere dayanır: dört lokasyonda tek üretici ve tek yönetim (FortiManager/FortiAnalyzer), hub için IPsec kapasitesi, kampüs için oturum kapasitesi ve S3 büyüme payı. Sophos XGS 4300 kampüste daha ucuzdur. Ancak aktif-aktif modda VPN ve UDP trafiğini dağıtmaz ve yönetim birliğini bozar. Bu fiyat farkı tasarımda bilinçli olarak kabul edilmiştir.
+
+### 7.5 İstanbul ve Londra: tek firewall riski
 
 Yedek hat operatör arızasına karşı korur, cihaz arızasına karşı korumaz. Tek firewall arızalanırsa lokasyonun interneti, VPN'i, VLAN'ler arası trafiği ve DHCP/DNS hizmeti kesilir (firewall bütün VLAN'lerin `.1` ağ geçididir). Bu bilinçli bir **risk kabulüdür** ve şu önlemlerle sınırlandırılır:
 
@@ -279,7 +379,7 @@ Yedek hat operatör arızasına karşı korur, cihaz arızasına karşı korumaz
 | 17 | TECH (45) | LAB (60) | RDP, SSH | Evet (loglu) |
 | 18 | SERVER (20) | Kullanıcı VLAN'leri | Hepsi | Hayır |
 | 19 | SERVER, bütün firewall/switch | Lokasyon toplayıcısı ve Ankara log/izleme | Syslog 514/6514, SNMP, trap, NetFlow | Evet |
-| 20 | İnternet | DMZ web/LMS ön yüzü | HTTPS 443 | Evet (IPS açık) |
+| 20 | İnternet → **Cloudflare WAF** (2026-11-07'den beri yalnızca Cloudflare IP aralıkları + mTLS) | DMZ web/LMS ön yüzü | HTTPS 443 | Evet (IPS açık). Doğrudan internet erişimi reddedilir (§6.1) |
 | 21 | DMZ (25) | İç ağ | Hepsi (arka uç portu hariç) | Hayır |
 | 22 | Diğer lokasyonların firewall'ları | Firewall WAN IP | UDP 500/4500, ESP | Evet |
 | 23 | İnternet | İç ağlar | Hepsi | Hayır |
@@ -287,7 +387,7 @@ Yedek hat operatör arızasına karşı korur, cihaz arızasına karşı korumaz
 
 ### 8.2 `company.json`'a nasıl aktarıldı
 
-Her lokasyonun firewall'u (`segment: perimeter`) bu 24 kuralın **o lokasyonda bulunan zone'lara uyan** satırlarını, kaynak depodaki politika matrisinin (P-01…P-99) ayrıntısıyla taşır. Toplam **152 kural** vardır: Ankara 35, İstanbul 40, Londra 29, Akademik 48. Her kuralın `note` alanı kaynak kural numarasını (README §8 kural n / P-xx) ve gerekçesini verir.
+Her lokasyonun firewall'u (`segment: perimeter`) bu 24 kuralın **o lokasyonda bulunan zone'lara uyan** satırlarını, kaynak depodaki politika matrisinin (P-01…P-99) ayrıntısıyla taşır. Perimeter firewall'larda toplam **154 kural** vardır: Ankara 36, İstanbul 40, Londra 29, Akademik 49. Ankara ve Akademik'teki birer ek kural, Cloudflare dışından gelen 443'ü reddeder. Bunlara ek olarak her iki `web-waf` segmentinde 6'şar WAF kuralı bulunur. Her kuralın `note` alanı kaynak kural numarasını (README §8 kural n / P-xx) ve gerekçesini verir.
 
 - **Sıra:** Önce temel servisler (DHCP, DNS, NTP), sonra yönetim izinleri ve yönetim reddi, izleme, zone izinleri ve redleri, misafir, DMZ, VPN, internet çıkışları, internetten içeri red ve son olarak default deny.
 - **Şemaya uyarlama:** Şemada her kural tek bir protokol taşıdığı için çok protokollü satırlar bölündü (ör. kural 1 → TCP 22/443, UDP 161, ICMP; kural 22 → UDP 500/4500 ve ESP). Kullanıcı başına bant limiti olan internet kuralları (öğrenci 20/5, misafir 5/2, geliştirici 100/50 Mbps) `limit` eylemiyle yazıldı.
@@ -403,7 +503,41 @@ Olay süreci: alarm → sorumlu rol üstlenir → sınıflandırma ve ticket →
 | Ankara tamamen kesilir | Merkezi izleme durur | FortiGate alert email; izleme VM'leri Akademik'te ≤ 4 saatte açılır |
 | Firewall yapılandırması kaybolur | — | Her değişiklikten sonra ve her gece FortiManager'a yedek |
 
-## 12. Varsayımlar, açık noktalar ve laboratuvar durumu
+## 12. CVE takibi (PR #41 geri bildirimiyle eklendi)
+
+| CVE | Ürün | Açıklık | Durum (`cveWatch.status`) |
+|---|---|---|---|
+| **CVE-2025-61624** (Fortinet PSIRT **FG-IR-26-122**) | FortiOS / FortiGate (70G, 90G, 120G, 900G) | Yönetim CLI'ında path traversal (CWE-22). Okuma-yazma yetkili bir yönetici, özel hazırlanmış CLI komutlarıyla dosya yazıp silebilir ve root'a yükselebilir. CVSS: Fortinet 5,4/6,0, NVD 6,5 | **mitigated**, tasarım düzeyinde (aşağıya bakın) |
+
+**Etkilenen ve düzeltilmiş sürümler** (Fortinet CNA kaydı, cve.org):
+
+| FortiOS kolu | Etkilenen | Düzeltilmiş |
+|---|---|---|
+| 7.6 | 7.6.0 – 7.6.4 | **7.6.5 ve sonrası** |
+| 7.4 | 7.4.0 – 7.4.9 | **7.4.10 ve sonrası** |
+| 7.2 / 7.0 / 6.4 | Bütün sürümler | Düzeltme yok; sabit bir sürüme geçilir |
+
+- **Aktif istismar:**
+  - CISA, açığı 2026-10-16'da **Known Exploited Vulnerabilities** (KEV) kataloğuna ekledi.
+  - GovCERT.HK, A26-10-30 numaralı uyarısıyla "yüksek tehdit" ilan etti.
+  - Unit 42, saldırganların önce başka bir açıkla yönetici erişimi elde ettiğini, sonra bu açıkla root'a yükseldiğini bildiriyor.
+- **Bizim durumumuz:**
+  - Cihazlar kurulmadı ve FortiOS sürümü seçilmedi. Bu yüzden cihazlarımızın açıktan etkilenip etkilenmediği **doğrulanmadı**. Sürümün devreye almada kontrol edilmesi zorunludur.
+  - `mitigated` durumu tasarımdaki azaltmayı anlatır. Yama uygulandığı anlamına gelmez.
+  - Dört model de düzeltilmiş 7.4.10 ve 7.6.5 sürüm notlarında destekleniyor.
+- **Geçici önlemler.** Açık, saldırganın önce yönetici hesabı ele geçirmesini gerektirir. Bu yüzden önlemler yönetim düzlemine odaklanır:
+  1. Yönetim arayüzleri internete kapalıdır. Yalnızca IT-OPS (10.10.200.0/24) ve VPN-ITOPS'tan, MFA ile ve loglu olarak erişilir (§8 kural 1–2).
+  2. Read-write yönetici profilleri en az kişiye verilir. Yönetici parolaları döndürülür.
+  3. Wazuh'ta yeni yönetici hesabı, başarısız giriş ve mesai dışı giriş alarmları çalışır (§9.2).
+  4. Yapılandırma revizyonlarında `../` içeren `system.auto-script` nesneleri FortiManager ile aranır (Unit 42 tespit önerisi).
+- **Kalıcı çözüm:**
+  1. Devreye almadan önce bütün FortiGate'lere **7.4.10+ veya 7.6.5+** yüklenir. Sürüm, kurulum kabul listesinde FortiManager ile doğrulanır.
+  2. HA çiftlerinde önce pasif üye, bakım penceresinde yükseltilir.
+  3. Sonrasında Fortinet PSIRT duyuruları ve CISA KEV aylık olarak takip edilir.
+- **Kaynaklar:** [NVD](https://nvd.nist.gov/vuln/detail/CVE-2025-61624) · [CVE.org](https://www.cve.org/CVERecord?id=CVE-2025-61624) · [CISA KEV](https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2025-61624) · [GovCERT.HK](https://www.govcert.gov.hk/en/alerts_detail.php?id=2119) · [Fortinet FG-IR-26-122](https://fortiguard.fortinet.com/psirt/FG-IR-26-122) · [FortiOS 7.4.10 desteklenen modeller](https://docs.fortinet.com/document/fortigate/7.4.10/fortios-release-notes/954635/introduction-and-supported-models).
+  - Fortinet sayfası 2026-11-07'de açılamadı (HTTP 500). Sürüm bilgileri Fortinet'in kendi yazdığı CVE.org kaydından alındı.
+
+## 13. Varsayımlar, açık noktalar ve laboratuvar durumu
 
 **Laboratuvar durumu:** GNS3 + pfSense CE 2.9 ortamı **kurulmadı**. Kaynak depodaki test planı (`validation/test-plan.md`) hiç çalıştırılmadı. Bu klasördeki hiçbir kural bir cihaza uygulanmadı veya test edilmedi. FortiGate cihazları satın alınmadı.
 
@@ -413,15 +547,17 @@ Olay süreci: alarm → sorumlu rol üstlenir → sınıflandırma ve ticket →
 
 - Gerçek trafik ölçümü yok. Kurulumdan sonra 1–3 aylık ölçümle §4 güncellenmeli.
 - Kampüsün yurtlu olup olmadığı bilinmiyor (S2/S3).
-- **Firewall fiyatları ve lisans maliyetleri araştırılmadı**, bu yüzden `priceUsd` boş. Dashboard audit'i bunu "Product prices missing" olarak gösterir.
-- **DMZ'deki web/LMS ön yüzü için WAF tanımlı değil.** Kaynak tasarım yalnızca IPS'i belirtir. Dashboard audit'i bunu en yüksek önem derecesiyle (5) işaretler. Bu bir tasarım kararı gerektirdiği için aktarımda eklenmedi.
-- **Takip edilen bir CVE yok** (`cveWatch` boş).
-- Firewall ve sunucular için tanımlı bir yama/firmware güncelleme takvimi yok.
+- **Fiyatlar teklif değildir.** PA-1410, PA-3430 ve Cisco 1230 fiyatları yalnızca arama sonucu özetlerinden alındı; satıcı sayfaları otomatik erişime kapalıydı. Check Point 19100 fiyatı küçük bir satıcıya aittir. Satın almadan önce yetkili satıcı teklifiyle doğrulanmalıdır (§7.4).
+- **Cloudflare ve KVKK:** WAF, TLS trafiğini Cloudflare kenarında açar, yani öğrenci ve kullanıcı verisi kurum dışındaki bir hizmetten geçer. Bunun için bir KVKK veri işleme değerlendirmesi ve Cloudflare ile veri işleme sözleşmesi gerekir. Bu değerlendirme yapılmadı.
+- **Alan adı sayısı:** Ankara ve Akademik için birer alan adı (zone) varsayıldı. Daha fazla alan adı varsa Cloudflare maliyeti alan adı başına artar.
+- **Rate limiting eşikleri** belirlenmedi; ilk izleme verisiyle konacak.
+- **CVE-2025-61624:** etkilenme durumu, cihazlar kurulup FortiOS sürümü görülene kadar doğrulanamaz (§12).
+- Sunucular için ayrı bir yama takvimi tanımlı değil. Firewall'lar için yükseltme planı §12'dedir.
 - FortiGate'in FortiAnalyzer'a ulaşamadığı süredeki logları sonradan yükleyip yüklemediği resmi belgede doğrulanamadı.
 - DMZ arka uç portu (5432/8443), lab lisans sunucusu portları, VOICE (SIP/RTP) portları ve RND-IOT yönetim portları örnekleyicidir. Uygulamalar seçilince daraltılacak.
 - Kaynak depodaki `policies/bandwidth-policy.md` ve `policies/firewall-policy-matrix.md` dosyaları 2026-10-23 tarihlidir ve mekanizmayı pfSense limiter diliyle anlatır. Üretim uygulaması README §4.3'teki FortiGate shaper + SD-WAN'dır. Değerler çelişmez, yalnızca uygulama aracı farklıdır.
 
-## 13. Kaynaklar
+## 14. Kaynaklar
 
 Kaynak depodaki ayrıntı belgeleri (commit `8944a81`):
 
