@@ -406,6 +406,27 @@ def lab_catalog(root: str, host: dict | None = None) -> dict:
             "labs": [lab_status(lab, host) for lab in LAB_ORDER]}
 
 
+def capability_catalog() -> dict:
+    """Health's platform tree. Lab support levels follow the same provider rules as lab_status."""
+    with open(os.path.join(os.path.dirname(__file__), "capabilities.json"), encoding="utf-8") as f:
+        catalog = json.load(f)
+    for group in catalog["groups"]:
+        for item in group["items"]:
+            lab = item.get("lab")
+            if not lab:
+                continue
+            for platform in ("macos", "windows", "linux"):
+                provider = provider_for(lab, platform)
+                if provider is None:
+                    level = "none"
+                elif provider in ("wsl2", "macos-containers") or (lab == "ios" and platform == "linux"):
+                    level = "partial"
+                else:
+                    level = "full"
+                item["support"][platform]["level"] = level
+    return catalog
+
+
 # ── Configuration ────────────────────────────────────────────────────────────
 
 def env_entries(text: str) -> dict[str, str]:

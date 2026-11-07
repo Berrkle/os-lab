@@ -135,7 +135,7 @@ def cached_host():
 class LabHttpHandler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):
         # Polling is frequent; keep the terminal for errors
-        if not self.path.startswith(("/api/logs", "/api/jobs", "/api/health", "/api/host", "/api/labs/")):
+        if not self.path.startswith(("/api/logs", "/api/jobs", "/api/health", "/api/host", "/api/labs/", "/api/capabilities")):
             super().log_message(fmt, *args)
 
     def _host_ok(self) -> bool:
@@ -167,7 +167,7 @@ class LabHttpHandler(BaseHTTPRequestHandler):
         if path.startswith("/api/content"):
             self._content_get(path, urllib.parse.parse_qs(parsed.query))
             return
-        if path.startswith(("/api/host", "/api/labs", "/api/jobs")):
+        if path.startswith(("/api/host", "/api/labs", "/api/jobs", "/api/capabilities")):
             if not oslab:
                 self._json(501, {"error": "The console module (console/oslab.py) is not installed"})
                 return
@@ -216,6 +216,8 @@ class LabHttpHandler(BaseHTTPRequestHandler):
         if path == "/api/host":
             host = cached_host()
             self._json(200, {"host": host, "labs": oslab.lab_catalog(REPO_ROOT, host)["labs"]})
+        elif path == "/api/capabilities":
+            self._json(200, oslab.capability_catalog())
         elif len(parts) == 4 and parts[:2] == ["api", "labs"] and parts[2] in oslab.LABS and parts[3] == "config":
             self._json(200, oslab.lab_config(REPO_ROOT, parts[2]))
         elif len(parts) == 4 and parts[:2] == ["api", "labs"] and parts[2] in oslab.LABS and parts[3] == "monitor":
