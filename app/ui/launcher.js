@@ -6,7 +6,7 @@
   var $ = function (id) { return document.getElementById(id); };
   var statusEl = $("status"), spinner = $("spinner"), problem = $("problem");
   var detail = $("detail"), where = $("where"), filesWhere = $("files-where"), resetBtn = $("reset"), pythonBtn = $("python");
-  var containerBtn = $("container"), continueBtn = $("continue"), consoleInfo = null;
+  var containerBtn = $("container"), recoverBtn = $("recover"), continueBtn = $("continue"), consoleInfo = null;
   var language = (navigator.languages || [navigator.language || "en"])
     .map(function (value) { return value.toLowerCase().split("-")[0]; })
     .find(function (value) { return ["en", "tr", "de", "fr", "es", "it", "fa", "ar"].indexOf(value) !== -1; }) || "en";
@@ -50,12 +50,19 @@
     en: "Docker or Podman is installed, but its engine or Compose command is unavailable. Start or reconnect your engine (for example Colima or a Podman machine), check that `docker compose version` or `podman compose version` works, then retry. You can continue to labs that do not need containers.",
     tr: "Docker veya Podman kurulu, ancak motoru ya da Compose komutu kullanılamıyor. Motorunuzu (örneğin Colima veya Podman makinesi) başlatıp bağlayın, `docker compose version` veya `podman compose version` komutunu kontrol edin ve yeniden deneyin. Konteyner gerektirmeyen laboratuvarlara devam edebilirsiniz."
   };
+  var recoverText = {
+    en: ["Start installed engine", "Starting the installed container engine…"],
+    tr: ["Kurulu motoru başlat", "Kurulu konteyner motoru başlatılıyor…"]
+  }[language] || ["Start installed engine", "Starting the installed container engine…"];
+  var dockerInstallText = { en: "Get Docker Desktop", tr: "Docker Desktop'u edin" }[language] || "Get Docker Desktop";
+  var containerHeading = { en: "Container runtime needs attention", tr: "Konteyner çalışma zamanı için işlem gerekiyor" }[language] || "Container runtime needs attention";
   $("retry").textContent = t.retry;
   $("choose").textContent = t.choose;
   resetBtn.textContent = t.reset;
   $("files").textContent = t.files;
   pythonBtn.textContent = pt[0];
-  containerBtn.textContent = ct[0];
+  containerBtn.textContent = dockerInstallText;
+  recoverBtn.textContent = recoverText[0];
   continueBtn.textContent = ct[1];
 
   function show(message, isError) {
@@ -69,6 +76,7 @@
     var message = String(err && err.message ? err.message : err);
     pythonBtn.hidden = message.indexOf("Python 3.9 or newer was not found") === -1;
     containerBtn.hidden = true;
+    recoverBtn.hidden = true;
     continueBtn.hidden = !consoleInfo;
     detail.textContent = message;
     if (invoke) invoke("console_logs").then(function (log) {
@@ -82,12 +90,13 @@
     window.location.replace(consoleInfo.url + (language === "en" ? "" : language + "/"));
   }
 
-  function showContainerSetup(message, canDownload) {
+  function showContainerSetup(message, canDownload, canRecover) {
     show(t.starting, true);
-    statusEl.textContent = ct[0];
+    statusEl.textContent = containerHeading;
     detail.textContent = message;
     pythonBtn.hidden = true;
     containerBtn.hidden = !canDownload;
+    recoverBtn.hidden = !canRecover;
     continueBtn.hidden = false;
   }
 
@@ -101,7 +110,7 @@
       where.textContent = info.source + ": " + info.root;
       resetBtn.hidden = info.source !== "chosen";
       invoke("container_status").then(function (status) {
-        if (status && !status.ready) showContainerSetup(status.cli_present ? (existingEngine[language] || existingEngine.en) : ct[2], !status.cli_present);
+        if (status && !status.ready) showContainerSetup(status.detail || (status.cli_present ? (existingEngine[language] || existingEngine.en) : ct[2]), status.can_download, Boolean(status.recovery));
         else openDashboard();
       }, openDashboard);
     }, fail);
@@ -114,7 +123,18 @@
   });
   containerBtn.addEventListener("click", function () {
     show(ct[3], false);
-    invoke("container_get").then(function () { showContainerSetup(ct[4], false); }, fail);
+    invoke("container_get").then(function () { showContainerSetup(ct[4], false, false); }, fail);
+  });
+  recoverBtn.addEventListener("click", function () {
+    recoverBtn.disabled = true;
+    show(recoverText[1], false);
+    invoke("container_recover").then(function () { recoverBtn.disabled = false; start(); }, function (err) {
+      recoverBtn.disabled = false;
+      var message = String(err && err.message ? err.message : err);
+      invoke("container_status").then(function (status) {
+        showContainerSetup(message, status.can_download, Boolean(status.recovery));
+      }, function () { showContainerSetup(message, false, false); });
+    });
   });
   continueBtn.addEventListener("click", openDashboard);
   $("choose").addEventListener("click", function () {
