@@ -57,6 +57,7 @@ export function sectionHref(id: string): string {
   if (id === "health") return "/api/health";
   if (id === "legal") return localized("/legal/");
   if (id === "contribute") return localized("/contribute/");
+  if (id === "content") return localized("/content/");
   if (id === "firewall") {
     const locale = typeof window === "undefined" ? "en" : localeFromPath(window.location.pathname);
     return firewallPath(locale);

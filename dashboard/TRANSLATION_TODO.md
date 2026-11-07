@@ -12,7 +12,7 @@ native speaker checks the wording and technical vocabulary.
   with native speakers, especially security terms, product names, units,
   command examples, and accessibility labels. Keep file paths, commands,
   product names, and placeholders exact.
-- [ ] Translate the Markdown articles in `docs/legal/` and `CONTRIBUTING.md`
+- [ ] Translate the Markdown articles in `docs/legal/`, `docs/CONTENT.md`, and `CONTRIBUTING.md`
   with legal and maintainer review. They are currently marked as English in
   localized pages; surrounding navigation and controls are translated.
 - [ ] Review authored company descriptions and project catalog content.

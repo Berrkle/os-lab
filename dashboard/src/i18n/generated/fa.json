@@ -1834,5 +1834,8 @@
   "You believe traffic is blocked; it is not.": "شما معتقدید که ترافیک مسدود شده است. این نیست.",
   "You know the bug exists but no mitigation or patch date is written down.": "می‌دانید که باگ وجود دارد، اما هیچ تاریخ کاهش یا وصله‌ای نوشته نشده است.",
   "You paid for bandwidth you cannot use, then replace the box early.": "شما برای پهنای باندی که نمی توانید استفاده کنید پرداخت کرده اید، سپس جعبه را زودتر تعویض کنید.",
-  "You wrote a deny, the allow above wins, and you believe it is protecting you.": "شما یک رد نوشتید، اجازه فوق برنده می شود و معتقدید که از شما محافظت می کند."
+  "You wrote a deny, the allow above wins, and you believe it is protecting you.": "شما یک رد نوشتید، اجازه فوق برنده می شود و معتقدید که از شما محافظت می کند.",
+  ". The same text ships with the repository; its history is the change log.": ". همان متن با مخزن ارسال می شود. تاریخچه آن ثبت تغییرات است.",
+  "Content updates": "به روز رسانی محتوا",
+  "Source:": "منبع:"
 }

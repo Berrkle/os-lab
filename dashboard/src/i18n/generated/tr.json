@@ -1834,5 +1834,8 @@
   "You believe traffic is blocked; it is not.": "Trafiğin engellendiğini düşünüyorsunuz; öyle değil.",
   "You know the bug exists but no mitigation or patch date is written down.": "Hatanın var olduğunu biliyorsunuz ancak herhangi bir azaltma veya yama tarihi yazılmıyor.",
   "You paid for bandwidth you cannot use, then replace the box early.": "Kullanamadığınız bant genişliği için ödeme yaptınız, ardından kutuyu erken değiştirin.",
-  "You wrote a deny, the allow above wins, and you believe it is protecting you.": "Bir reddet yazdınız, yukarıdaki izin veren kazanır ve onun sizi koruduğuna inanırsınız."
+  "You wrote a deny, the allow above wins, and you believe it is protecting you.": "Bir reddet yazdınız, yukarıdaki izin veren kazanır ve onun sizi koruduğuna inanırsınız.",
+  ". The same text ships with the repository; its history is the change log.": ". Aynı metin depoyla birlikte gönderilir; geçmişi değişiklik günlüğüdür.",
+  "Content updates": "İçerik güncellemeleri",
+  "Source:": "Kaynak:"
 }

@@ -1834,5 +1834,8 @@
   "You believe traffic is blocked; it is not.": "Ritieni che il traffico sia bloccato; non lo è.",
   "You know the bug exists but no mitigation or patch date is written down.": "Sai che il bug esiste ma non è stata scritta alcuna mitigazione o data di patch.",
   "You paid for bandwidth you cannot use, then replace the box early.": "Hai pagato per la larghezza di banda che non puoi utilizzare, quindi sostituisci la scatola in anticipo.",
-  "You wrote a deny, the allow above wins, and you believe it is protecting you.": "Hai scritto un rifiuto, il consenso sopra vince e ritieni che ti protegga."
+  "You wrote a deny, the allow above wins, and you believe it is protecting you.": "Hai scritto un rifiuto, il consenso sopra vince e ritieni che ti protegga.",
+  ". The same text ships with the repository; its history is the change log.": ". Lo stesso testo viene fornito con il repository; la sua cronologia è il registro delle modifiche.",
+  "Content updates": "Aggiornamenti dei contenuti",
+  "Source:": "Fonte:"
 }

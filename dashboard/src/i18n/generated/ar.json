@@ -1834,5 +1834,8 @@
   "You believe traffic is blocked; it is not.": "كنت تعتقد أن حركة المرور محظورة؛ ليس كذلك.",
   "You know the bug exists but no mitigation or patch date is written down.": "أنت تعلم أن الخطأ موجود ولكن لم تتم كتابة تاريخ التخفيف أو التصحيح.",
   "You paid for bandwidth you cannot use, then replace the box early.": "لقد دفعت مقابل عرض النطاق الترددي الذي لا يمكنك استخدامه، ثم استبدل الصندوق مبكرًا.",
-  "You wrote a deny, the allow above wins, and you believe it is protecting you.": "لقد كتبت رفضًا، فالسماح أعلاه يفوز، وتعتقد أنه يحميك."
+  "You wrote a deny, the allow above wins, and you believe it is protecting you.": "لقد كتبت رفضًا، فالسماح أعلاه يفوز، وتعتقد أنه يحميك.",
+  ". The same text ships with the repository; its history is the change log.": ". يأتي نفس النص مع المستودع؛ تاريخه هو سجل التغيير.",
+  "Content updates": "تحديثات المحتوى",
+  "Source:": "المصدر:"
 }
