@@ -50,6 +50,7 @@ dashboard/node_modules/
 secrets/*
 !secrets/README.md
 app/out/
+app/src-tauri/resources/tools/uv-*
 app/**/*.p8
 app/**/*.p12
 app/**/*.pfx

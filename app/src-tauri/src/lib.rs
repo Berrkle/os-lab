@@ -11,6 +11,7 @@
 //! open in the system browser.
 
 mod console;
+mod python_runtime;
 mod runtime;
 
 use std::path::PathBuf;
@@ -76,8 +77,20 @@ async fn console_start(app: AppHandle, state: State<'_, Console>) -> Result<Star
         std::env::set_var("OSLAB_CONTENT_DIR", data_dir(&app)?.join("content"));
     }
     let log = console::log_path(&log_dir(&app)?);
+    let data = data_dir(&app)?;
     let console = state.inner().clone();
-    tauri::async_runtime::spawn_blocking(move || console.start(&root, source, &log))
+    tauri::async_runtime::spawn_blocking(move || console.start(&root, source, &log, &data))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
+/// Download a managed CPython only after an explicit launcher action.
+#[tauri::command]
+async fn python_install(app: AppHandle) -> Result<String, String> {
+    let helper = app.path().resource_dir().map_err(|e| e.to_string())?
+        .join("tools").join(python_runtime::helper_name()?);
+    let data = data_dir(&app)?;
+    tauri::async_runtime::spawn_blocking(move || python_runtime::install(&helper, &data))
         .await
         .map_err(|e| e.to_string())?
 }
@@ -200,7 +213,8 @@ pub fn run() {
             console_restart,
             console_choose_root,
             console_reset_root,
-            console_logs
+            console_logs,
+            python_install
         ])
         .setup(|app| {
             build_window(app.handle())?;

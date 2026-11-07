@@ -45,15 +45,23 @@ untracked `.env` or VM disk cannot ship. Staging fails if a required lab entry p
 `--no-build` stages the committed `dashboard/dist`.
 
 The installer contains the lab scripts and Compose definitions, not the host tools or guest
-payloads they operate. The console needs Python 3.9+ on `PATH` (the Debian package declares this
-dependency). Container labs need a working Docker or Podman installation and pull their images
+payloads they operate. The console needs Python 3.9+ (the Debian package declares this
+dependency, and the app can get a managed copy on other hosts). Container labs need a working
+Docker or Podman installation and pull their images
 separately; VM labs also need the host virtualization support and guest media their Doctor page
 reports. Native iOS simulation needs Xcode and a Simulator runtime. The app can run from its
 bundled copy without a Git checkout, and the dashboard shows each lab's setup requirements.
 
+If no suitable Python is installed, the launcher offers **Get Python**. Release builds include a
+SHA-256-verified uv helper for each supported architecture; it downloads CPython 3.12 into the
+app's data folder on request, without changing the system Python or `PATH`. The release scripts
+stage this helper before building. An existing Python 3.9+ installation still works without a
+download.
+
 ## Release (macOS DMG, notarized)
 
 `app/scripts/release-mac.sh` builds a universal DMG, signs it (Developer ID), notarizes the app and the DMG, staples, verifies with `codesign`/`spctl`/`stapler`, and with `--publish` uploads it to the GitHub release `app-v<version>` with a SHA-256 file. Without `--publish` it uploads nothing; `--no-notarize` signs only. Credentials come from the environment, the git-ignored `secrets/` folder or the login keychain, never from the repo (`secrets/README.md`); the script refuses to run if a key or secrets file is tracked.
+The Python helpers must be signed before Tauri bundles them, so this release path needs the Developer ID identity available in the keychain.
 
 ## Release (Windows installers, Debian package)
 

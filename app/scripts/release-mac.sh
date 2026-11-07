@@ -92,6 +92,8 @@ say "installing dashboard build tools"
 npm ci --no-audit --no-fund --prefix "$APP_DIR/../dashboard" >/dev/null
 say "staging the runtime and dashboard"
 node scripts/stage-runtime.mjs
+[ -n "${APPLE_SIGNING_IDENTITY:-}" ] || die "bundled Python helpers need a Developer ID identity in the keychain; import APPLE_CERTIFICATE before building"
+node scripts/stage-python-helper.mjs
 say "building ($TARGET) — Tauri signs the app with hardened runtime and notarizes it when the API key is set"
 npx tauri build --target "$TARGET" --bundles app,dmg
 
