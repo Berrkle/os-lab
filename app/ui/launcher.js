@@ -6,6 +6,7 @@
   var $ = function (id) { return document.getElementById(id); };
   var statusEl = $("status"), spinner = $("spinner"), problem = $("problem");
   var detail = $("detail"), where = $("where"), resetBtn = $("reset"), pythonBtn = $("python");
+  var containerBtn = $("container"), continueBtn = $("continue"), consoleInfo = null;
   var language = (navigator.languages || [navigator.language || "en"])
     .map(function (value) { return value.toLowerCase().split("-")[0]; })
     .find(function (value) { return ["en", "tr", "de", "fr", "es", "it", "fa", "ar"].indexOf(value) !== -1; }) || "en";
@@ -33,10 +34,23 @@
     ar: ["الحصول على Python", "جارٍ تنزيل Python لـ os-lab…"]
   };
   var pt = pythonStrings[language] || pythonStrings.en;
+  var containerStrings = {
+    en: ["Get container runtime", "Continue to dashboard", "A container runtime is needed for the VM and Android labs. Get the verified Docker Desktop installer, complete its setup, then retry. Host virtualization may need enabling.", "Downloading Docker Desktop…", "Docker Desktop installer opened. Complete its setup, then retry."],
+    tr: ["Konteyner çalışma ortamını edin", "Panoya devam et", "VM ve Android laboratuvarları için bir konteyner çalışma ortamı gerekir. Doğrulanmış Docker Desktop yükleyicisini edinip kurulumu tamamlayın, ardından yeniden deneyin.", "Docker Desktop indiriliyor…", "Docker Desktop yükleyicisi açıldı. Kurulumu tamamlayıp yeniden deneyin."],
+    de: ["Container-Laufzeit laden", "Zum Dashboard", "Für VM- und Android-Labs wird eine Container-Laufzeit benötigt. Laden Sie den geprüften Docker-Desktop-Installer, schließen Sie die Einrichtung ab und versuchen Sie es erneut.", "Docker Desktop wird geladen…", "Docker-Desktop-Installer geöffnet. Schließen Sie die Einrichtung ab und versuchen Sie es erneut."],
+    fr: ["Obtenir le moteur de conteneurs", "Continuer vers le tableau de bord", "Les labs VM et Android nécessitent un moteur de conteneurs. Obtenez l’installateur Docker Desktop vérifié, terminez l’installation, puis réessayez.", "Téléchargement de Docker Desktop…", "Installateur Docker Desktop ouvert. Terminez l’installation, puis réessayez."],
+    es: ["Obtener motor de contenedores", "Continuar al panel", "Los laboratorios de VM y Android necesitan un motor de contenedores. Obtén el instalador verificado de Docker Desktop, completa la instalación y reintenta.", "Descargando Docker Desktop…", "Se abrió el instalador de Docker Desktop. Completa la instalación y reintenta."],
+    it: ["Scarica il runtime container", "Continua alla dashboard", "I lab VM e Android richiedono un runtime container. Scarica il programma di installazione verificato di Docker Desktop, completa l'installazione e riprova.", "Download di Docker Desktop…", "Installer di Docker Desktop aperto. Completa l'installazione e riprova."],
+    fa: ["دریافت محیط کانتینر", "ادامه به داشبورد", "آزمایشگاه‌های VM و Android به محیط کانتینر نیاز دارند. نصب‌کنندهٔ تأییدشدهٔ Docker Desktop را دریافت و نصب کنید، سپس دوباره تلاش کنید.", "Docker Desktop در حال دریافت است…", "نصب‌کنندهٔ Docker Desktop باز شد. نصب را کامل کنید و دوباره تلاش کنید."],
+    ar: ["الحصول على بيئة الحاويات", "المتابعة إلى لوحة المعلومات", "تحتاج مختبرات VM وAndroid إلى بيئة حاويات. احصل على مُثبّت Docker Desktop المتحقق منه وأكمل الإعداد ثم أعد المحاولة.", "جارٍ تنزيل Docker Desktop…", "فُتح مُثبّت Docker Desktop. أكمل الإعداد ثم أعد المحاولة."]
+  };
+  var ct = containerStrings[language] || containerStrings.en;
   $("retry").textContent = t.retry;
   $("choose").textContent = t.choose;
   resetBtn.textContent = t.reset;
   pythonBtn.textContent = pt[0];
+  containerBtn.textContent = ct[0];
+  continueBtn.textContent = ct[1];
 
   function show(message, isError) {
     statusEl.textContent = message;
@@ -48,20 +62,41 @@
     show(t.failed, true);
     var message = String(err && err.message ? err.message : err);
     pythonBtn.hidden = message.indexOf("Python 3.9 or newer was not found") === -1;
+    containerBtn.hidden = true;
+    continueBtn.hidden = !consoleInfo;
     detail.textContent = message;
     if (invoke) invoke("console_logs").then(function (log) {
       if (log) detail.textContent += "\n\n— console.log —\n" + log;
     }, function () {});
   }
 
+  function openDashboard() {
+    if (!consoleInfo) return;
+    show(t.opening, false);
+    window.location.replace(consoleInfo.url + (language === "en" ? "" : language + "/"));
+  }
+
+  function showContainerSetup(message, canDownload) {
+    show(t.starting, true);
+    statusEl.textContent = ct[0];
+    detail.textContent = message;
+    pythonBtn.hidden = true;
+    containerBtn.hidden = !canDownload;
+    continueBtn.hidden = false;
+  }
+
   function start() {
+    consoleInfo = null;
     show(t.starting, false);
     if (!invoke) { return fail(t.bridge); }
     invoke("console_start").then(function (info) {
+      consoleInfo = info;
       where.textContent = info.source + ": " + info.root;
       resetBtn.hidden = info.source !== "chosen";
-      show(t.opening, false);
-      window.location.replace(info.url + (language === "en" ? "" : language + "/"));
+      invoke("container_status").then(function (ready) {
+        if (ready === false) showContainerSetup(ct[2], true);
+        else openDashboard();
+      }, openDashboard);
     }, fail);
   }
 
@@ -70,6 +105,11 @@
     show(pt[1], false);
     invoke("python_install").then(start, fail);
   });
+  containerBtn.addEventListener("click", function () {
+    show(ct[3], false);
+    invoke("container_get").then(function () { showContainerSetup(ct[4], false); }, fail);
+  });
+  continueBtn.addEventListener("click", openDashboard);
   $("choose").addEventListener("click", function () {
     invoke("console_choose_root").then(function (path) { if (path) start(); }, fail);
   });
