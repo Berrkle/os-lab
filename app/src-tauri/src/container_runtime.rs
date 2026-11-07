@@ -3,7 +3,8 @@
 
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, Stdio};
+use std::time::{Duration, Instant};
 
 const DOWNLOAD: &str = r#"
 import hashlib, os, sys, urllib.request
@@ -80,9 +81,30 @@ pub fn augment_path() {
 }
 
 pub fn is_ready() -> bool {
-    ["docker", "podman"].iter().any(|name| {
-        Command::new(name).arg("info").output().is_ok_and(|out| out.status.success())
-    })
+    ["docker", "podman"].iter().any(|name| works(name))
+}
+
+fn works(name: &str) -> bool {
+    let Ok(mut child) = Command::new(name).arg("info").stdout(Stdio::null()).stderr(Stdio::null()).spawn() else {
+        return false;
+    };
+    let deadline = Instant::now() + Duration::from_secs(5);
+    loop {
+        match child.try_wait() {
+            Ok(Some(status)) => return status.success(),
+            Err(_) => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return false;
+            }
+            Ok(None) if Instant::now() < deadline => std::thread::sleep(Duration::from_millis(100)),
+            Ok(None) => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return false;
+            }
+        }
+    }
 }
 
 pub fn download(python: &str, data_dir: &Path) -> Result<PathBuf, String> {
