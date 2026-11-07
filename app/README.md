@@ -63,7 +63,7 @@ Like the macOS script, both refuse to run if anything under `secrets/` (except i
 ## Not done yet
 
 - No auto-update (needs a signing key).
-- `release-win.ps1` and `release-deb.sh` have not been run yet (written on macOS; the .deb and Windows installers are untested).
+- `release-win.ps1` has not been run yet (written on macOS; the Windows installers are untested). `release-deb.sh` has built and published the 0.1.0 `.deb` on Ubuntu (amd64); installing and launching it is still untested.
 - Only built and run on macOS (aarch64); the Windows and Linux paths (`py -3`, `taskkill`, the
   supervisor's `ctypes` parent check) compile-time-gated but untested.
 - Phones are out of scope: labs need a desktop host.

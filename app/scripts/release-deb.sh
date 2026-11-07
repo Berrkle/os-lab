@@ -69,11 +69,11 @@ DEB="$(ls "$APP_DIR"/src-tauri/target/release/bundle/deb/*.deb 2>/dev/null | hea
 # ── 3. Verify what will ship ────────────────────────────────────────────────────────────────────
 say "verifying $(basename "$DEB")"
 dpkg-deb --info "$DEB" | sed -n '/Package:/p;/Version:/p;/Architecture:/p;/Depends:/p'
-dpkg-deb --info "$DEB" | grep -Eq '^ *Depends:.*python3' || die "the .deb does not depend on python3 (bundle.linux.deb.depends)"
+grep -Eq '^ *Depends:.*python3' <<<"$(dpkg-deb --info "$DEB")" || die "the .deb does not depend on python3 (bundle.linux.deb.depends)"
 LISTING="$(dpkg-deb --contents "$DEB")"
-echo "$LISTING" | grep -q 'os-lab/labctl' || die "the .deb has no bundled runtime (os-lab/labctl)"
-echo "$LISTING" | grep -q 'os-lab/dashboard/dist/index.html' || die "the .deb has no dashboard build"
-if echo "$LISTING" | grep -Eq '/(\.env|config\.env)$|\.(p8|p12|pfx|pem|key)$|/secrets/|/storage/'; then
+grep -q 'os-lab/labctl' <<<"$LISTING" || die "the .deb has no bundled runtime (os-lab/labctl)"
+grep -q 'os-lab/dashboard/dist/index.html' <<<"$LISTING" || die "the .deb has no dashboard build"
+if grep -Eq '/(\.env|config\.env)$|\.(p8|p12|pfx|pem|key)$|/secrets/|/storage/' <<<"$LISTING"; then
   die "the .deb contains a secret-looking file"
 fi
 
