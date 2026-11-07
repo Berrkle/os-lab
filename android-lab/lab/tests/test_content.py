@@ -275,3 +275,18 @@ def test_the_repo_content_builds_and_the_client_accepts_it():
     out = subprocess.run([sys.executable, os.path.join(ROOT, "scripts", "build-content.py"), "--check"], capture_output=True, text=True)
     assert out.returncode == 0, out.stderr
     assert "data files" in out.stdout
+
+
+def test_verify_content_report_runs_on_the_repo_files():
+    out = subprocess.run([sys.executable, os.path.join(ROOT, "scripts", "verify-content.py"), "--all"], capture_output=True, text=True)
+    assert out.returncode == 0, out.stdout + out.stderr
+    assert "PASS: company manifests match the schema" in out.stdout
+    assert "| `docs/legal/PRIVACY.md` | data |" in out.stdout
+
+
+def test_content_cli_status_is_json_and_offline_safe(tmp_path):
+    env = {**os.environ, "OSLAB_CONTENT_DIR": str(tmp_path / "c"), "OSLAB_CONTENT_OFFLINE": "1"}
+    status = subprocess.run([sys.executable, os.path.join(ROOT, "console", "content.py"), "status"], capture_output=True, text=True, env=env)
+    assert status.returncode == 0 and json.loads(status.stdout)["installed"] is False
+    check = subprocess.run([sys.executable, os.path.join(ROOT, "console", "content.py"), "check"], capture_output=True, text=True, env=env)
+    assert check.returncode == 1 and "switched off" in check.stderr
