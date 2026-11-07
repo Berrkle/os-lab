@@ -137,7 +137,7 @@ if [ "$PUBLISH" = 1 ]; then
   else
     say "creating release $TAG"
     gh release create "$TAG" "$ASSET" "$ASSET.sha256" -R "$SLUG" --title "os-lab app $VERSION" \
-      --notes "os-lab desktop app $VERSION for macOS (universal, signed and notarized). Needs Python 3.9+ on PATH. SHA-256 in the .sha256 file."
+      --notes "os-lab desktop app $VERSION. One installer per platform, each with a .sha256 file. The macOS DMG is universal, signed and notarized. Needs Python 3.9+ on PATH."
   fi
   say "published: https://github.com/$SLUG/releases/tag/$TAG"
 else
