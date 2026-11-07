@@ -868,7 +868,7 @@
           "product": "Force 3950",
           "vendor": "Check Point",
           "throughputGbps": 5.5,
-          "priceUsd": null
+          "priceUsd": 12050
         },
         {
           "product": "Firepower 1150",
@@ -966,7 +966,7 @@
           "product": "Force 3920",
           "vendor": "Check Point",
           "throughputGbps": 3.2,
-          "priceUsd": null
+          "priceUsd": 6020
         },
         {
           "product": "Firepower 1140",
@@ -1015,7 +1015,7 @@
           "product": "Spark 1600",
           "vendor": "Check Point",
           "throughputGbps": 1.5,
-          "priceUsd": null
+          "priceUsd": 4010
         },
         {
           "product": "Firepower 1010",
@@ -1064,7 +1064,7 @@
           "product": "Force 9300",
           "vendor": "Check Point",
           "throughputGbps": 10.5,
-          "priceUsd": null
+          "priceUsd": 42990
         },
         {
           "product": "Secure Firewall 3110",
