@@ -53,3 +53,6 @@ app/out/
 app/**/*.p8
 app/**/*.p12
 app/**/*.pfx
+
+# Built content pack (scripts/build-content.py)
+dist-content/

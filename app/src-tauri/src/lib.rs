@@ -70,6 +70,11 @@ fn resolve_root(app: &AppHandle) -> Result<(PathBuf, Source), String> {
 #[tauri::command]
 async fn console_start(app: AppHandle, state: State<'_, Console>) -> Result<Started, String> {
     let (root, source) = resolve_root(&app)?;
+    // Downloaded content packs (console/content.py) live in the app's data folder, beside but
+    // never inside the bundled copy, so "reset" always returns to what shipped.
+    if std::env::var_os("OSLAB_CONTENT_DIR").is_none() {
+        std::env::set_var("OSLAB_CONTENT_DIR", data_dir(&app)?.join("content"));
+    }
     let log = console::log_path(&log_dir(&app)?);
     let console = state.inner().clone();
     tauri::async_runtime::spawn_blocking(move || console.start(&root, source, &log))

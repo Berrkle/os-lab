@@ -62,6 +62,13 @@ Signed Windows installers (free, through SignPath Foundation and GitHub Actions)
 
 Like the macOS script, both refuse to run if anything under `secrets/` (except its README) or a key file is tracked.
 
+## Content updates
+
+Firewall Lab companies, guides, legal documents and (optionally) the Frida hooks update without a new app
+release, from a signed pack on the `content-latest` GitHub release. The console downloads it only on request,
+verifies the signature and every file, and keeps it in the app's data folder (`content/`), never over the bundled
+copy. See `lat.md/content.md`; publish with `scripts/publish-content.sh --publish`.
+
 ## Not done yet
 
 - No auto-update (needs a signing key).
