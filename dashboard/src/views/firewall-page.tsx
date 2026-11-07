@@ -22,7 +22,7 @@ import "../styles/firewall-contribute.css";
 import { AppShell } from "../shell/app-shell";
 import { TopBar } from "../shell/top-bar";
 import { Badge, Section, type Tone } from "../components/ui";
-import { COMPANIES } from "../firewall/companies.generated";
+import { useLiveCompanies } from "../firewall/live";
 import type { Branch, Company, Firewall, Rule } from "../firewall/types";
 import { branchRole, copy, cveStatus, firewallPath, ruleAction, ruleDirection, type FirewallLocale } from "../firewall/locale";
 import { FirewallLanguageSwitch } from "../firewall/language-switch";
@@ -295,7 +295,7 @@ function CompanyPanel({ company, locale }: { company: Company; locale: FirewallL
 
 export function FirewallPage({ locale = "en" }: { locale?: FirewallLocale }) {
   const t = copy[locale];
-  const companies = COMPANIES;
+  const companies = useLiveCompanies();
   const [showContribute, setShowContribute] = useState(false);
   const [activeSlug, setActiveSlug] = useState(companies[0]?.slug ?? "");
   const active = useMemo(() => companies.find((c) => c.slug === activeSlug) ?? companies[0], [companies, activeSlug]);

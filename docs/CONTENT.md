@@ -21,6 +21,11 @@ a separate choice and never arrive silently.
 Nothing is downloaded in the background. The console contacts GitHub only when you check or
 update, and `OSLAB_CONTENT_OFFLINE=1` switches even that off.
 
+In the dashboard, open **This computer** and find **Content updates**: it shows what is installed and
+what is the latest published, with **Check for updates**, **Update content**, a separate **Include Frida
+hooks** checkbox that is off every time, and **Reset to bundled**. The Firewall Lab then lists the
+downloaded companies; a company that is new in the pack opens from the same address, drawn from the pack.
+
 From a terminal, in an os-lab checkout:
 
 ```bash

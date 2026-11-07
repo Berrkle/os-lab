@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ArrowLeftIcon, ArrowRightIcon, FireIcon, MapPinIcon, ShieldCheckIcon, WarningDiamondIcon, GraphIcon } from "@phosphor-icons/react";
 import { AppShell } from "../shell/app-shell";
 import { TopBar } from "../shell/top-bar";
-import { COMPANIES } from "../firewall/companies.generated";
+import { useLiveCompanies } from "../firewall/live";
 import type { Branch, Company } from "../firewall/types";
 import { branchRole, copy, firewallPath, type FirewallLocale } from "../firewall/locale";
 import { numberLocale } from "../firewall/locale";
@@ -84,14 +84,16 @@ function BranchDetail({ branch, locale }: { branch: Branch; locale: FirewallLoca
   );
 }
 
-export function FirewallCompanyPage({ company, locale = "en" }: { company: Company; locale?: FirewallLocale }) {
+export function FirewallCompanyPage({ company: seeded, locale = "en" }: { company: Company; locale?: FirewallLocale }) {
   const t = copy[locale];
+  const companies = useLiveCompanies();
+  const company = companies.find((item) => item.slug === seeded.slug) ?? seeded;
   const [selectedId, setSelectedId] = useState(company.branches[0]?.id ?? "");
   const [tab, setTab] = useState<"network" | "gaps">(() => (typeof location !== "undefined" && location.hash.startsWith("#gap") ? "gaps" : "network"));
   const gaps = auditCompany(company).total;
   const pick = (t: "network" | "gaps") => { setTab(t); history.replaceState(null, "", t === "gaps" ? "#gaps" : location.pathname + location.search); };
   const selected = company.branches.find((branch) => branch.id === selectedId) ?? company.branches[0];
-  const next = COMPANIES[(COMPANIES.findIndex((item) => item.slug === company.slug) + 1) % COMPANIES.length];
+  const next = companies[(companies.findIndex((item) => item.slug === company.slug) + 1) % companies.length];
   return (
     <AppShell activeId="firewall">
       <div className="iux min-h-screen">
