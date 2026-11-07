@@ -35,6 +35,7 @@ import { AppSidebar, SidebarBadge, useSidebarCollapsed, type SidebarGroup } from
 import { Spotlight, type SpotlightCommand, type SpotlightMeta, type SpotlightRecord } from "./spotlight";
 import { toggleMode, useThemeMode } from "./theme";
 import { androidLogsStore, healthStore, hostStore, jobsStore, type LabId, type LabStatus } from "../lib/api";
+import { copy, firewallPath, FIREWALL_LOCALES, type FirewallLocale } from "../firewall/locale";
 
 export const REPO_URL = "https://github.com/keyvanarasteh/os-lab";
 
@@ -54,7 +55,11 @@ export function sectionHref(id: string): string {
   if (id === "health") return "/api/health";
   if (id === "legal") return "/legal/";
   if (id === "contribute") return "/contribute/";
-  if (id === "firewall") return "/firewall/";
+  if (id === "firewall") {
+    const code = typeof window === "undefined" ? "en" : window.location.pathname.split("/")[1];
+    const locale: FirewallLocale = FIREWALL_LOCALES.includes(code as FirewallLocale) ? code as FirewallLocale : "en";
+    return firewallPath(locale);
+  }
   if (id.startsWith("legal-")) return `/legal/${id.slice(6)}/`;
   if (id === "android-overview") return "/android/";
   if (id.startsWith("android-")) return `/android/${id.slice(8)}/`;
@@ -78,7 +83,7 @@ function RunningDot() {
   return <span className="ml-auto size-2 animate-pulse rounded-full bg-[#00d084]" aria-label="running" />;
 }
 
-function buildGroups(labs: LabStatus[] | undefined, running: Set<string>, androidRunning: boolean): SidebarGroup[] {
+function buildGroups(labs: LabStatus[] | undefined, running: Set<string>, androidRunning: boolean, locale: FirewallLocale): SidebarGroup[] {
   const lab = (id: LabId) => labs?.find((l) => l.id === id);
   const labItem = (id: LabId, label: string) => ({
     id: `lab-${id}`,
@@ -121,7 +126,7 @@ function buildGroups(labs: LabStatus[] | undefined, running: Set<string>, androi
         labItem("windows", "Windows Lab"),
         labItem("macos", "macOS Lab"),
         labItem("linux", "Linux Lab"),
-        { id: "firewall", label: "Firewall Lab", icon: <FireIcon size={16} /> }
+        { id: "firewall", label: copy[locale].lab, icon: <FireIcon size={16} /> }
       ]
     },
     {
@@ -254,6 +259,8 @@ export function AppShell({
   const { data: jobs } = jobsStore.use();
   const { data: health, error: healthError } = healthStore.use();
   const { data: androidLogs } = androidLogsStore.use();
+  const pathLocale = typeof window === "undefined" ? "en" : window.location.pathname.split("/")[1];
+  const locale: FirewallLocale = FIREWALL_LOCALES.includes(pathLocale as FirewallLocale) ? pathLocale as FirewallLocale : "en";
 
   useEffect(() => {
     const drawer = drawerRef.current;
@@ -264,8 +271,8 @@ export function AppShell({
 
   const running = useMemo(() => new Set((jobs ?? []).filter((j) => j.state === "running").map((j) => j.lab)), [jobs]);
   const groups = useMemo(
-    () => buildGroups(host?.labs, running, Boolean(androidLogs?.running)),
-    [host?.labs, running, androidLogs?.running]
+    () => buildGroups(host?.labs, running, Boolean(androidLogs?.running), locale),
+    [host?.labs, running, androidLogs?.running, locale]
   );
   const meta = useMemo(buildMeta, []);
   const records = useMemo<SpotlightRecord[]>(

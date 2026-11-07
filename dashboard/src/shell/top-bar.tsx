@@ -6,12 +6,13 @@ import type { ReactNode } from "react";
 import { ArrowLeftIcon, CircleIcon, ShieldCheckIcon } from "@phosphor-icons/react";
 import { ShellMenuButton, ThemeToggle } from "./app-shell";
 import { androidLogsStore, healthStore, jobsStore } from "../lib/api";
+import { statusCopy, type FirewallLocale } from "../firewall/locale";
 
 export interface TopBarProps {
   title: string;
   back?: { href: string; label: string };
   icon?: ReactNode;
-  locale?: "en" | "tr";
+  locale?: FirewallLocale;
 }
 
 export function TopBar({ title, back, icon, locale = "en" }: TopBarProps) {
@@ -20,9 +21,10 @@ export function TopBar({ title, back, icon, locale = "en" }: TopBarProps) {
   const { data: logs } = androidLogsStore.use();
   const busy = Boolean(logs?.running) || (jobs ?? []).some((j) => j.state === "running");
   const online = health?.status === "ok" && !error;
+  const t = statusCopy[locale];
   const label = !online
-    ? (error ? (locale === "tr" ? "Çevrimdışı" : "Offline") : (locale === "tr" ? "Bağlanıyor…" : "Connecting…"))
-    : busy ? (locale === "tr" ? "İş çalışıyor" : "Job running") : (locale === "tr" ? "Laboratuvar etkin" : "Lab Active");
+    ? (error ? t.offline : t.connecting)
+    : busy ? t.running : t.active;
   return (
     <header className="sticky top-0 z-20 border-b border-(--iux-border) bg-(--iux-background)/80 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 sm:px-6">
