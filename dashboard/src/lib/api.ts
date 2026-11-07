@@ -312,13 +312,16 @@ export function formatBytes(n: number | null | undefined): string {
     v /= 1024;
     i++;
   }
-  return `${v >= 10 || i === 0 ? Math.round(v) : v.toFixed(1)} ${units[i]}`;
+  const locale = typeof document === "undefined" ? "en" : document.documentElement.lang || "en";
+  return `${new Intl.NumberFormat(locale, { maximumFractionDigits: v >= 10 || i === 0 ? 0 : 1 }).format(v)} ${units[i]}`;
 }
 export function ago(seconds: number | null | undefined): string {
   if (!seconds) return "";
   const s = Math.max(0, Math.round(Date.now() / 1000 - seconds));
-  if (s < 60) return `${s}s ago`;
-  if (s < 3600) return `${Math.round(s / 60)}m ago`;
-  if (s < 86400) return `${Math.round(s / 3600)}h ago`;
-  return `${Math.round(s / 86400)}d ago`;
+  const locale = typeof document === "undefined" ? "en" : document.documentElement.lang || "en";
+  const format = new Intl.RelativeTimeFormat(locale, { numeric: "auto", style: "short" });
+  if (s < 60) return format.format(-s, "second");
+  if (s < 3600) return format.format(-Math.round(s / 60), "minute");
+  if (s < 86400) return format.format(-Math.round(s / 3600), "hour");
+  return format.format(-Math.round(s / 86400), "day");
 }

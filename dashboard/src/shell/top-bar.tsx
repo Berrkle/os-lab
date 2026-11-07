@@ -6,7 +6,8 @@ import type { ReactNode } from "react";
 import { ArrowLeftIcon, CircleIcon, ShieldCheckIcon } from "@phosphor-icons/react";
 import { ShellMenuButton, ThemeToggle } from "./app-shell";
 import { androidLogsStore, healthStore, jobsStore } from "../lib/api";
-import { statusCopy, type FirewallLocale } from "../firewall/locale";
+import { copy, FIREWALL_LOCALES, firewallLanguageName, statusCopy, type FirewallLocale } from "../firewall/locale";
+import { localeFromPath, localePath } from "../i18n/paths";
 
 export interface TopBarProps {
   title: string;
@@ -15,13 +16,14 @@ export interface TopBarProps {
   locale?: FirewallLocale;
 }
 
-export function TopBar({ title, back, icon, locale = "en" }: TopBarProps) {
+export function TopBar({ title, back, icon, locale }: TopBarProps) {
+  const currentLocale = locale ?? (typeof window === "undefined" ? "en" : localeFromPath(window.location.pathname));
   const { data: health, error } = healthStore.use();
   const { data: jobs } = jobsStore.use();
   const { data: logs } = androidLogsStore.use();
   const busy = Boolean(logs?.running) || (jobs ?? []).some((j) => j.state === "running");
   const online = health?.status === "ok" && !error;
-  const t = statusCopy[locale];
+  const t = statusCopy[currentLocale];
   const label = !online
     ? (error ? t.offline : t.connecting)
     : busy ? t.running : t.active;
@@ -43,6 +45,18 @@ export function TopBar({ title, back, icon, locale = "en" }: TopBarProps) {
         ) : null}
         <h1 className="min-w-0 truncate text-base font-semibold">{title}</h1>
         <div className="ml-auto flex items-center gap-3">
+          <select
+            aria-label={copy[currentLocale].language}
+            value={currentLocale}
+            onChange={(event) => {
+              const path = localePath(window.location.pathname, event.target.value as FirewallLocale);
+              window.location.assign(`${path}${window.location.search}${window.location.hash}`);
+            }}
+            className="max-w-25 rounded-md border border-(--iux-border) bg-(--iux-background) px-1.5 py-1 text-xs"
+            dir="ltr"
+          >
+            {FIREWALL_LOCALES.map((code) => <option key={code} value={code}>{firewallLanguageName[code]}</option>)}
+          </select>
           <div className="flex items-center gap-1.5 text-xs text-(--iux-muted-foreground)">
             <CircleIcon
               size={8}

@@ -47,7 +47,7 @@
       where.textContent = info.source + ": " + info.root;
       resetBtn.hidden = info.source !== "chosen";
       show(t.opening, false);
-      window.location.replace(info.url);
+      window.location.replace(info.url + (language === "en" ? "" : language + "/"));
     }, fail);
   }
 

@@ -35,7 +35,8 @@ import { AppSidebar, SidebarBadge, useSidebarCollapsed, type SidebarGroup } from
 import { Spotlight, type SpotlightCommand, type SpotlightMeta, type SpotlightRecord } from "./spotlight";
 import { toggleMode, useThemeMode } from "./theme";
 import { androidLogsStore, healthStore, hostStore, jobsStore, type LabId, type LabStatus } from "../lib/api";
-import { copy, firewallPath, FIREWALL_LOCALES, type FirewallLocale } from "../firewall/locale";
+import { copy, firewallPath, type FirewallLocale } from "../firewall/locale";
+import { localeFromPath, localePath } from "../i18n/paths";
 
 export const REPO_URL = "https://github.com/keyvanarasteh/os-lab";
 
@@ -49,24 +50,24 @@ export const LAB_ICON: Record<LabId, (size?: number) => ReactNode> = {
 
 /** Where a section id leads. Pages are static files, so every section is a plain href. */
 export function sectionHref(id: string): string {
-  if (id === "host") return "/";
-  if (id === "jobs") return "/jobs/";
+  const localized = (path: string) => localePath(path, typeof window === "undefined" ? "en" : localeFromPath(window.location.pathname));
+  if (id === "host") return localized("/");
+  if (id === "jobs") return localized("/jobs/");
   if (id === "repo") return REPO_URL;
   if (id === "health") return "/api/health";
-  if (id === "legal") return "/legal/";
-  if (id === "contribute") return "/contribute/";
+  if (id === "legal") return localized("/legal/");
+  if (id === "contribute") return localized("/contribute/");
   if (id === "firewall") {
-    const code = typeof window === "undefined" ? "en" : window.location.pathname.split("/")[1];
-    const locale: FirewallLocale = FIREWALL_LOCALES.includes(code as FirewallLocale) ? code as FirewallLocale : "en";
+    const locale = typeof window === "undefined" ? "en" : localeFromPath(window.location.pathname);
     return firewallPath(locale);
   }
-  if (id.startsWith("legal-")) return `/legal/${id.slice(6)}/`;
-  if (id === "android-overview") return "/android/";
-  if (id.startsWith("android-")) return `/android/${id.slice(8)}/`;
-  if (id.startsWith("lab-")) return `/labs/${id.slice(4)}/`;
-  return "/";
+  if (id.startsWith("legal-")) return localized(`/legal/${id.slice(6)}/`);
+  if (id === "android-overview") return localized("/android/");
+  if (id.startsWith("android-")) return localized(`/android/${id.slice(8)}/`);
+  if (id.startsWith("lab-")) return localized(`/labs/${id.slice(4)}/`);
+  return localized("/");
 }
-export const labHref = (lab: LabId) => `/labs/${lab}/`;
+export const labHref = (lab: LabId) => localePath(`/labs/${lab}/`, typeof window === "undefined" ? "en" : localeFromPath(window.location.pathname));
 
 function StatePill({ lab }: { lab?: LabStatus }) {
   if (!lab) return null;
@@ -259,8 +260,7 @@ export function AppShell({
   const { data: jobs } = jobsStore.use();
   const { data: health, error: healthError } = healthStore.use();
   const { data: androidLogs } = androidLogsStore.use();
-  const pathLocale = typeof window === "undefined" ? "en" : window.location.pathname.split("/")[1];
-  const locale: FirewallLocale = FIREWALL_LOCALES.includes(pathLocale as FirewallLocale) ? pathLocale as FirewallLocale : "en";
+  const locale: FirewallLocale = typeof window === "undefined" ? "en" : localeFromPath(window.location.pathname);
 
   useEffect(() => {
     const drawer = drawerRef.current;
@@ -373,7 +373,7 @@ export function AppShell({
           { scope: "linux", description: "Linux Lab actions", icon: <CpuIcon size={16} /> }
         ]}
         onNavigate={(section, record) => {
-          if (record && section === "jobs") return go(`/jobs/#${record.id}`);
+          if (record && section === "jobs") return go(`${sectionHref("jobs")}#${record.id}`);
           if (record && section.startsWith("lab-")) return go(`${sectionHref(section)}#action=${record.id.split(":")[1]}`);
           go(sectionHref(section));
         }}

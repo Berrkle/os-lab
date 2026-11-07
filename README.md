@@ -59,6 +59,13 @@ what each still needs, one page per lab to install dependencies and start,
 stop or inspect it (every action is previewed before it runs), a jobs log,
 and the Android Lab workbench.
 
+The dashboard and desktop app offer **English (default), Turkish, German,
+French, Spanish, Italian, Persian and Arabic**. Choose a language from the top
+bar; the desktop app starts in the system language. Each dashboard route keeps
+its locale when you move between labs. Persian and Arabic use right-to-left
+layout. See [translation review notes](dashboard/TRANSLATION_TODO.md) for
+content that still needs a native-speaker review.
+
 ## Legal
 
 os-lab is licensed under the [Apache License 2.0](LICENSE). Before running the
