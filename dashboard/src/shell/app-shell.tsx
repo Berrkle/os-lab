@@ -54,7 +54,7 @@ export function sectionHref(id: string): string {
   if (id === "host") return localized("/");
   if (id === "jobs") return localized("/jobs/");
   if (id === "repo") return REPO_URL;
-  if (id === "health") return "/api/health";
+  if (id === "health") return localized("/health/");
   if (id === "legal") return localized("/legal/");
   if (id === "contribute") return localized("/contribute/");
   if (id === "content") return localized("/content/");
