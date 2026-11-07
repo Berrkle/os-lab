@@ -11,6 +11,7 @@
 //! open in the system browser.
 
 mod console;
+mod container_runtime;
 mod python_runtime;
 mod runtime;
 
@@ -93,6 +94,26 @@ async fn python_install(app: AppHandle) -> Result<String, String> {
     tauri::async_runtime::spawn_blocking(move || python_runtime::install(&helper, &data))
         .await
         .map_err(|e| e.to_string())?
+}
+
+/// None on platforms where the existing lab setup scripts handle the engine.
+#[tauri::command]
+async fn container_status() -> Result<Option<bool>, String> {
+    if container_runtime::installer().is_none() { return Ok(None); }
+    tauri::async_runtime::spawn_blocking(container_runtime::is_ready)
+        .await.map(Some).map_err(|e| e.to_string())
+}
+
+/// Fetch a Docker installer whose SHA-256 is pinned to Docker's release notes, then open it.
+#[tauri::command]
+async fn container_get(app: AppHandle) -> Result<String, String> {
+    let data = data_dir(&app)?;
+    let python = console::find_python(&data)?;
+    let path = tauri::async_runtime::spawn_blocking(move || container_runtime::download(&python, &data))
+        .await.map_err(|e| e.to_string())??;
+    app.opener().open_path(path.to_string_lossy().into_owned(), None::<String>)
+        .map_err(|e| format!("Docker Desktop was downloaded but could not be opened: {e}"))?;
+    Ok(path.display().to_string())
 }
 
 #[tauri::command]
@@ -195,6 +216,7 @@ fn build_window(app: &AppHandle) -> tauri::Result<()> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    container_runtime::augment_path();
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
             if let Some(w) = app.get_webview_window("main") {
@@ -214,7 +236,9 @@ pub fn run() {
             console_choose_root,
             console_reset_root,
             console_logs,
-            python_install
+            python_install,
+            container_status,
+            container_get
         ])
         .setup(|app| {
             build_window(app.handle())?;

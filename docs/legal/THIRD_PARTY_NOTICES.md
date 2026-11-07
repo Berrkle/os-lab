@@ -38,6 +38,7 @@ IP address through ipinfo.io. The image honours the opt-out variable
 
 | Component | Licence |
 |-----------|---------|
+| [Docker Desktop](https://docs.docker.com/desktop/) | Downloaded only when requested on macOS or Windows; subject to the [Docker Subscription Service Agreement](https://www.docker.com/legal/docker-subscription-service-agreement/) |
 | [uv](https://github.com/astral-sh/uv) and the CPython builds it downloads from [python-build-standalone](https://github.com/astral-sh/python-build-standalone) | Apache-2.0 or MIT for uv; CPython and included libraries retain their own licences |
 | [JADX](https://github.com/skylot/jadx) | Apache-2.0 |
 | [Apktool](https://github.com/iBotPeaches/Apktool) | Apache-2.0 |

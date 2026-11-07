@@ -58,6 +58,15 @@ app's data folder on request, without changing the system Python or `PATH`. The 
 stage this helper before building. An existing Python 3.9+ installation still works without a
 download.
 
+On macOS and Windows, if neither Docker nor Podman responds, the launcher offers **Get container
+runtime**. It downloads Docker Desktop 4.98.0 for the host architecture, verifies the SHA-256
+published in Docker's release notes, and opens the installer. The user completes Docker's
+interactive installation and licensing, enables host virtualization if needed, then retries.
+**Continue to dashboard** remains available for labs that do not need containers. On Linux, the
+dashboard's existing lab setup actions install Docker Engine and the lab scripts pull their
+container images when started. VM guest media is fetched by the relevant lab workflow or supplied
+by the operator; it is never redistributed by the app.
+
 ## Release (macOS DMG, notarized)
 
 `app/scripts/release-mac.sh` builds a universal DMG, signs it (Developer ID), notarizes the app and the DMG, staples, verifies with `codesign`/`spctl`/`stapler`, and with `--publish` uploads it to the GitHub release `app-v<version>` with a SHA-256 file. Without `--publish` it uploads nothing; `--no-notarize` signs only. Credentials come from the environment, the git-ignored `secrets/` folder or the login keychain, never from the repo (`secrets/README.md`); the script refuses to run if a key or secrets file is tracked.
