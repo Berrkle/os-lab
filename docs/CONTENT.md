@@ -18,12 +18,17 @@ a separate choice and never arrive silently.
 
 ## How to use it
 
-Nothing is downloaded in the background. The console contacts GitHub only when you check or
-update, and `OSLAB_CONTENT_OFFLINE=1` switches even that off.
+Opening **This computer** checks the small signed manifest when the last check is older than 15
+minutes. The content pack itself downloads only after you press the update button.
+`OSLAB_CONTENT_OFFLINE=1` switches off both checks and updates.
 
-In the dashboard, open **This computer** and find **Content updates**: it shows what is installed and
-what is the latest published, with **Check for updates**, **Update content**, a separate **Include Frida
-hooks** checkbox that is off every time, and **Reset to bundled**. The Firewall Lab then lists the
+In the dashboard, open **This computer** and find **Content updates**. The compact card shows the
+installed and latest versions. **Check and update** verifies the manifest and installs a newer
+signed data pack, with progress status. **Advanced options** keeps the separate **Check for updates**,
+**Update content**, **Include Frida hooks** checkbox (off every time), and **Reset to bundled**.
+If hooks are already installed, the compact button opens Advanced options so you can make that
+choice again before updating.
+The Firewall Lab then lists the
 downloaded companies; a company that is new in the pack opens from the same address, drawn from the pack.
 
 From a terminal, in an os-lab checkout:

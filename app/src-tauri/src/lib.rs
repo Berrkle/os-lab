@@ -186,20 +186,16 @@ async fn python_install(app: AppHandle) -> Result<String, String> {
         .map_err(|e| e.to_string())?
 }
 
-#[derive(serde::Serialize)]
-struct ContainerStatus {
-    ready: bool,
-    cli_present: bool,
+#[tauri::command]
+async fn container_status() -> Result<container_runtime::Status, String> {
+    tauri::async_runtime::spawn_blocking(container_runtime::status)
+        .await.map_err(|e| e.to_string())
 }
 
-/// None on platforms where the existing lab setup scripts handle the engine.
 #[tauri::command]
-async fn container_status() -> Result<Option<ContainerStatus>, String> {
-    if container_runtime::installer().is_none() { return Ok(None); }
-    tauri::async_runtime::spawn_blocking(|| ContainerStatus {
-        ready: container_runtime::is_ready(),
-        cli_present: container_runtime::cli_present(),
-    }).await.map(Some).map_err(|e| e.to_string())
+async fn container_recover() -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(container_runtime::recover)
+        .await.map_err(|e| e.to_string())?
 }
 
 /// Fetch a Docker installer whose SHA-256 is pinned to Docker's release notes, then open it.
@@ -345,6 +341,7 @@ pub fn run() {
             console_choose_files_dir,
             python_install,
             container_status,
+            container_recover,
             container_get
         ])
         .setup(|app| {

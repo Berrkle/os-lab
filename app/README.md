@@ -67,10 +67,12 @@ app's data folder on request, without changing the system Python or `PATH`. The 
 stage this helper before building. An existing Python 3.9+ installation still works without a
 download.
 
-On macOS and Windows, if neither Docker nor Podman responds with Compose, the launcher offers **Get container
-runtime** when no CLI is installed. If a CLI exists but its engine or Compose command does not respond, the launcher
-asks you to start or reconnect that engine, or install Compose, and retry; Docker Desktop is optional. The download
-action fetches Docker Desktop 4.98.0 for the host architecture, verifies the SHA-256
+If Docker or Podman is installed but stopped, the launcher can start an existing Colima, Podman
+machine, Docker Desktop, or Linux service when the user presses **Start installed engine**. It
+checks the engine and Compose again before continuing. An unavailable external volume, missing
+Compose plugin, or host authorization can still require user action. On macOS and Windows, the
+launcher also offers **Get Docker Desktop** when no working engine is available; Docker Desktop
+is optional. The download action fetches Docker Desktop 4.98.0 for the host architecture, verifies the SHA-256
 published in Docker's release notes, and opens the installer. The user completes Docker's
 interactive installation and licensing, enables host virtualization if needed, then retries.
 **Continue to dashboard** remains available for labs that do not need containers. On Linux, the
@@ -102,14 +104,15 @@ Like the macOS script, both refuse to run if anything under `secrets/` (except i
 ## Content updates
 
 Firewall Lab companies, guides, legal documents and (optionally) the Frida hooks update without a new app
-release, from a signed pack on the `content-latest` GitHub release. The console downloads it only on request,
+release, from a signed pack on the `content-latest` GitHub release. The dashboard checks the signed
+manifest when **This computer** opens if the last check is stale; it downloads the content pack only on request,
 verifies the signature and every file, and keeps it in the app's data folder (`content/`), never over the bundled
 copy. See `lat.md/content.md`; publish with `scripts/publish-content.sh --publish`.
 
 ## Not done yet
 
 - No auto-update (needs a signing key).
-- The 0.2.1 macOS DMG was signed, notarized and published. The 0.2.1 Windows and Debian installers were also published; installing and launching those builds is still untested.
+- The 0.2.2 macOS DMG was signed, notarized and published. The 0.2.2 Windows and Debian installers were also published; installing and launching those builds is still untested.
 - Only built and run on macOS (aarch64); the Windows and Linux paths (`py -3`, `taskkill`, the
   supervisor's `ctypes` parent check) compile-time-gated but untested.
 - Phones are out of scope: labs need a desktop host.

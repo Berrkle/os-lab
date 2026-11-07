@@ -16,6 +16,7 @@
     "allow-console-choose-files-dir",
     "allow-python-install",
     "allow-container-status",
+    "allow-container-recover",
     "allow-container-get"
   ]
 }
