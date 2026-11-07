@@ -31,6 +31,7 @@ import os
 import posixpath
 import shutil
 import tarfile
+import sys
 import time
 import urllib.request
 from typing import Callable, Optional
@@ -472,3 +473,27 @@ def default_content_dir() -> str:
     if explicit:
         return explicit
     return os.path.join(os.path.expanduser("~"), ".oslab", "content")
+
+
+def main(argv=None) -> int:
+    """`python3 console/content.py status|check|update [--hooks]|reset` (same store the console uses)."""
+    import argparse
+
+    ap = argparse.ArgumentParser(prog="content.py", description="Signed content packs for os-lab.")
+    ap.add_argument("action", choices=["status", "check", "update", "reset"])
+    ap.add_argument("--hooks", action="store_true", help="with update: also install the Frida hook scripts")
+    args = ap.parse_args(argv)
+    root = os.path.realpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+    store = ContentStore(default_content_dir(), root)
+    try:
+        result = {"status": store.state, "check": store.check, "reset": store.reset}.get(args.action)
+        result = result() if result else store.update(include_hooks=args.hooks)
+    except ContentError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 1
+    print(json.dumps(result, indent=2))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

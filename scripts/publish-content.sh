@@ -17,6 +17,7 @@ seq="$(python3 -c "import json;print(json.load(open('dist-content/manifest.json'
 for tag in "content-$seq" content-latest; do
   gh release delete "$tag" -R "$SLUG" --cleanup-tag --yes 2>/dev/null || true
   gh release create "$tag" dist-content/manifest.json dist-content/manifest.json.sig dist-content/content-pack.tar.gz \
-    -R "$SLUG" --title "os-lab content $seq" --notes "Signed content pack, sequence $seq." --target "$(git rev-parse HEAD)"
+    -R "$SLUG" --title "os-lab content $seq" --notes "Signed content pack, sequence $seq." --target "$(git rev-parse HEAD)" \
+    --latest=false   # never take "Latest" from the app release
 done
 echo "==> published content-$seq and content-latest"

@@ -55,3 +55,14 @@ sequence number is the commit count, so it only goes up.
 
 Tests: [[android-lab/lab/tests/test_content.py]] and the content cases in
 [[android-lab/lab/tests/test_web_ui.py]].
+
+## Proof and the info page
+
+Contributors can show their change works with a verification report and an optional
+recording; the instructions live in [[docs/CONTENT.md]], which the dashboard renders at
+`/content/`.
+
+[[scripts/verify-content.py]] runs the CI checks and lists each changed content file with its
+class and SHA-256; CI prints it in the job summary. Recordings are attached to the pull
+request, never committed. `python3 console/content.py` is the terminal client for status,
+check, update and reset.
