@@ -58,12 +58,14 @@ Run these on the machine that matches the platform; all three publish into the s
 - `app/scripts/release-deb.sh [--publish] [--install-deps]` (Debian/Ubuntu) builds `os-lab_<v>_linux_<arch>.deb`, checks that
   it depends on `python3`, bundles the runtime and contains no secret-looking file. Nothing to sign.
 
+Signed Windows installers (free, through SignPath Foundation and GitHub Actions) are described in [SIGNING.md](SIGNING.md).
+
 Like the macOS script, both refuse to run if anything under `secrets/` (except its README) or a key file is tracked.
 
 ## Not done yet
 
 - No auto-update (needs a signing key).
-- `release-win.ps1` has not been run yet (written on macOS; the Windows installers are untested). `release-deb.sh` has built and published the 0.1.0 `.deb` on Ubuntu (amd64); installing and launching it is still untested.
+- `release-win.ps1` built and published the unsigned 0.1.0 Windows installers; installing and launching them is still untested. `release-deb.sh` has built and published the 0.1.0 `.deb` on Ubuntu (amd64); installing and launching it is still untested.
 - Only built and run on macOS (aarch64); the Windows and Linux paths (`py -3`, `taskkill`, the
   supervisor's `ctypes` parent check) compile-time-gated but untested.
 - Phones are out of scope: labs need a desktop host.
