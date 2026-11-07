@@ -98,9 +98,10 @@ say "building ($TARGET) — Tauri signs the app with hardened runtime and notari
 npx tauri build --target "$TARGET" --bundles app,dmg
 
 BUNDLE="$APP_DIR/src-tauri/target/$TARGET/release/bundle"
-APP="$(ls -d "$BUNDLE"/macos/*.app | head -1)"
-DMG="$(ls "$BUNDLE"/dmg/*.dmg | head -1)"
-[ -d "$APP" ] && [ -f "$DMG" ] || die "build produced no .app/.dmg under $BUNDLE"
+ARCH_LABEL="${TARGET%%-apple-darwin}"
+APP="$BUNDLE/macos/os-lab.app"
+DMG="$BUNDLE/dmg/os-lab_${VERSION}_${ARCH_LABEL}.dmg"
+[ -d "$APP" ] && [ -f "$DMG" ] || die "build produced no app or version-matched DMG ($DMG)"
 
 # ── 4. Sign + notarize the DMG itself (Tauri notarizes the .app) ────────────────────────────────
 say "signing the DMG"
@@ -125,7 +126,6 @@ fi
 
 # ── 6. Collect ──────────────────────────────────────────────────────────────────────────────────
 mkdir -p "$OUT"
-ARCH_LABEL="${TARGET%%-apple-darwin}"; [ "$ARCH_LABEL" = universal ] || true
 ASSET="$OUT/os-lab_${VERSION}_macos_${ARCH_LABEL}.dmg"
 cp "$DMG" "$ASSET"
 ( cd "$OUT" && shasum -a 256 "$(basename "$ASSET")" > "$(basename "$ASSET").sha256" )
@@ -141,7 +141,7 @@ if [ "$PUBLISH" = 1 ]; then
   else
     say "creating release $TAG"
     gh release create "$TAG" "$ASSET" "$ASSET.sha256" -R "$SLUG" --title "os-lab app $VERSION" \
-      --notes "os-lab desktop app $VERSION. One installer per platform, each with a .sha256 file. The macOS DMG is universal, signed and notarized. Needs Python 3.9+ on PATH."
+      --notes "os-lab desktop app $VERSION. One installer per platform, each with a .sha256 file. The macOS DMG is universal, signed and notarized. The app can download managed Python on request."
   fi
   say "published: https://github.com/$SLUG/releases/tag/$TAG"
 else
