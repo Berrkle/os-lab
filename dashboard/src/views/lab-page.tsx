@@ -8,7 +8,9 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ArrowClockwiseIcon,
   CheckCircleIcon,
+  CircleNotchIcon,
   GearSixIcon,
+  InfoIcon,
   PlayIcon,
   PulseIcon,
   ShieldWarningIcon,
@@ -19,8 +21,7 @@ import {
 } from "@phosphor-icons/react";
 import { AppShell, LAB_ICON } from "../shell/app-shell";
 import { TopBar } from "../shell/top-bar";
-import { ProgressConsoleReport, ShellSnippet } from "../apk-lab/components";
-import type { ExecutionVersionStage } from "../apk-lab/components";
+import { ShellSnippet } from "../apk-lab/components";
 import { Badge, Empty, EndpointList, Field, PageHead, Section, Skeleton, Status } from "../components/ui";
 import { stateBadge } from "./host-page";
 import {
@@ -51,14 +52,6 @@ const ACTION_GROUPS: { title: string; ids: string[] }[] = [
   { title: "Inspect", ids: ["status", "doctor", "urls", "logs", "monitor"] },
   { title: "Maintenance", ids: ["backup", "service-install", "service-uninstall"] }
 ];
-
-const STAGE: Record<LabJob["state"], ExecutionVersionStage["status"]> = {
-  running: "Running",
-  succeeded: "Deployed",
-  failed: "Failed",
-  cancelled: "Failed",
-  "timed-out": "Failed"
-};
 
 function Requirements({ lab }: { lab: LabStatus }) {
   if (!lab.requirements.length) return <Empty>No host prerequisites are tracked for this lab.</Empty>;
@@ -182,54 +175,65 @@ function JobPanel({ jobs, selected, onSelect }: { jobs: LabJob[]; selected: stri
   const current = jobs.find((j) => j.id === id);
   const detail = usePoll(() => (id ? api.job(id) : Promise.resolve(null)), current?.state === "running" ? 1500 : 0, [id, current?.state]);
   const [cancelling, setCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
   if (!jobs.length) return <Empty>No jobs for this lab yet. Preview an action above to start one.</Empty>;
-  const logs = detail.data?.logs ?? [];
+  const logs = detail.data?.id === id ? detail.data.logs ?? [] : [];
   return (
-    <ProgressConsoleReport
-      title={current?.label ?? "Job"}
-      description={current ? `${current.command} · started ${ago(current.startedAt)}${current.exitCode != null ? ` · exit ${current.exitCode}` : ""}${current.error ? ` · ${current.error}` : ""}` : ""}
-      stages={jobs.slice(0, 6).map((j) => ({
-        id: j.id,
-        version: j.action,
-        updatedAt: ago(j.startedAt),
-        status: STAGE[j.state],
-        active: j.id === id
-      }))}
-      logs={logs.length ? logs : [current?.state === "running" ? "Waiting for output…" : "No output."]}
-      streaming={current?.state === "running"}
-      footer={
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          {jobs.slice(0, 6).map((j) => (
-            <button
-              key={j.id}
-              type="button"
-              onClick={() => onSelect(j.id)}
-              className={`rounded-md px-2.5 py-1 font-mono text-xs ${j.id === id ? "bg-[#f36c21]/20 text-[#f36c21]" : "text-zinc-400 hover:text-white"}`}
-            >
-              {j.action}
-            </button>
-          ))}
-          {current?.state === "running" ? (
-            <button
-              type="button"
-              disabled={cancelling}
-              onClick={async () => {
-                setCancelling(true);
-                try {
-                  await api.cancel(current.id);
-                  await jobsStore.refresh();
-                } finally {
-                  setCancelling(false);
-                }
-              }}
-              className="flex items-center gap-1.5 rounded-lg border border-red-500/50 bg-red-500/10 px-3 py-1 text-xs font-semibold text-red-400 hover:bg-red-500/20"
-            >
-              <StopIcon size={12} weight="fill" /> Cancel job
-            </button>
-          ) : null}
+    <div className="iux-card gap-4 p-5" aria-busy={current?.state === "running"}>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold">{current?.label ?? "Job"}</h3>
+          <p className="mt-1 text-xs text-(--iux-muted-foreground)">
+            Started {ago(current?.startedAt)}{current?.exitCode != null ? ` · exit ${current.exitCode}` : ""}
+          </p>
         </div>
-      }
-    />
+        <Badge tone={current?.state === "succeeded" ? "success" : current?.state === "running" ? "warning" : "danger"}>
+          {current?.state === "running" ? <CircleNotchIcon size={13} className="mr-1 inline animate-spin" /> : null}
+          {current?.state ?? "unknown"}
+        </Badge>
+      </div>
+      {current?.state === "running" ? (
+        <div role="status" className="space-y-1.5 text-xs text-(--iux-muted-foreground)">
+          <p>{current.action === "setup" ? "Installing and checking dependencies…" : "Running action…"} Output appears below as each step completes.</p>
+          <div className="h-1.5 overflow-hidden rounded-full bg-(--iux-muted)">
+            <div className="h-full w-1/3 animate-pulse rounded-full bg-[#f36c21]" />
+          </div>
+        </div>
+      ) : null}
+      {current?.error ? <Status value={{ ok: false, text: current.error }} /> : null}
+      {detail.error ? <Status value={{ ok: false, text: `Could not load job output: ${detail.error}` }} /> : null}
+      {cancelError ? <Status value={{ ok: false, text: `Could not cancel job: ${cancelError}` }} /> : null}
+      <div className="flex flex-wrap gap-2">
+        {jobs.slice(0, 6).map((job) => (
+          <button key={job.id} type="button" onClick={() => { setCancelError(null); onSelect(job.id); }}
+            className="iux-btn" data-variant={job.id === id ? "primary" : "outline"}>
+            {job.action} · {job.state}
+          </button>
+        ))}
+        {current?.state === "running" ? (
+          <button type="button" className="iux-btn" data-variant="outline" disabled={cancelling}
+            onClick={async () => {
+              setCancelling(true);
+              setCancelError(null);
+              try {
+                await api.cancel(current.id);
+                await jobsStore.refresh();
+              } catch (e) {
+                setCancelError(message(e));
+              } finally {
+                setCancelling(false);
+              }
+            }}>
+            <StopIcon size={14} /> {cancelling ? "Cancelling…" : "Cancel job"}
+          </button>
+        ) : null}
+      </div>
+      <div>
+        <p className="mb-2 text-xs font-medium text-(--iux-muted-foreground)">Output · {current?.lines ?? 0} lines</p>
+        <pre className="max-h-80 overflow-auto rounded-lg border border-(--iux-border) bg-(--iux-muted) p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap break-words">{logs.length ? logs.join("\n") : current?.state === "running" ? "Waiting for output…" : "No output."}</pre>
+        {current?.truncated ? <p className="mt-1 text-xs text-(--iux-muted-foreground)">Earlier output was trimmed.</p> : null}
+      </div>
+    </div>
   );
 }
 
@@ -429,7 +433,7 @@ export default function LabPage({ lab: labId }: { lab: LabId }) {
                   ))}
                   {lab.notes.map((n) => (
                     <p key={n} className="flex gap-2 text-(--iux-muted-foreground)">
-                      <CheckCircleIcon size={16} className="mt-0.5 shrink-0" /> {n}
+                      <InfoIcon size={16} className="mt-0.5 shrink-0" /> {n}
                     </p>
                   ))}
                 </div>

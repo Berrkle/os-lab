@@ -59,6 +59,13 @@ def test_macos_offers_native_simulator_and_static_android_only():
     android = oslab.lab_status("android", host)
     assert android["provider"] == "macos-containers"
     assert not any(a["privileged"] for a in android["actions"])
+    assert not any(r["id"] == "kvm" for r in android["requirements"])
+    assert len([n for n in android["notes"] if "Linux/KVM" in n]) == 1
+    for lab in ("ios", "macos"):
+        status = oslab.lab_status(lab, host)
+        assert status["state"] == "ready"
+        assert any("Appium automation needs" in note for note in status["notes"])
+        assert all(not action["privileged"] for action in status["actions"])
 
 
 def test_native_macos_needs_full_xcode_and_available_ios_simulator():
@@ -93,6 +100,43 @@ def test_windows_host_uses_wsl2():
     assert states(host)["windows"] == "ready"
     assert states(host)["macos"] == "unavailable"
     assert oslab.lab_status("linux", host)["provider"] == "wsl2"
+
+
+def test_only_unsupported_labs_are_unavailable_across_hosts():
+    expected = {
+        "linux": {"macos"},
+        "windows": {"macos"},
+        "macos": {"windows", "linux"},
+    }
+    for os_name, unavailable in expected.items():
+        host = make_host(os_name=os_name, kvm=os_name == "linux", distros=("Ubuntu",) if os_name == "windows" else ())
+        labs = oslab.lab_catalog(REPO_ROOT, host)["labs"]
+        assert {lab["id"] for lab in labs if lab["state"] == "unavailable"} == unavailable
+        assert all(any(action["id"] == "setup" for action in lab["actions"])
+                   for lab in labs if lab["state"] == "needs-setup")
+
+
+def test_job_failure_before_process_start_is_reported(monkeypatch):
+    def fail(_root):
+        raise RuntimeError("cannot read configuration")
+    monkeypatch.setattr(oslab, "secret_values", fail)
+    service = oslab.JobService(REPO_ROOT)
+    plan = {"program": sys.executable, "args": ["-c", "pass"], "timeoutSec": 5, "display": "test"}
+    job = oslab.Job("Test setup", "macos", "setup", plan)
+    service._run(job, plan)
+    assert job.state == "failed"
+    assert job.error == "cannot read configuration"
+    assert job.finished_at is not None
+
+
+def test_job_nonzero_exit_reports_error():
+    service = oslab.JobService(REPO_ROOT)
+    plan = {"program": sys.executable, "args": ["-c", "import sys;sys.exit(7)"], "timeoutSec": 5, "display": "test"}
+    job = oslab.Job("Test setup", "macos", "setup", plan)
+    service._run(job, plan)
+    assert job.state == "failed"
+    assert job.exit_code == 7
+    assert job.error == "Command exited with status 7. See output below."
 
 
 def test_plan_builds_typed_labctl_command():
