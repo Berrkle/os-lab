@@ -15,9 +15,11 @@ mod container_runtime;
 mod python_runtime;
 mod runtime;
 
-use std::path::PathBuf;
+use std::fs;
+use std::path::{Path, PathBuf};
 
 use tauri::{AppHandle, Manager, State, WebviewUrl, WebviewWindowBuilder};
+use tauri::menu::{MenuBuilder, SubmenuBuilder};
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_opener::OpenerExt;
 use tauri_plugin_store::StoreExt;
@@ -27,13 +29,48 @@ use runtime::Source;
 
 const STORE: &str = "settings.json";
 const ROOT_KEY: &str = "root";
+const FILES_DIR_KEY: &str = "files_dir";
 
 fn data_dir(app: &AppHandle) -> Result<PathBuf, String> {
-    app.path().app_data_dir().map_err(|e| e.to_string())
+    let default = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let selected = app.store(STORE).map_err(|e| e.to_string())?
+        .get(FILES_DIR_KEY)
+        .and_then(|value| value.as_str().map(PathBuf::from));
+    Ok(selected.unwrap_or(default))
+}
+
+/// Copy all app-owned files before changing locations. Refuse a populated destination so an
+/// unrelated folder or an older installation cannot be silently mixed with the current data.
+fn copy_files_dir(from: &Path, to: &Path) -> Result<(), String> {
+    let from = fs::canonicalize(from).map_err(|e| format!("Could not read {}: {e}", from.display()))?;
+    let to = fs::canonicalize(to).map_err(|e| format!("Could not read {}: {e}", to.display()))?;
+    if to == from || to.starts_with(&from) || from.starts_with(&to) {
+        return Err("Choose a separate folder outside the current os-lab files folder.".into());
+    }
+    if fs::read_dir(&to).map_err(|e| e.to_string())?.next().is_some() {
+        return Err("Choose an empty folder for the os-lab files.".into());
+    }
+    fn copy_tree(from: &Path, to: &Path) -> Result<(), String> {
+        for entry in fs::read_dir(from).map_err(|e| e.to_string())? {
+            let entry = entry.map_err(|e| e.to_string())?;
+            let kind = entry.file_type().map_err(|e| e.to_string())?;
+            let dest = to.join(entry.file_name());
+            if kind.is_dir() {
+                fs::create_dir(&dest).map_err(|e| format!("Could not create {}: {e}", dest.display()))?;
+                copy_tree(&entry.path(), &dest)?;
+            } else if kind.is_file() {
+                fs::copy(entry.path(), &dest).map_err(|e| format!("Could not copy {}: {e}", dest.display()))?;
+            } else {
+                return Err(format!("Cannot move files folder because {} is a link or special file.", entry.path().display()));
+            }
+        }
+        Ok(())
+    }
+    copy_tree(&from, &to)
 }
 
 fn log_dir(app: &AppHandle) -> Result<PathBuf, String> {
-    app.path().app_log_dir().map_err(|e| e.to_string())
+    Ok(data_dir(app)?.join("logs"))
 }
 
 fn chosen_root(app: &AppHandle) -> Option<PathBuf> {
@@ -74,15 +111,41 @@ async fn console_start(app: AppHandle, state: State<'_, Console>) -> Result<Star
     let (root, source) = resolve_root(&app)?;
     // Downloaded content packs (console/content.py) live in the app's data folder, beside but
     // never inside the bundled copy, so "reset" always returns to what shipped.
-    if std::env::var_os("OSLAB_CONTENT_DIR").is_none() {
-        std::env::set_var("OSLAB_CONTENT_DIR", data_dir(&app)?.join("content"));
-    }
+    let content = std::env::var_os("OSLAB_CONTENT_DIR").map(PathBuf::from)
+        .unwrap_or(data_dir(&app)?.join("content"));
     let log = console::log_path(&log_dir(&app)?);
     let data = data_dir(&app)?;
     let console = state.inner().clone();
-    tauri::async_runtime::spawn_blocking(move || console.start(&root, source, &log, &data))
+    tauri::async_runtime::spawn_blocking(move || console.start(&root, source, &log, &data, &content))
         .await
         .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+fn console_files_dir(app: AppHandle) -> Result<String, String> {
+    Ok(data_dir(&app)?.display().to_string())
+}
+
+/// Choose an empty location and copy the current files before changing the saved path.
+#[tauri::command]
+async fn console_choose_files_dir(app: AppHandle, state: State<'_, Console>) -> Result<Option<String>, String> {
+    let app2 = app.clone();
+    let picked = tauri::async_runtime::spawn_blocking(move || {
+        app2.dialog().file().set_title("Choose an empty folder for os-lab files").blocking_pick_folder()
+    }).await.map_err(|e| e.to_string())?;
+    let Some(picked) = picked else { return Ok(None) };
+    let target = picked.into_path().map_err(|e| e.to_string())?;
+    let current = data_dir(&app)?;
+    fs::create_dir_all(&current).map_err(|e| format!("Could not prepare {}: {e}", current.display()))?;
+    state.stop();
+    let from = current.clone();
+    let to = target.clone();
+    tauri::async_runtime::spawn_blocking(move || copy_files_dir(&from, &to))
+        .await.map_err(|e| e.to_string())??;
+    let store = app.store(STORE).map_err(|e| e.to_string())?;
+    store.set(FILES_DIR_KEY, target.display().to_string());
+    store.save().map_err(|e| e.to_string())?;
+    Ok(Some(target.display().to_string()))
 }
 
 /// Download a managed CPython only after an explicit launcher action.
@@ -96,12 +159,20 @@ async fn python_install(app: AppHandle) -> Result<String, String> {
         .map_err(|e| e.to_string())?
 }
 
+#[derive(serde::Serialize)]
+struct ContainerStatus {
+    ready: bool,
+    cli_present: bool,
+}
+
 /// None on platforms where the existing lab setup scripts handle the engine.
 #[tauri::command]
-async fn container_status() -> Result<Option<bool>, String> {
+async fn container_status() -> Result<Option<ContainerStatus>, String> {
     if container_runtime::installer().is_none() { return Ok(None); }
-    tauri::async_runtime::spawn_blocking(container_runtime::is_ready)
-        .await.map(Some).map_err(|e| e.to_string())
+    tauri::async_runtime::spawn_blocking(|| ContainerStatus {
+        ready: container_runtime::is_ready(),
+        cli_present: container_runtime::cli_present(),
+    }).await.map(Some).map_err(|e| e.to_string())
 }
 
 /// Fetch a Docker installer whose SHA-256 is pinned to Docker's release notes, then open it.
@@ -181,13 +252,14 @@ fn open_external(app: &AppHandle, url: &url::Url) {
     }
 }
 
-fn build_window(app: &AppHandle) -> tauri::Result<()> {
+fn build_window(app: &AppHandle, files_settings: bool) -> tauri::Result<()> {
     if let Some(old) = app.get_webview_window("main") {
         let _ = old.destroy();
     }
     let nav = app.clone();
     let popup = app.clone();
-    WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into()))
+    let page = if files_settings { "index.html?settings=files" } else { "index.html" };
+    WebviewWindowBuilder::new(app, "main", WebviewUrl::App(page.into()))
         .title("os-lab")
         .inner_size(1280.0, 840.0)
         .min_inner_size(420.0, 560.0)
@@ -229,6 +301,12 @@ pub fn run() {
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_dialog::init())
         .manage(Console::new())
+        .on_menu_event(|app, event| {
+            if event.id().as_ref() == "files_settings" {
+                app.state::<Console>().stop();
+                let _ = build_window(app, true);
+            }
+        })
         .invoke_handler(tauri::generate_handler![
             console_start,
             console_status,
@@ -236,12 +314,21 @@ pub fn run() {
             console_choose_root,
             console_reset_root,
             console_logs,
+            console_files_dir,
+            console_choose_files_dir,
             python_install,
             container_status,
             container_get
         ])
         .setup(|app| {
-            build_window(app.handle())?;
+            let file_menu = SubmenuBuilder::new(app, "File")
+                .text("files_settings", "Files folder…")
+                .separator()
+                .quit()
+                .build()?;
+            let menu = MenuBuilder::new(app).item(&file_menu).build()?;
+            app.set_menu(menu)?;
+            build_window(app.handle(), false)?;
             Ok(())
         })
         .build(tauri::generate_context!())
@@ -253,4 +340,25 @@ pub fn run() {
             handle.state::<Console>().stop();
         }
     });
+}
+
+#[cfg(test)]
+mod files_dir_tests {
+    use super::*;
+
+    #[test]
+    fn relocating_files_copies_state_and_rejects_populated_or_nested_folders() {
+        let base = std::env::temp_dir().join(format!("oslab-files-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&base);
+        let from = base.join("from");
+        let to = base.join("to");
+        fs::create_dir_all(from.join("os-lab/android-lab/storage")).unwrap();
+        fs::create_dir_all(&to).unwrap();
+        fs::write(from.join("os-lab/android-lab/storage/disk.img"), "state").unwrap();
+        copy_files_dir(&from, &to).unwrap();
+        assert_eq!(fs::read_to_string(to.join("os-lab/android-lab/storage/disk.img")).unwrap(), "state");
+        assert!(copy_files_dir(&from, &to).unwrap_err().contains("empty folder"));
+        assert!(copy_files_dir(&from, &from.join("os-lab")).unwrap_err().contains("separate folder"));
+        let _ = fs::remove_dir_all(base);
+    }
 }

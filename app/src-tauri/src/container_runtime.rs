@@ -84,6 +84,11 @@ pub fn is_ready() -> bool {
     ["docker", "podman"].iter().any(|name| works(name))
 }
 
+pub fn cli_present() -> bool {
+    ["docker", "podman"].iter().any(|name| Command::new(name).arg("--version")
+        .stdout(Stdio::null()).stderr(Stdio::null()).status().is_ok_and(|status| status.success()))
+}
+
 fn works(name: &str) -> bool {
     let Ok(mut child) = Command::new(name).arg("info").stdout(Stdio::null()).stderr(Stdio::null()).spawn() else {
         return false;
