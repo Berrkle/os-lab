@@ -81,7 +81,7 @@ pub fn augment_path() {
 }
 
 pub fn is_ready() -> bool {
-    ["docker", "podman"].iter().any(|name| works(name))
+    ["docker", "podman"].iter().any(|name| works(name, &["info"]) && works(name, &["compose", "version"]))
 }
 
 pub fn cli_present() -> bool {
@@ -89,8 +89,8 @@ pub fn cli_present() -> bool {
         .stdout(Stdio::null()).stderr(Stdio::null()).status().is_ok_and(|status| status.success()))
 }
 
-fn works(name: &str) -> bool {
-    let Ok(mut child) = Command::new(name).arg("info").stdout(Stdio::null()).stderr(Stdio::null()).spawn() else {
+fn works(name: &str, args: &[&str]) -> bool {
+    let Ok(mut child) = Command::new(name).args(args).stdout(Stdio::null()).stderr(Stdio::null()).spawn() else {
         return false;
     };
     let deadline = Instant::now() + Duration::from_secs(5);

@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { allowed, missingRequired, REQUIRED, select } from "./stage-runtime.mjs";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 test("secrets and local state never ship, even when tracked", () => {
   for (const p of ["android-lab/lab/.env", "ios-lab/mac/config.env", "x/notes.local.md", "a/b/key.pem", "win-lab/storage/disk.img", "linux-lab/id_rsa", ".private/x"]) {
@@ -19,4 +21,16 @@ test("only the runtime roots are selected", () => {
 test("the bundle includes every console and lab entry point", () => {
   assert.deepEqual(missingRequired(REQUIRED), []);
   assert.deepEqual(missingRequired(REQUIRED.filter((p) => p !== "labctl")), ["labctl"]);
+});
+
+test("launcher grants each Tauri command it calls", () => {
+  const base = join(import.meta.dirname, "..");
+  const launcher = readFileSync(join(base, "ui", "launcher.js"), "utf8");
+  const capability = JSON.parse(readFileSync(join(base, "src-tauri", "capabilities", "launcher.json"), "utf8"));
+  const manifest = readFileSync(join(base, "src-tauri", "build.rs"), "utf8");
+  const commands = [...launcher.matchAll(/invoke\("([a-z_]+)"/g)].map((match) => match[1]);
+  for (const command of commands) {
+    assert.ok(capability.permissions.includes(`allow-${command.replaceAll("_", "-")}`), command);
+    assert.ok(manifest.includes(`"${command}"`), `build.rs: ${command}`);
+  }
 });

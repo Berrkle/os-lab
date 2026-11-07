@@ -9,6 +9,8 @@ fn main() {
             "console_choose_root",
             "console_reset_root",
             "console_logs",
+            "console_files_dir",
+            "console_choose_files_dir",
             "python_install",
             "container_status",
             "container_get",

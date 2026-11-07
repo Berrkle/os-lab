@@ -219,9 +219,29 @@ def wsl_distributions() -> list[str]:
 
 def container_runtime() -> str | None:
     for name in ("docker", "podman"):
-        if _which(name):
+        if _which(name) and _capture([name, "info"], timeout=5)[0] == 0 \
+                and _capture([name, "compose", "version"], timeout=5)[0] == 0:
             return name
     return None
+
+
+def xcode_status() -> dict:
+    """Full Xcode and an available iOS Simulator, not just the command-line tools."""
+    if host_os() != "macos":
+        return {"installed": False, "iosRuntime": False, "iosDevice": False}
+    installed = _capture(["xcodebuild", "-version"], timeout=5)[0] == 0
+    if not installed:
+        return {"installed": False, "iosRuntime": False, "iosDevice": False}
+    code, output = _capture(["xcrun", "simctl", "list", "-j", "devices", "available"], timeout=10)
+    try:
+        devices = json.loads(output)["devices"] if code == 0 else {}
+        ios_device = any("iOS" in runtime and any(d.get("isAvailable", True) for d in entries)
+                         for runtime, entries in devices.items())
+    except (ValueError, KeyError, TypeError, AttributeError):
+        ios_device = False
+    code, output = _capture(["xcrun", "simctl", "list", "runtimes"], timeout=10)
+    ios_runtime = code == 0 and any(line.startswith("iOS ") for line in output.splitlines())
+    return {"installed": installed, "iosRuntime": ios_runtime, "iosDevice": ios_device}
 
 
 def host_info(root: str) -> dict:
@@ -246,6 +266,7 @@ def host_info(root: str) -> dict:
         "kvm": {"present": kvm_exists, "usable": kvm_exists and os.access(kvm_path, os.R_OK | os.W_OK)},
         "wsl": {"guest": in_wsl, "distributions": wsl_distributions()},
         "runtime": container_runtime(),
+        "xcode": xcode_status() if os_name == "macos" else None,
         "python": platform.python_version(),
         "root": root,
         "tools": [{"id": t, "label": label, "found": bool(_which(t)), "path": _which(t)} for t, label in TOOLS],
@@ -316,9 +337,12 @@ def lab_status(lab: str, host: dict) -> dict:
                 "actions": [], "installed": os.path.isdir(os.path.join(host["root"], meta["dir"]))}
 
     if provider == "native-macos":
+        xcode = host.get("xcode") or {}
         reqs += [
-            _req("xcrun", "Xcode command-line tools", tools.get("xcrun"), hint="xcode-select --install"),
-            _req("brew", "Homebrew", tools.get("brew"), hint="https://brew.sh"),
+            _req("xcode", "Full Xcode", xcode.get("installed"), hint="Install and open Xcode, then accept its license"),
+            _req("ios-runtime", "iOS Simulator runtime", xcode.get("iosRuntime"), hint="Xcode > Settings > Components"),
+            _req("ios-device", "Available iOS Simulator device", xcode.get("iosDevice"), hint="Add a simulator in Xcode"),
+            _req("brew", "Homebrew", tools.get("brew"), required=False, hint="https://brew.sh (needed for automated Appium setup)"),
             _req("node", "Node.js", tools.get("node"), required=False, hint="brew install node"),
             _req("appium", "Appium (XCUITest)", tools.get("appium"), required=False, hint="npm i -g appium"),
         ]
@@ -330,7 +354,8 @@ def lab_status(lab: str, host: dict) -> dict:
         ]
         notes.append("Commands run inside the selected WSL2 distribution; Docker/Podman and KVM are checked there by Doctor.")
     else:
-        reqs.append(_req("runtime", "Docker or Podman", runtime, hint="Install dependencies"))
+        reqs.append(_req("runtime", "Working Docker or Podman with Compose", runtime,
+                         hint="Start the engine and install its Compose plugin if needed"))
         reqs.append(_req("bash", "Bash", tools.get("bash")))
         needs_kvm = lab in ("windows", "linux", "ios")
         reqs.append(_req("kvm", "Usable /dev/kvm", kvm, required=needs_kvm,
@@ -842,7 +867,7 @@ def monitor(root: str, lab: str, host: dict | None = None) -> dict:
     if not names:
         return {"lab": lab, "state": "unknown", "note": "This lab runs natively; use Status.", "containers": []}
     if not runtime:
-        return {"lab": lab, "state": "no-runtime", "note": "Docker or Podman is not installed.", "containers": []}
+        return {"lab": lab, "state": "no-runtime", "note": "No working Docker or Podman engine with Compose is available.", "containers": []}
     fmt = ["--format", "json"] if runtime == "podman" else ["--format", "{{json .}}"]
     code, out = _capture([runtime, "ps", "-a"] + fmt, timeout=8)
     if code != 0:
