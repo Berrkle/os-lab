@@ -66,8 +66,7 @@ say "building the .deb"
 npx tauri build --bundles deb
 
 DEB="$APP_DIR/src-tauri/target/release/bundle/deb/os-lab_${VERSION}_${ARCH}.deb"
-[ -f "$DEB" ] || DEB="$(ls "$APP_DIR"/src-tauri/target/release/bundle/deb/*.deb 2>/dev/null | head -1 || true)"
-[ -f "$DEB" ] || die "build produced no .deb under src-tauri/target/release/bundle/deb"
+[ -f "$DEB" ] || die "build produced no .deb for version $VERSION and architecture $ARCH at $DEB"
 
 # ── 3. Verify what will ship ────────────────────────────────────────────────────────────────────
 say "verifying $(basename "$DEB")"
