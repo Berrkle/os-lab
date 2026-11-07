@@ -72,7 +72,7 @@ LABS = {
         "dir": "ios-lab/mac",
         "labctl": None,
         "containers": [],
-        "summary": "Native Xcode Simulator and Appium/XCUITest on a Mac.",
+        "summary": "Manage this Mac's Xcode simulators and optional Appium/XCUITest automation.",
     },
 }
 
@@ -337,6 +337,8 @@ def lab_status(lab: str, host: dict) -> dict:
                 "actions": [], "installed": os.path.isdir(os.path.join(host["root"], meta["dir"]))}
 
     if provider == "native-macos":
+        if lab == "ios":
+            notes.append("Uses the same native Xcode installation as macOS Lab on this Mac.")
         xcode = host.get("xcode") or {}
         reqs += [
             _req("xcode", "Full Xcode", xcode.get("installed"), hint="Install and open Xcode, then accept its license"),
@@ -346,6 +348,8 @@ def lab_status(lab: str, host: dict) -> dict:
             _req("node", "Node.js", tools.get("node"), required=False, hint="brew install node"),
             _req("appium", "Appium (XCUITest)", tools.get("appium"), required=False, hint="npm i -g appium"),
         ]
+        if not tools.get("appium"):
+            notes.append("Appium automation needs Appium and its XCUITest driver; the simulator can run without them.")
     elif provider == "wsl2":
         distros = host["wsl"]["distributions"]
         reqs += [
@@ -358,14 +362,15 @@ def lab_status(lab: str, host: dict) -> dict:
                          hint="Start the engine and install its Compose plugin if needed"))
         reqs.append(_req("bash", "Bash", tools.get("bash")))
         needs_kvm = lab in ("windows", "linux", "ios")
-        reqs.append(_req("kvm", "Usable /dev/kvm", kvm, required=needs_kvm,
-                         hint="Enable virtualization in firmware, then Install dependencies (adds you to the kvm group)"))
+        if os_name == "linux":
+            reqs.append(_req("kvm", "Usable /dev/kvm", kvm, required=needs_kvm,
+                             hint="Enable virtualization in firmware, then Install dependencies (adds you to the kvm group)"))
         if lab in ("windows", "ios") and arch != "x86_64":
             reasons.append(f"{meta['label']} guests need an x86_64 host; this host is {arch}.")
             state = "unavailable"
         if lab == "android":
             reqs.append(_req("adb", "Android Debug Bridge", tools.get("adb"), required=False, hint="Install dependencies"))
-            if not kvm:
+            if os_name == "linux" and not kvm:
                 notes.append("No usable KVM: static analysis (MobSF, mitmproxy, tools) works; the emulator needs KVM.")
         if provider == "macos-containers":
             notes.append("On macOS only the lightweight/static Android profile runs; the emulator needs a Linux/KVM host.")
@@ -375,7 +380,9 @@ def lab_status(lab: str, host: dict) -> dict:
         reasons.append("Missing: " + ", ".join(r["label"] for r in reqs if r["required"] and not r["found"]) + ".")
 
     actions = actions_for(lab, provider) if state != "unavailable" else []
-    return {"id": lab, "label": meta["label"], "summary": meta["summary"], "state": state, "provider": provider,
+    summary = ("Run the iOS Simulator with this Mac's Xcode; Appium automation is optional."
+               if lab == "ios" and provider == "native-macos" else meta["summary"])
+    return {"id": lab, "label": meta["label"], "summary": summary, "state": state, "provider": provider,
             "reasons": reasons, "requirements": reqs, "notes": notes, "actions": actions,
             "installed": os.path.isdir(os.path.join(host["root"], meta["dir"]))}
 
@@ -390,7 +397,7 @@ def actions_for(lab: str, provider: str | None) -> list[dict]:
     else:
         names = []
     return [{"id": n, "label": ACTION_INFO[n][0], "description": ACTION_INFO[n][1],
-             "privileged": n in PRIVILEGED} for n in names]
+             "privileged": n in PRIVILEGED and provider != "native-macos"} for n in names]
 
 
 def lab_catalog(root: str, host: dict | None = None) -> dict:
@@ -767,24 +774,36 @@ class JobService:
             for old in sorted(self.jobs.values(), key=lambda j: j.started_at)[:-50]:
                 if old.state != "running":
                     self.jobs.pop(old.id, None)
-        threading.Thread(target=self._run, args=(job, plan_), daemon=True).start()
+        try:
+            threading.Thread(target=self._run, args=(job, plan_), daemon=True).start()
+        except RuntimeError as e:
+            job.state = "failed"
+            job.error = f"Could not start the job worker: {e}"
+            job.finished_at = time.time()
         return job
 
     def _run(self, job: Job, plan_: dict) -> None:
-        redact = secret_values(self.root)
-        env = dict(os.environ, NO_COLOR="1", TERM="dumb")
-        popen_kw: dict = {}
-        if os.name == "posix":
-            popen_kw["start_new_session"] = True
-        else:
-            popen_kw["creationflags"] = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+        timer: threading.Timer | None = None
+        redact: list[str] = []
         try:
+            redact = secret_values(self.root)
+            env = dict(os.environ, NO_COLOR="1", TERM="dumb")
+            popen_kw: dict = {}
+            if os.name == "posix":
+                popen_kw["start_new_session"] = True
+            else:
+                popen_kw["creationflags"] = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+            if job.cancelled:
+                job.state = "cancelled"
+                return
             job.proc = subprocess.Popen([plan_["program"]] + plan_["args"], cwd=self.root, env=env,
                                         stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                         bufsize=1, text=True, encoding="utf-8", errors="replace", **popen_kw)
             timer = threading.Timer(plan_["timeoutSec"], self._timeout, args=(job,))
             timer.daemon = True
             timer.start()
+            if job.cancelled:
+                self._signal(job)
             assert job.proc.stdout is not None
             for line in job.proc.stdout:
                 line = ANSI.sub("", line.rstrip("\r\n"))
@@ -795,13 +814,27 @@ class JobService:
                     del job.lines[: len(job.lines) - MAX_LINES]
                     job.truncated = True
             job.exit_code = job.proc.wait()
-            timer.cancel()
             if job.state == "running":
                 job.state = "cancelled" if job.cancelled else ("succeeded" if job.exit_code == 0 else "failed")
-        except OSError as e:
-            job.state = "failed"
-            job.error = str(e)
+                if job.state == "failed":
+                    job.error = f"Command exited with status {job.exit_code}. See output below."
+        except Exception as e:
+            if job.state == "running":
+                job.state = "failed"
+            if job.proc and job.proc.poll() is None:
+                self._signal(job)
+                try:
+                    job.exit_code = job.proc.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    job.proc.kill()
+                    job.exit_code = job.proc.wait()
+            error = str(e)
+            for value in redact:
+                error = error.replace(value, "[redacted]")
+            job.error = error or type(e).__name__
         finally:
+            if timer:
+                timer.cancel()
             job.finished_at = time.time()
             job.proc = None
 
@@ -815,9 +848,10 @@ class JobService:
         job = self.jobs.get(job_id)
         if not job:
             raise KeyError(job_id)
-        if job.state == "running" and job.proc:
+        if job.state == "running":
             job.cancelled = True
-            self._signal(job)
+            if job.proc:
+                self._signal(job)
         return job
 
     @staticmethod
