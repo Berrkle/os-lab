@@ -46,3 +46,9 @@ lat.md/.cache/
 .private/
 teached/**/*
 dashboard/node_modules/
+# Release credentials (Apple signing + notarization). Only the READMEs are tracked.
+secrets/*
+!secrets/README.md
+app/out/
+app/**/*.p8
+app/**/*.p12

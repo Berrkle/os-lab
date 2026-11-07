@@ -42,6 +42,10 @@ npm run test:stage
 `npm run stage` bundles **git-tracked** files only, minus credentials and guest data, so an
 untracked `.env` or VM disk cannot ship. `--no-build` stages the committed `dashboard/dist`.
 
+## Release (macOS DMG, notarized)
+
+`app/scripts/release-mac.sh` builds a universal DMG, signs it (Developer ID), notarizes the app and the DMG, staples, verifies with `codesign`/`spctl`/`stapler`, and with `--publish` uploads it to the GitHub release `app-v<version>` with a SHA-256 file. Without `--publish` it uploads nothing; `--no-notarize` signs only. Credentials come from the environment, the git-ignored `secrets/` folder or the login keychain, never from the repo (`secrets/README.md`); the script refuses to run if a key or secrets file is tracked.
+
 ## Not done yet
 
 - No auto-update (needs a signing key), code signing or notarization.
