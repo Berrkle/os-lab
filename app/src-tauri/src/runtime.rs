@@ -22,6 +22,26 @@ pub fn is_root(dir: &Path) -> bool {
         && dir.join("android-lab").join("lab").join("web_ui.py").is_file()
 }
 
+const BUNDLE_FILES: &[&str] = &[
+    "console/content.py",
+    "dashboard/dist/index.html",
+    "docs/legal/PRIVACY.md",
+    "android-lab/lab/scripts/setup-ubuntu.sh",
+    "android-lab/lab/docker-compose.yml",
+    "win-lab/scripts/setup-ubuntu.sh",
+    "win-lab/docker-compose.yml",
+    "linux-lab/scripts/setup-ubuntu.sh",
+    "linux-lab/docker-compose.yml",
+    "ios-lab/scripts/setup-ubuntu.sh",
+    "ios-lab/docker-compose.yml",
+    "ios-lab/mac/setup-mac.sh",
+];
+
+/// A staged installer must contain the console, dashboard, legal baseline and lab entry points.
+fn is_complete_bundle(dir: &Path) -> bool {
+    is_root(dir) && BUNDLE_FILES.iter().all(|path| dir.join(path).is_file())
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug, serde::Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Source {
@@ -88,7 +108,7 @@ pub fn sync_tree(src: &Path, dst: &Path) -> io::Result<usize> {
 /// The dashboard build is replaced wholesale on an update: hashed assets from an older build
 /// would otherwise pile up in the data folder.
 pub fn sync_bundle(bundle: &Path, data_root: &Path, app_version: &str) -> Result<usize, String> {
-    if !is_root(bundle) {
+    if !is_complete_bundle(bundle) {
         return Err(format!(
             "The bundled os-lab files are missing or incomplete ({}). Rebuild the app with `npm run stage`.",
             bundle.display()
@@ -96,7 +116,7 @@ pub fn sync_bundle(bundle: &Path, data_root: &Path, app_version: &str) -> Result
     }
     let stamp = data_root.join(".app-version");
     let current = fs::read_to_string(&stamp).unwrap_or_default();
-    if current.trim() == app_version && is_root(data_root) {
+    if current.trim() == app_version && is_complete_bundle(data_root) {
         return Ok(0);
     }
     let dist = data_root.join("dashboard").join("dist");
@@ -136,6 +156,13 @@ mod tests {
         fs::write(dir.join("console/oslab.py"), "x").unwrap();
         fs::write(dir.join("android-lab/lab/web_ui.py"), "x").unwrap();
         fs::write(dir.join("dashboard/dist/index.html"), marker).unwrap();
+        for path in BUNDLE_FILES {
+            let file = dir.join(path);
+            fs::create_dir_all(file.parent().unwrap()).unwrap();
+            if !file.exists() {
+                fs::write(file, "x").unwrap();
+            }
+        }
     }
 
     #[test]
@@ -174,5 +201,18 @@ mod tests {
         let bundle = tmp("empty");
         let data = tmp("data2");
         assert!(sync_bundle(&bundle, &data, "1").unwrap_err().contains("npm run stage"));
+    }
+
+    #[test]
+    fn missing_installed_file_is_repaired_without_changing_state() {
+        let bundle = tmp("repair-bundle");
+        let data = tmp("repair-data");
+        fake_root(&bundle, "v1");
+        sync_bundle(&bundle, &data, "1").unwrap();
+        fs::write(data.join("android-lab/lab/.env"), "SECRET=1").unwrap();
+        fs::remove_file(data.join("docs/legal/PRIVACY.md")).unwrap();
+        assert!(sync_bundle(&bundle, &data, "1").unwrap() > 0);
+        assert!(data.join("docs/legal/PRIVACY.md").is_file());
+        assert_eq!(fs::read_to_string(data.join("android-lab/lab/.env")).unwrap(), "SECRET=1");
     }
 }

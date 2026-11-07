@@ -39,8 +39,17 @@ npm run test:stage
 (cd src-tauri && cargo test)
 ```
 
-`npm run stage` bundles **git-tracked** files only, minus credentials and guest data, so an
-untracked `.env` or VM disk cannot ship. `--no-build` stages the committed `dashboard/dist`.
+`npm run stage` bundles **git-tracked** files from `labctl`, the console, all five lab folders,
+`docs/legal`, and a fresh dashboard build. It excludes credentials and guest data, so an
+untracked `.env` or VM disk cannot ship. Staging fails if a required lab entry point is missing.
+`--no-build` stages the committed `dashboard/dist`.
+
+The installer contains the lab scripts and Compose definitions, not the host tools or guest
+payloads they operate. The console needs Python 3.9+ on `PATH` (the Debian package declares this
+dependency). Container labs need a working Docker or Podman installation and pull their images
+separately; VM labs also need the host virtualization support and guest media their Doctor page
+reports. Native iOS simulation needs Xcode and a Simulator runtime. The app can run from its
+bundled copy without a Git checkout, and the dashboard shows each lab's setup requirements.
 
 ## Release (macOS DMG, notarized)
 
