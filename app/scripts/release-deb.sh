@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# Build and (optionally) publish the os-lab Linux app as a .deb (Debian, Ubuntu and derivatives).
+# Build and (optionally) publish the os-lab Linux app as a .deb, plus optional RPM and AppImage.
 #
 #   app/scripts/release-deb.sh                  build + verify, upload nothing
 #   app/scripts/release-deb.sh --publish        ...and add it to the GitHub release app-v<version>
 #   app/scripts/release-deb.sh --install-deps   apt-get the Tauri build libraries first (uses sudo)
+#   app/scripts/release-deb.sh --all-formats    build .deb, .rpm and .AppImage for the host architecture
 #
 # Nothing here needs a secret: the .deb is unsigned. --publish uses the gh CLI's own login. The
 # script refuses to run if anything under secrets/ (other than the README) or any key file is tracked.
@@ -12,12 +13,13 @@ set -euo pipefail
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPO="$(cd "$APP_DIR/.." && pwd)"
 SLUG="keyvanarasteh/os-lab"
-PUBLISH=0; INSTALL_DEPS=0
+PUBLISH=0; INSTALL_DEPS=0; ALL_FORMATS=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --publish) PUBLISH=1 ;;
     --install-deps) INSTALL_DEPS=1 ;;
+    --all-formats) ALL_FORMATS=1 ;;
     -h|--help) sed -n 2,9p "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 2 ;;
   esac
@@ -32,7 +34,7 @@ if [ "$INSTALL_DEPS" = 1 ]; then
   say "installing Tauri build libraries (sudo)"
   sudo apt-get update
   sudo apt-get install -y build-essential curl wget file pkg-config libssl-dev libxdo-dev \
-    libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev
+    libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf xdg-utils rpm
 fi
 for t in node npm cargo dpkg dpkg-deb sha256sum git tar; do command -v "$t" >/dev/null || die "$t not found"; done
 pkg-config --exists webkit2gtk-4.1 \
@@ -43,6 +45,11 @@ VERSION="$(node -p "require('$APP_DIR/src-tauri/tauri.conf.json').version")"
 TAG="app-v$VERSION"
 ARCH="$(dpkg --print-architecture)"
 OUT="$APP_DIR/out/$VERSION"
+if [ "$PUBLISH" = 1 ]; then
+  git -C "$REPO" fetch -q origin "refs/tags/$TAG:refs/tags/$TAG" || die "release tag $TAG is missing"
+  [ "$(git -C "$REPO" rev-list -n 1 "$TAG")" = "$(git -C "$REPO" rev-parse HEAD)" ] \
+    || die "$TAG does not point to this checkout; publish from the tagged commit"
+fi
 
 # ── 1. Secrets must never be tracked ────────────────────────────────────────────────────────────
 TRACKED="$(git -C "$REPO" ls-files -- secrets | grep -v '^secrets/README.md$' || true)"
@@ -63,8 +70,12 @@ npm ci --no-audit --no-fund --prefix "$APP_DIR/../dashboard" >/dev/null
 say "staging the runtime and dashboard"
 node scripts/stage-runtime.mjs
 node scripts/stage-python-helper.mjs
-say "building the .deb"
-npx tauri build --bundles deb
+say "building Linux bundles"
+if [ "$ALL_FORMATS" = 1 ]; then
+  npx tauri build --bundles deb,rpm,appimage
+else
+  npx tauri build --bundles deb
+fi
 
 DEB="$APP_DIR/src-tauri/target/release/bundle/deb/os-lab_${VERSION}_${ARCH}.deb"
 [ -f "$DEB" ] || die "build produced no .deb for version $VERSION and architecture $ARCH at $DEB"
@@ -87,16 +98,41 @@ cp "$DEB" "$ASSET"
 ( cd "$OUT" && sha256sum "$(basename "$ASSET")" > "$(basename "$ASSET").sha256" )
 say "ready: $ASSET"
 cat "$ASSET.sha256"
+ASSETS=("$ASSET" "$ASSET.sha256")
+
+if [ "$ALL_FORMATS" = 1 ]; then
+  command -v rpm >/dev/null || die "rpm is required to verify the RPM package"
+  for format in rpm appimage; do
+    case "$format" in
+      rpm) bundle_dir="$APP_DIR/src-tauri/target/release/bundle/rpm"; extension=rpm ;;
+      appimage) bundle_dir="$APP_DIR/src-tauri/target/release/bundle/appimage"; extension=AppImage ;;
+    esac
+    mapfile -d '' matches < <(find "$bundle_dir" -maxdepth 1 -type f -name "*${VERSION}*.${extension}" -print0)
+    [ "${#matches[@]}" = 1 ] || die "expected exactly one $extension for $VERSION, found ${#matches[@]}"
+    package="${matches[0]}"
+    if [ "$format" = rpm ]; then
+      rpm -qip "$package" | grep -F "Version     : $VERSION" >/dev/null || die "RPM version mismatch"
+    else
+      [ -s "$package" ] || die "AppImage is empty"
+    fi
+    asset="$OUT/os-lab_${VERSION}_linux_${ARCH}.${extension}"
+    cp "$package" "$asset"
+    ( cd "$OUT" && sha256sum "$(basename "$asset")" > "$(basename "$asset").sha256" )
+    ASSETS+=("$asset" "$asset.sha256")
+    say "ready: $asset"
+    cat "$asset.sha256"
+  done
+fi
 
 # ── 5. Publish ──────────────────────────────────────────────────────────────────────────────────
 if [ "$PUBLISH" = 1 ]; then
   if gh release view "$TAG" -R "$SLUG" >/dev/null 2>&1; then
     say "adding to release $TAG"
-    gh release upload "$TAG" "$ASSET" "$ASSET.sha256" --clobber -R "$SLUG"
+    gh release upload "$TAG" "${ASSETS[@]}" --clobber -R "$SLUG"
   else
     say "creating release $TAG"
-    gh release create "$TAG" "$ASSET" "$ASSET.sha256" -R "$SLUG" --title "os-lab app $VERSION" \
-      --notes "os-lab desktop app $VERSION. One installer per platform, each with a .sha256 file. Needs Python 3.9+ (the .deb depends on python3)."
+    gh release create "$TAG" "${ASSETS[@]}" -R "$SLUG" --title "os-lab app $VERSION" \
+      --notes "os-lab desktop app $VERSION. Verify each download with its .sha256 file."
   fi
   say "published: https://github.com/$SLUG/releases/tag/$TAG"
 else

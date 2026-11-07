@@ -7,7 +7,7 @@ to ship the Windows app, both free:
 |---|---|---|
 | Where it builds | your Windows machine | a GitHub-hosted runner (free for public repositories) |
 | Signed | no, unless you own a certificate | yes, through SignPath Foundation |
-| Warns in SmartScreen | yes | no |
+| SmartScreen | Warns for an unsigned file | Reputation may still need to build after signing |
 
 ## Option 1: unsigned, local
 
@@ -58,8 +58,10 @@ builds the installers, submits them to SignPath, checks that each signature is `
    provided by [SignPath.io](https://signpath.io), certificate by
    [SignPath Foundation](https://signpath.org).*
 
-Until `SIGNPATH_ORGANIZATION_ID` is set the workflow builds and publishes **unsigned** installers,
-so it is safe to merge before approval. No certificate or key is ever stored in the repository.
+Until `SIGNPATH_ORGANIZATION_ID` is set the workflow builds **unsigned artifacts for review** but
+does not publish them from a tag. A manual workflow run can publish unsigned installers only when
+both *publish* and *allow_unsigned* are selected. No certificate or key is ever stored in the
+repository.
 
 ### Re-signing an existing release
 

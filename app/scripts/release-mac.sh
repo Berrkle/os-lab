@@ -37,6 +37,11 @@ if [ "$PUBLISH" = 1 ]; then command -v gh >/dev/null && gh auth status >/dev/nul
 VERSION="$(node -p "require('$APP_DIR/src-tauri/tauri.conf.json').version")"
 TAG="app-v$VERSION"
 OUT="$APP_DIR/out/$VERSION"
+if [ "$PUBLISH" = 1 ]; then
+  git -C "$REPO" fetch -q origin "refs/tags/$TAG:refs/tags/$TAG" || die "release tag $TAG is missing"
+  [ "$(git -C "$REPO" rev-list -n 1 "$TAG")" = "$(git -C "$REPO" rev-parse HEAD)" ] \
+    || die "$TAG does not point to this checkout; publish from the tagged commit"
+fi
 
 # ── 1. Secrets must never be tracked ────────────────────────────────────────────────────────────
 TRACKED="$(git -C "$REPO" ls-files -- secrets | grep -v '^secrets/README.md$' || true)"
