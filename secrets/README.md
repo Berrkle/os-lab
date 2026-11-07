@@ -36,3 +36,13 @@ Resolution order for each value: environment variable → this folder → a sibl
 | `OSLAB_SECRETS_DIR` | another folder laid out like `secrets/cupertino` |
 
 On GitHub Actions, put the same names in repository **secrets**; never in the workflow file.
+
+```text
+secrets/content/
+  content-signing.pem      # Ed25519 private key that signs the content pack (scripts/build-content.py)
+```
+
+Its public half is `PUBLIC_KEY` in `console/content.py`; the same PEM is the `CONTENT_SIGNING_KEY` repository
+secret that `.github/workflows/content.yml` signs with. Back it up: without it, content can only be updated by
+shipping an app with a new public key. Variables: `OSLAB_CONTENT_SIGNING_KEY` (the PEM text),
+`OSLAB_CONTENT_SIGNING_KEY_FILE`.
