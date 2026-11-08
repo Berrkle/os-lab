@@ -3,6 +3,8 @@
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
+[Code signing policy](CODE_SIGNING.md) · [Desktop releases](https://github.com/keyvanarasteh/os-lab/releases?q=app-v)
+
 ![os-lab security workbench](docs/media/os-lab-promo.png)
 
 Four research-backed, runnable operating-system security labs in one repository,
