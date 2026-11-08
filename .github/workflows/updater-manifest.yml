@@ -19,6 +19,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - run: sudo apt-get update && sudo apt-get install -y minisign
       - name: Download and verify release assets
         env:
           GH_TOKEN: ${{ github.token }}
@@ -31,6 +32,13 @@ jobs:
           mkdir -p release-assets
           gh release download "$tag" --dir release-assets
           node app/scripts/build-update-manifest.mjs "$VERSION" release-assets latest.json
+          for package in \
+            "os-lab_${VERSION}_macos_universal.app.tar.gz" \
+            "os-lab_${VERSION}_windows_x64-setup.exe" \
+            "os-lab_${VERSION}_linux_amd64.AppImage" \
+            "os-lab_${VERSION}_linux_arm64.AppImage"; do
+            python3 app/scripts/verify-release-signature.py "release-assets/$package" --version "$VERSION"
+          done
       - name: Publish updater feed
         env:
           GH_TOKEN: ${{ github.token }}

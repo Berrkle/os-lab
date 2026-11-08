@@ -25,7 +25,9 @@ the signature bound to the announced version. The private key is stored in the r
 `TAURI_SIGNING_PRIVATE_KEY`; a local backup is in ignored `secrets/updater/os-lab.key`. Preserve
 an additional secure backup outside the repository and worktrees. Losing the private key prevents
 updates to existing app installations. The matching public key is tracked in
-[`UPDATER_PUBLIC_KEY.pub`](UPDATER_PUBLIC_KEY.pub). Never commit or print the private key.
+[`UPDATER_PUBLIC_KEY.pub`](UPDATER_PUBLIC_KEY.pub), with a decoded minisign copy in
+[`UPDATER_MINISIGN.pub`](UPDATER_MINISIGN.pub) for manual verification. Never commit or print
+the private key.
 
 The platform builds publish `.sig` files alongside their updater bundles. On Windows, the
 SignPath-signed installer is signed again with the Tauri key, because Authenticode changes its

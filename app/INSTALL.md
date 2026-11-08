@@ -39,9 +39,10 @@ authorization to uninstall it.
 Choose the `amd64` or `arm64` build that matches `dpkg --print-architecture`. Each package has
 a SHA-256 file and a detached Tauri signature. Debian and RPM packages are not distributed
 through a signed apt or dnf repository, so their package managers do not verify that signature
-automatically. To verify a detached signature manually, download
-[`UPDATER_PUBLIC_KEY.pub`](UPDATER_PUBLIC_KEY.pub) and run
-`minisign -Vm <package> -x <package>.sig -p UPDATER_PUBLIC_KEY.pub`.
+automatically. To verify a detached signature manually, download the package and its `.sig` file,
+install `minisign`, and run
+`python3 app/scripts/verify-release-signature.py <package>` from a checkout. The helper decodes
+Tauri's signature format and uses the tracked [public key](UPDATER_MINISIGN.pub).
 
 - Debian and Ubuntu: `sudo apt install ./os-lab_<version>_linux_<arch>.deb`
 - Fedora and other RPM distributions: `sudo dnf install ./os-lab_<version>_linux_<arch>.rpm`

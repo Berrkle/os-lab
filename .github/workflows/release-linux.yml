@@ -48,11 +48,17 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential curl wget file pkg-config libssl-dev libxdo-dev \
-            libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf xdg-utils xvfb xauth rpm
+            libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf xdg-utils xvfb xauth rpm minisign
       - name: Build and verify Linux packages
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         run: ./app/scripts/release-deb.sh --all-formats
+      - name: Verify detached package signatures
+        shell: bash
+        run: |
+          for package in app/out/*/os-lab_*_linux_${{ matrix.arch }}.deb app/out/*/os-lab_*_linux_${{ matrix.arch }}.rpm app/out/*/os-lab_*_linux_${{ matrix.arch }}.AppImage; do
+            python3 app/scripts/verify-release-signature.py "$package" --version "$(node -p "require('./app/src-tauri/tauri.conf.json').version")"
+          done
       - name: Install, launch and uninstall package
         shell: bash
         run: |
