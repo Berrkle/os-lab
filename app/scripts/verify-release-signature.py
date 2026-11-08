@@ -33,7 +33,9 @@ def main() -> int:
     print(result.stderr, end="", file=sys.stderr)
     if result.returncode != 0:
         return result.returncode
-    if args.version and f"version:{args.version}" not in result.stdout.split("Trusted comment:", 1)[-1]:
+    comment = result.stdout.partition("Trusted comment:")[2].splitlines()
+    trusted = comment[0].strip().split("\t") if comment else []
+    if args.version and f"version:{args.version}" not in trusted:
         print(f"Signature is not bound to version {args.version}", file=sys.stderr)
         return 1
     return 0
