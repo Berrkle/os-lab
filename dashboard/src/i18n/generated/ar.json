@@ -1908,5 +1908,6 @@
   "Shut the iOS Simulator down.": "يطفئ محاكي iOS.",
   "Availability follows this host's OS, architecture, KVM and tools. Labs that cannot run here are left out.": "يعتمد التوفر على نظام التشغيل والمعمارية وKVM وأدوات هذا الجهاز. المختبرات التي لا تعمل هنا مخفية.",
   "See what each platform supports": "اطّلع على ما تدعمه كل منصة",
-  "Labs that do not run on this computer:": "المختبرات التي لا تعمل على هذا الحاسوب:"
+  "Labs that do not run on this computer:": "المختبرات التي لا تعمل على هذا الحاسوب:",
+  "Start, stop and the other actions appear once the missing dependencies are installed.": "يظهر التشغيل والإيقاف وبقية الإجراءات بعد تثبيت الاعتماديات المفقودة."
 }
