@@ -6,6 +6,7 @@
  * Every POST carries X-OSLab: 1, which the server requires so other sites cannot drive the lab.
  */
 import { useEffect, useReducer } from "react";
+import type { CapabilityCatalog } from "../health/capabilities";
 
 export type LabId = "android" | "windows" | "linux" | "ios" | "macos";
 export type LabState = "ready" | "needs-setup" | "unavailable";
@@ -182,6 +183,7 @@ export interface ContentState {
 export const api = {
   health: () => call<{ status: string; version: string; console: boolean }>("/api/health"),
   host: () => call<{ host: HostInfo; labs: LabStatus[] }>("/api/host"),
+  capabilities: () => call<CapabilityCatalog>("/api/capabilities"),
   config: (lab: LabId) => call<LabConfig>(`/api/labs/${lab}/config`),
   monitor: (lab: LabId) => call<LabMonitor>(`/api/labs/${lab}/monitor`),
   plan: (request: LabRequest) => post<{ plan: LabPlan; token: string }>("/api/labs/plan", { request }),

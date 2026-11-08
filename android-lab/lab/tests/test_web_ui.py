@@ -118,6 +118,12 @@ def test_host_reports_every_lab(web_server):
         assert lab["state"] in ("ready", "needs-setup", "unavailable")
 
 
+def test_health_capabilities_are_served_by_console(web_server):
+    data = json.loads(urllib.request.urlopen(f"{web_server}/api/capabilities").read().decode("utf-8"))
+    assert len(data["platforms"]) == 3
+    assert any(item.get("lab") == "ios" for group in data["groups"] for item in group["items"])
+
+
 def test_lab_start_requires_a_previewed_plan(web_server):
     status, data = _post(f"{web_server}/api/labs/start",
                          {"request": {"lab": "android", "action": "status"}, "token": "forged"},

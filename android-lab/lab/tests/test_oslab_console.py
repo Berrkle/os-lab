@@ -116,6 +116,17 @@ def test_only_unsupported_labs_are_unavailable_across_hosts():
                    for lab in labs if lab["state"] == "needs-setup")
 
 
+def test_capability_catalog_uses_lab_provider_rules():
+    catalog = oslab.capability_catalog()
+    assert {p["id"] for p in catalog["platforms"]} == {"macos", "windows", "linux"}
+    labs = {item["lab"]: item for group in catalog["groups"] for item in group["items"] if item.get("lab")}
+    assert set(labs) == set(oslab.LAB_ORDER)
+    for lab, item in labs.items():
+        for platform in ("macos", "windows", "linux"):
+            provider = oslab.provider_for(lab, platform)
+            assert (item["support"][platform]["level"] == "none") == (provider is None)
+
+
 def test_job_failure_before_process_start_is_reported(monkeypatch):
     def fail(_root):
         raise RuntimeError("cannot read configuration")

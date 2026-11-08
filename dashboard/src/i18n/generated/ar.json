@@ -1894,5 +1894,9 @@
   "optional": "اختياري",
   "Asking the engine…": "جارٍ سؤال المحرّك…",
   "Nothing here changes your system.": "لا شيء هنا يغيّر نظامك.",
-  "Details and fixes are listed below. Nothing here changes your system.": "التفاصيل والحلول أدناه. لا شيء هنا يغيّر نظامك."
+  "Details and fixes are listed below. Nothing here changes your system.": "التفاصيل والحلول أدناه. لا شيء هنا يغيّر نظامك.",
+  "Docker or Podman is installed. Start its engine (or Colima/Podman machine), then check docker compose version or podman compose version and Re-check.": "Docker أو Podman مثبت. شغّل المحرك (أو جهاز Colima/Podman)، ثم تحقق من docker compose version أو podman compose version وأعد الفحص.",
+  "Install a container engine, start it, and check its Compose command. The Firewall Lab and native iOS Simulator do not need containers.": "ثبّت محرك حاويات وشغّله وتحقق من أمر Compose. لا يحتاج Firewall Lab ومحاكي iOS الأصلي إلى حاويات.",
+  "setup guide": "دليل الإعداد",
+  "Could not load platform capabilities:": "تعذّر تحميل إمكانات المنصة:"
 }

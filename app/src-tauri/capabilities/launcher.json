@@ -17,6 +17,8 @@
     "allow-python-install",
     "allow-container-status",
     "allow-container-recover",
-    "allow-container-get"
+    "allow-container-get",
+    "allow-app-update-check",
+    "allow-app-update-install"
   ]
 }

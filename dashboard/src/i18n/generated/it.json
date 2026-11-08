@@ -1894,5 +1894,9 @@
   "optional": "opzionale",
   "Asking the engine…": "Interrogazione del motore…",
   "Nothing here changes your system.": "Nulla qui modifica il sistema.",
-  "Details and fixes are listed below. Nothing here changes your system.": "Dettagli e soluzioni sono sotto. Nulla qui modifica il sistema."
+  "Details and fixes are listed below. Nothing here changes your system.": "Dettagli e soluzioni sono sotto. Nulla qui modifica il sistema.",
+  "Docker or Podman is installed. Start its engine (or Colima/Podman machine), then check docker compose version or podman compose version and Re-check.": "Docker o Podman è installato. Avvia il motore (o la macchina Colima/Podman), verifica docker compose version o podman compose version e ripeti il controllo.",
+  "Install a container engine, start it, and check its Compose command. The Firewall Lab and native iOS Simulator do not need containers.": "Installa e avvia un motore di container e verifica il comando Compose. Firewall Lab e il simulatore iOS nativo non richiedono container.",
+  "setup guide": "guida alla configurazione",
+  "Could not load platform capabilities:": "Impossibile caricare le funzionalità della piattaforma:"
 }

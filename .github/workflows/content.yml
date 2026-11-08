@@ -66,9 +66,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           seq="$(python3 -c "import json;print(json.load(open('dist-content/manifest.json'))['sequence'])")"
+          python3 scripts/content-release-notes.py --sequence "$seq" > dist-content/release-notes.md
           for tag in "content-$seq" content-latest; do
             gh release delete "$tag" --cleanup-tag --yes 2>/dev/null || true
             gh release create "$tag" dist-content/manifest.json dist-content/manifest.json.sig dist-content/content-pack.tar.gz \
-              --title "os-lab content $seq" --notes "Signed content pack, sequence $seq. Downloaded by the app; do not edit." \
+              --title "os-lab content $seq" --notes-file dist-content/release-notes.md \
               --target "$GITHUB_SHA" --latest=false
           done
