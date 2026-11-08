@@ -109,7 +109,7 @@ jobs:
         run: |
           version="$(node -p "require('./app/src-tauri/tauri.conf.json').version")"
           tag="app-v$version"
-          git fetch origin "refs/tags/$tag:refs/tags/$tag"
+          git fetch --force origin "refs/tags/$tag:refs/tags/$tag"
           [[ "$(git rev-list -n 1 "$tag")" == "$GITHUB_SHA" ]] || {
             echo "The $tag tag does not point to this commit" >&2
             exit 1
