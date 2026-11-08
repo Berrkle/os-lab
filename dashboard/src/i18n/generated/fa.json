@@ -1901,5 +1901,9 @@
   "Could not load platform capabilities:": "قابلیت‌های پلتفرم بارگیری نشد:",
   "Install Appium": "نصب Appium",
   "Install Node (Homebrew if needed), Appium and the XCUITest driver for this user only. No administrator rights.": "Node (در صورت نیاز با Homebrew)، Appium و درایور XCUITest را فقط برای این کاربر نصب می‌کند. نیازی به دسترسی مدیر نیست.",
-  "Install Appium (no administrator rights)": "نصب Appium (بدون نیاز به دسترسی مدیر)"
+  "Install Appium (no administrator rights)": "نصب Appium (بدون نیاز به دسترسی مدیر)",
+  "Start iOS Simulator": "راه‌اندازی شبیه‌ساز iOS",
+  "Boot the configured iOS Simulator device on this Mac.": "دستگاه شبیه‌ساز iOS پیکربندی‌شده را روی این مک روشن می‌کند.",
+  "Stop iOS Simulator": "توقف شبیه‌ساز iOS",
+  "Shut the iOS Simulator down.": "شبیه‌ساز iOS را خاموش می‌کند."
 }

@@ -312,6 +312,19 @@ def test_appium_install_is_a_user_level_native_macos_action():
     assert "appium-install" not in {a["id"] for a in oslab.lab_status("android", host)["actions"]}
 
 
+def test_native_macos_actions_follow_whether_appium_is_installed():
+    missing = oslab.lab_status("macos", make_host(os_name="macos", kvm=False, tools=("xcrun", "brew")))
+    ids = {a["id"] for a in missing["actions"]}
+    assert "appium-install" in ids and not ids & {"appium-start", "appium-stop"}
+    present = oslab.lab_status("macos", make_host(os_name="macos", kvm=False, tools=("xcrun", "brew", "appium")))
+    ids = {a["id"] for a in present["actions"]}
+    assert {"appium-start", "appium-stop"} <= ids and "appium-install" not in ids
+    labels = {a["id"]: a["label"] for a in present["actions"]}
+    assert labels["start"] == "Start iOS Simulator" and labels["stop"] == "Stop iOS Simulator"
+    # Linux/container labs keep their own wording
+    assert {a["id"]: a["label"] for a in oslab.lab_status("windows", make_host())["actions"]}["start"] == "Start"
+
+
 def test_managed_appium_counts_as_installed(tmp_path, monkeypatch):
     monkeypatch.setenv("OSLAB_APPIUM_HOME", str(tmp_path))
     monkeypatch.setattr(oslab.shutil, "which", lambda name: None)

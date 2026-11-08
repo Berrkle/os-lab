@@ -1901,5 +1901,9 @@
   "Could not load platform capabilities:": "تعذّر تحميل إمكانات المنصة:",
   "Install Appium": "تثبيت Appium",
   "Install Node (Homebrew if needed), Appium and the XCUITest driver for this user only. No administrator rights.": "يثبّت Node (عبر Homebrew عند الحاجة) وAppium ومشغّل XCUITest لهذا المستخدم فقط. لا حاجة إلى صلاحيات المدير.",
-  "Install Appium (no administrator rights)": "تثبيت Appium (دون صلاحيات المدير)"
+  "Install Appium (no administrator rights)": "تثبيت Appium (دون صلاحيات المدير)",
+  "Start iOS Simulator": "تشغيل محاكي iOS",
+  "Boot the configured iOS Simulator device on this Mac.": "يشغّل جهاز محاكي iOS المُعدّ على هذا الـ Mac.",
+  "Stop iOS Simulator": "إيقاف محاكي iOS",
+  "Shut the iOS Simulator down.": "يطفئ محاكي iOS."
 }
