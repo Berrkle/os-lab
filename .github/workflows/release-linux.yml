@@ -48,7 +48,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential curl wget file pkg-config libssl-dev libxdo-dev \
-            libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf xdg-utils xvfb xauth rpm minisign
+            libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf xdg-utils xvfb xauth rpm
+      - name: Install signature verifier
+        run: bash app/scripts/install-minisign-linux.sh
       - name: Build and verify Linux packages
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
