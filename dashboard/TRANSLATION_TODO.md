@@ -22,8 +22,9 @@ native speaker checks the wording and technical vocabulary.
   native errors. Keep diagnostic commands and raw logs intact.
 - [ ] Review Persian and Arabic layout, punctuation, number formatting, and
   mixed left-to-right technical text with native speakers.
-- [x] Add a catalog parity check in CI and a documented workflow for new strings.
-  Source copy still needs deliberate catalog updates; native review remains open.
+- [x] Add a catalog parity check and a TSX source-string gap check in CI, with a documented
+  workflow for new copy. The baseline records 97 pre-existing gaps for review; native review
+  remains open. Astro templates and backend strings still need manual review.
 
 ## Adding UI copy
 
@@ -31,7 +32,9 @@ native speaker checks the wording and technical vocabulary.
    `src/i18n/generated/*.json` dictionary, with a draft translation when a reviewer is not
    available. Preserve commands, file paths, product names and interpolation tokens.
 2. Run `npm run test:i18n`, `npm run build` and `npm run test:e2e`. The CI parity check fails when
-   a key is missing from any locale; the browser tests exercise the content and Health pages.
+   a key is missing from any locale or new visible TSX copy lacks a catalog key. The browser tests
+   exercise the content and Health pages. Update the source-gap baseline only after reviewing an
+   intentional English-only phrase.
 3. Inspect the new copy in English and Turkish. Request native review for the other locales and
    record unresolved wording or RTL issues in the queue above.
 

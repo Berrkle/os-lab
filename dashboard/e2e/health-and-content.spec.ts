@@ -8,7 +8,7 @@ const labs = [
   { id: "linux", label: "Linux Lab", summary: "Linux VM", state: "unavailable", provider: null, reasons: ["Needs Linux/KVM"], requirements: [], notes: [], actions: [], installed: true }
 ];
 const content = {
-  installed: false, version: "0.2.4", sequence: 1, hooks: false, updatedAt: null, fileCount: 0,
+  installed: false, version: "0.2.5", sequence: 1, hooks: false, updatedAt: null, fileCount: 0,
   latest: { version: "content-149", sequence: 149, files: { data: 10, hooks: 0 } },
   checkedAt: Date.now() / 1000, offline: false, source: "bundled", updateAvailable: true
 };
@@ -30,7 +30,7 @@ async function mockApi(page: Page, os: "macos" | "windows" | "linux" = "macos") 
         provider: lab.id === "macos" ? null : os === "windows" ? "wsl2" : "linux-containers"
       }))
     };
-    else if (path === "/api/health") body = { status: "ok", version: "0.2.4", console: true };
+    else if (path === "/api/health") body = { status: "ok", version: "0.2.5", console: true };
     else if (path === "/api/capabilities") body = {
       platforms: ["macos", "windows", "linux"].map((id) => ({ id, label: id, installer: "test installer", engine: "test engine" })),
       groups: [{ id: "labs", title: "Labs", description: "Platform support", items: [{

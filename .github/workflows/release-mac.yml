@@ -3,6 +3,12 @@ name: release-mac
 on:
   push:
     tags: ['app-v*']
+  pull_request:
+    paths:
+      - '.github/workflows/release-mac.yml'
+      - 'app/**'
+      - 'dashboard/**'
+      - 'console/**'
   workflow_dispatch:
     inputs:
       publish:
@@ -14,6 +20,35 @@ permissions:
   contents: read
 
 jobs:
+  macos-pr:
+    if: github.event_name == 'pull_request'
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+      - name: Build unsigned universal test bundle
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          CARGO_PROFILE_RELEASE_STRIP: 'false'
+        run: |
+          npm ci --no-audit --no-fund --prefix dashboard
+          npm ci --no-audit --no-fund --prefix app
+          node app/scripts/stage-runtime.mjs
+          node app/scripts/stage-python-helper.mjs
+          (cd app && npx tauri build --target universal-apple-darwin --bundles app,dmg)
+          test -d app/src-tauri/target/universal-apple-darwin/release/bundle/macos/os-lab.app
+          test -s app/src-tauri/target/universal-apple-darwin/release/bundle/macos/os-lab.app.tar.gz.sig
+      - uses: actions/upload-artifact@v4
+        with:
+          name: os-lab-macos-pr-dmg
+          path: app/src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+          if-no-files-found: error
+
   macos:
     # The repository owner enables tag publishing after adding the Apple secrets below.
     if: github.event_name == 'workflow_dispatch' || vars.MACOS_RELEASE_CI_ENABLED == 'true'

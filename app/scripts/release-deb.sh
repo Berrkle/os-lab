@@ -6,8 +6,9 @@
 #   app/scripts/release-deb.sh --install-deps   apt-get the Tauri build libraries first (uses sudo)
 #   app/scripts/release-deb.sh --all-formats    build .deb, .rpm and .AppImage for the host architecture
 #
-# Nothing here needs a secret: the .deb is unsigned. --publish uses the gh CLI's own login. The
-# script refuses to run if anything under secrets/ (other than the README) or any key file is tracked.
+# Tauri updater signatures need TAURI_SIGNING_PRIVATE_KEY (or ignored secrets/updater/os-lab.key).
+# Debian and RPM are not distributed through a signed package repository. --publish uses the gh
+# CLI's own login. The script refuses to run if any key file is tracked.
 set -euo pipefail
 
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

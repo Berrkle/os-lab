@@ -7,7 +7,8 @@
   app\scripts\release-win.ps1 -Publish    ...and add them to the GitHub release app-v<version>
   app\scripts\release-win.ps1 -NoSign     skip Authenticode even if a certificate is configured
 
-  Authenticode signing is optional. A certificate is used when one is found, in this order:
+  Authenticode signing is optional. Tauri updater signing is required for builds. A Windows
+  Authenticode certificate is used when one is found, in this order:
     1. $env:OSLAB_WIN_CERT_THUMBPRINT (a certificate already in the user's store)
     2. secrets\windows\thumbprint.txt
     3. secrets\windows\os-lab.pfx + os-lab.pfx.password (imported into the user's store)

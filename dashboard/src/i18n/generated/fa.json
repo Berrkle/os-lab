@@ -1894,5 +1894,9 @@
   "optional": "اختیاری",
   "Asking the engine…": "در حال پرسیدن از موتور…",
   "Nothing here changes your system.": "هیچ‌چیز در اینجا سیستم شما را تغییر نمی‌دهد.",
-  "Details and fixes are listed below. Nothing here changes your system.": "جزئیات و راه‌حل‌ها در پایین است. هیچ‌چیز در اینجا سیستم شما را تغییر نمی‌دهد."
+  "Details and fixes are listed below. Nothing here changes your system.": "جزئیات و راه‌حل‌ها در پایین است. هیچ‌چیز در اینجا سیستم شما را تغییر نمی‌دهد.",
+  "Docker or Podman is installed. Start its engine (or Colima/Podman machine), then check docker compose version or podman compose version and Re-check.": "Docker یا Podman نصب است. موتور آن (یا ماشین Colima/Podman) را راه‌اندازی کنید، سپس docker compose version یا podman compose version را بررسی کرده و دوباره بررسی کنید.",
+  "Install a container engine, start it, and check its Compose command. The Firewall Lab and native iOS Simulator do not need containers.": "یک موتور کانتینر نصب و راه‌اندازی کنید و فرمان Compose آن را بررسی کنید. Firewall Lab و شبیه‌ساز بومی iOS به کانتینر نیاز ندارند.",
+  "setup guide": "راهنمای راه‌اندازی",
+  "Could not load platform capabilities:": "قابلیت‌های پلتفرم بارگیری نشد:"
 }

@@ -26,7 +26,7 @@ content, managed Python and local lab data.
 ## Windows
 
 Use the x64 `-setup.exe` or `.msi`. Run one installer and then launch **os-lab** from the Start menu.
-Current release installers are unsigned; Windows SmartScreen may show **More info → Run anyway**.
+If an installer is unsigned, Windows SmartScreen may show **More info → Run anyway**.
 The app can download managed Python when needed. Docker or Podman with Compose is needed for
 container labs, and WSL2 is needed for the Linux-backed VM labs.
 
@@ -39,7 +39,9 @@ authorization to uninstall it.
 Choose the `amd64` or `arm64` build that matches `dpkg --print-architecture`. Each package has
 a SHA-256 file and a detached Tauri signature. Debian and RPM packages are not distributed
 through a signed apt or dnf repository, so their package managers do not verify that signature
-automatically.
+automatically. To verify a detached signature manually, download
+[`UPDATER_PUBLIC_KEY.pub`](UPDATER_PUBLIC_KEY.pub) and run
+`minisign -Vm <package> -x <package>.sig -p UPDATER_PUBLIC_KEY.pub`.
 
 - Debian and Ubuntu: `sudo apt install ./os-lab_<version>_linux_<arch>.deb`
 - Fedora and other RPM distributions: `sudo dnf install ./os-lab_<version>_linux_<arch>.rpm`
