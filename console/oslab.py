@@ -120,6 +120,12 @@ ACTION_INFO = {
     "appium-stop": ("Stop Appium", "Stop the Appium server."),
 }
 
+# On the native Mac path "start" and "stop" drive the iOS Simulator, not a container stack.
+NATIVE_SIMULATOR_INFO = {
+    "start": ("Start iOS Simulator", "Boot the configured iOS Simulator device on this Mac."),
+    "stop": ("Stop iOS Simulator", "Shut the iOS Simulator down."),
+}
+
 PRIVILEGED = {"setup", "service-install", "service-uninstall"}
 SECRET_PARTS = ("PASSWORD", "SECRET", "TOKEN", "API_KEY", "PRIVATE_KEY", "CREDENTIAL")
 ANSI = re.compile(r"\x1b\[[0-9;?]*[ -/]*[@-~]")
@@ -389,6 +395,13 @@ def lab_status(lab: str, host: dict) -> dict:
         reasons.append("Missing: " + ", ".join(r["label"] for r in reqs if r["required"] and not r["found"]) + ".")
 
     actions = actions_for(lab, provider) if state != "unavailable" else []
+    if provider == "native-macos":
+        # Installed Appium: offer start/stop, not install. Not installed: offer install, not start/stop.
+        drop = {"appium-install"} if tools.get("appium") else {"appium-start", "appium-stop"}
+        actions = [a for a in actions if a["id"] not in drop]
+        for a in actions:
+            if a["id"] in NATIVE_SIMULATOR_INFO:
+                a["label"], a["description"] = NATIVE_SIMULATOR_INFO[a["id"]]
     summary = ("Run the iOS Simulator with this Mac's Xcode; Appium automation is optional."
                if lab == "ios" and provider == "native-macos" else meta["summary"])
     return {"id": lab, "label": meta["label"], "summary": summary, "state": state, "provider": provider,

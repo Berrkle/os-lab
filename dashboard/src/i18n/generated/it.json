@@ -1901,5 +1901,9 @@
   "Could not load platform capabilities:": "Impossibile caricare le funzionalità della piattaforma:",
   "Install Appium": "Installa Appium",
   "Install Node (Homebrew if needed), Appium and the XCUITest driver for this user only. No administrator rights.": "Installa Node (con Homebrew se serve), Appium e il driver XCUITest solo per questo utente. Nessun privilegio di amministratore richiesto.",
-  "Install Appium (no administrator rights)": "Installa Appium (senza privilegi di amministratore)"
+  "Install Appium (no administrator rights)": "Installa Appium (senza privilegi di amministratore)",
+  "Start iOS Simulator": "Avvia simulatore iOS",
+  "Boot the configured iOS Simulator device on this Mac.": "Avvia il dispositivo del simulatore iOS configurato su questo Mac.",
+  "Stop iOS Simulator": "Arresta simulatore iOS",
+  "Shut the iOS Simulator down.": "Spegne il simulatore iOS."
 }
