@@ -285,10 +285,8 @@
             },
             {
               "action": "deny",
-              "direction": "in",
+              "direction": "forward",
               "proto": "any",
-              "from": "any",
-              "to": "any",
               "note": "Açık varsayılan engelleme (Explicit Default-Deny): Listede açıkça izin verilmeyen tüm paketleri sessizce düşür ve logla."
             }
           ]
@@ -541,10 +539,8 @@
             },
             {
               "action": "deny",
-              "direction": "in",
+              "direction": "forward",
               "proto": "any",
-              "from": "any",
-              "to": "any",
               "note": "Açık varsayılan engelleme (Explicit Default-Deny): Tanımlı kurallarla eşleşmeyen tüm gelen trafiği sessizce düşür."
             }
           ]
@@ -750,8 +746,8 @@
               "proto": "tcp",
               "port": 443,
               "from": "rnd-fintech",
-              "to": "internet",
-              "note": "FinTech Ar-Ge ekibinin yalnızca onaylı UK OpenBanking test sandbox API uçlarına erişimi."
+              "to": "egress-proxy",
+              "note": "FinTech Ar-Ge ekibinin yalnızca DLP egress proxy üzerinden onaylı UK OpenBanking test sandbox API uçlarına erişimi."
             },
             {
               "action": "deny",
@@ -788,10 +784,8 @@
             },
             {
               "action": "deny",
-              "direction": "in",
+              "direction": "forward",
               "proto": "any",
-              "from": "any",
-              "to": "any",
               "note": "Açık varsayılan engelleme (Explicit Default-Deny): Tanımlanmamış tüm harici ve transit trafiği sessizce düşür."
             }
           ]
@@ -1134,10 +1128,8 @@
             },
             {
               "action": "deny",
-              "direction": "in",
+              "direction": "forward",
               "proto": "any",
-              "from": "any",
-              "to": "any",
               "note": "Açık varsayılan engelleme (Explicit Default-Deny): Listede açıkça izin verilmeyen tüm gelen ve transit paketleri sessizce düşür."
             }
           ]
@@ -1151,7 +1143,7 @@
   },
   "monitoring": {
     "siem": "FortiAnalyzer ve merkezi SIEM (Elasticsearch/Splunk) üzerinden TLS 6514 ile log toplama; Zabbix/Prometheus + Grafana ile donanım sağlığı ve hat doluluğu; NetFlow v9 ile trafik analizi. Türkiye şubelerinde 5651 sayılı kanun gereği saatlik özet loglar TÜBİTAK zaman damgasıyla 2 yıl saklanır; Londra logları UK-GDPR gereği yerel olarak tutulup SIEM'e maskeli gönderilir.",
-    "owner": "İstanbul genel merkezinde 7/24 üç vardiya çalışan SOC (Tier 1-2-3) ve NOC ekipleri; Ankara şubesi yedek felaket izleme merkezi olarak görev yapar. Kural değişiklikleri 4-göz ilkesi ve biletleme onayıyla yalnızca sertifikalı güvenlik duvarı mühendislerince uygulanır.",
+    "owner": "İstanbul genel merkezinde 7/24 üç vardiya çalışan SOC (Tier 1-2-3) ve NOC ekipleri; Ankara şubesi yedek felaket kurtarma (disaster recovery / DR) izleme merkezi olarak görev yapar. Günlük otomatik şifreli config backup / snapshot arşivi alınır ve kural değişiklikleri 4-göz ilkesi ve biletleme onayıyla yalnızca sertifikalı güvenlik duvarı mühendislerince uygulanır.",
     "alertSink": "Kritik güvenlik olaylarında SOAR üzerinden anlık PagerDuty/SMS ve nöbetçi SOC analist ekranı (SLA: ilk müdahale < 15 dakika); sistem arızalarında NOC Zabbix alarm konsolu.",
     "appVsSecurity": "NOC ekibi fiziksel hatları, BGP yönlendirmeyi, HA durumunu ve arayüz kapasitesini izler; SOC ekibi IDS/IPS alarmlarını, yetkisiz erişim denemelerini ve tehdit istihbaratını denetler. İki ekibin izleme ekranları ve operasyonel yetki sınırları birbirinden tamamen ayrılmıştır."
   },
