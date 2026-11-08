@@ -88,6 +88,8 @@ else
   unset APPLE_API_KEY APPLE_API_ISSUER APPLE_API_KEY_PATH
 fi
 export APPLE_SIGNING_IDENTITY
+# Cargo must not strip host proc-macro dylibs; doing so breaks some macOS toolchains with E0463.
+export CARGO_PROFILE_RELEASE_STRIP=false
 
 # ── 3. Build ────────────────────────────────────────────────────────────────────────────────────
 cd "$APP_DIR"
@@ -99,14 +101,20 @@ say "staging the runtime and dashboard"
 node scripts/stage-runtime.mjs
 [ -n "${APPLE_SIGNING_IDENTITY:-}" ] || die "bundled Python helpers need a Developer ID identity in the keychain; import APPLE_CERTIFICATE before building"
 node scripts/stage-python-helper.mjs
+if [ -z "${TAURI_SIGNING_PRIVATE_KEY:-}" ] && [ -f "$REPO/secrets/updater/os-lab.key" ]; then
+  export TAURI_SIGNING_PRIVATE_KEY="$(cat "$REPO/secrets/updater/os-lab.key")"
+fi
+[ -n "${TAURI_SIGNING_PRIVATE_KEY:-}" ] || die "updater signing key is missing (TAURI_SIGNING_PRIVATE_KEY)"
 say "building ($TARGET) — Tauri signs the app with hardened runtime and notarizes it when the API key is set"
 npx tauri build --target "$TARGET" --bundles app,dmg
 
-BUNDLE="$APP_DIR/src-tauri/target/$TARGET/release/bundle"
+BUNDLE="${CARGO_TARGET_DIR:-$APP_DIR/src-tauri/target}/$TARGET/release/bundle"
 ARCH_LABEL="${TARGET%%-apple-darwin}"
 APP="$BUNDLE/macos/os-lab.app"
 DMG="$BUNDLE/dmg/os-lab_${VERSION}_${ARCH_LABEL}.dmg"
-[ -d "$APP" ] && [ -f "$DMG" ] || die "build produced no app or version-matched DMG ($DMG)"
+UPDATE="$BUNDLE/macos/os-lab.app.tar.gz"
+[ -d "$APP" ] && [ -f "$DMG" ] && [ -f "$UPDATE" ] && [ -f "$UPDATE.sig" ] \
+  || die "build produced no app, version-matched DMG or signed updater bundle"
 
 # ── 4. Sign + notarize the DMG itself (Tauri notarizes the .app) ────────────────────────────────
 say "signing the DMG"
@@ -136,16 +144,22 @@ cp "$DMG" "$ASSET"
 ( cd "$OUT" && shasum -a 256 "$(basename "$ASSET")" > "$(basename "$ASSET").sha256" )
 say "ready: $ASSET"
 cat "$ASSET.sha256"
+npx tauri signer sign --app-version "$VERSION" "$ASSET" >/dev/null
+[ -f "$ASSET.sig" ] || die "DMG signature is missing"
+UPDATE_ASSET="$OUT/os-lab_${VERSION}_macos_${ARCH_LABEL}.app.tar.gz"
+cp "$UPDATE" "$UPDATE_ASSET"
+cp "$UPDATE.sig" "$UPDATE_ASSET.sig"
+( cd "$OUT" && shasum -a 256 "$(basename "$UPDATE_ASSET")" > "$(basename "$UPDATE_ASSET").sha256" )
 
 # ── 7. Publish ──────────────────────────────────────────────────────────────────────────────────
 if [ "$PUBLISH" = 1 ]; then
   [ "$NOTARIZE" = 1 ] || die "refusing to publish an un-notarized DMG"
   if gh release view "$TAG" -R "$SLUG" >/dev/null 2>&1; then
     say "updating release $TAG"
-    gh release upload "$TAG" "$ASSET" "$ASSET.sha256" --clobber -R "$SLUG"
+    gh release upload "$TAG" "$ASSET" "$ASSET.sha256" "$ASSET.sig" "$UPDATE_ASSET" "$UPDATE_ASSET.sig" "$UPDATE_ASSET.sha256" --clobber -R "$SLUG"
   else
     say "creating release $TAG"
-    gh release create "$TAG" "$ASSET" "$ASSET.sha256" -R "$SLUG" --title "os-lab app $VERSION" \
+    gh release create "$TAG" "$ASSET" "$ASSET.sha256" "$ASSET.sig" "$UPDATE_ASSET" "$UPDATE_ASSET.sig" "$UPDATE_ASSET.sha256" -R "$SLUG" --title "os-lab app $VERSION" \
       --notes "os-lab desktop app $VERSION. One installer per platform, each with a .sha256 file. The macOS DMG is universal, signed and notarized. The app can download managed Python on request."
   fi
   say "published: https://github.com/$SLUG/releases/tag/$TAG"

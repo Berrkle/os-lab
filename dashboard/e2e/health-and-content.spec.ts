@@ -67,6 +67,18 @@ test("Turkish page renders the content card without layout overflow", async ({ p
   expect(overflow).toBeLessThanOrEqual(2);
 });
 
+for (const locale of ["ar", "fa"] as const) {
+  test(`${locale} content page keeps its right-to-left layout inside the viewport`, async ({ page }) => {
+    await mockApi(page);
+    await page.goto(`/${locale}/`);
+    await expect(page.locator("html")).toHaveAttribute("lang", locale);
+    await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+    await expect(page.locator("#content")).toBeVisible();
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(overflow).toBeLessThanOrEqual(2);
+  });
+}
+
 for (const os of ["macos", "windows", "linux"] as const) {
   test(`Health shows ${os} live checks and API capability tree`, async ({ page }) => {
     await mockApi(page, os);

@@ -87,6 +87,11 @@ Run 'npm' @('ci', '--no-audit', '--no-fund', '--prefix', (Join-Path $Repo 'dashb
 Say 'staging the runtime and dashboard'
 Run 'node' @('scripts/stage-runtime.mjs')
 Run 'node' @('scripts/stage-python-helper.mjs')
+if (-not $env:TAURI_SIGNING_PRIVATE_KEY) {
+  $updaterKey = Join-Path $Repo 'secrets\updater\os-lab.key'
+  if (Test-Path $updaterKey) { $env:TAURI_SIGNING_PRIVATE_KEY = Get-Content -Raw $updaterKey }
+}
+if (-not $env:TAURI_SIGNING_PRIVATE_KEY) { Die 'updater signing key is missing (TAURI_SIGNING_PRIVATE_KEY)' }
 
 $tauriArgs = @('tauri', 'build', '--bundles', 'nsis,msi')
 $overlay = $null
@@ -133,12 +138,15 @@ foreach ($a in $assets) {
   Say "ready: $dest"
   Write-Host "$hash  $($a.Name)"
   $files += $dest, "$dest.sha256"
+  if (-not (Test-Path "$($a.Src).sig")) { Die "updater signature is missing for $($a.Src)" }
+  Copy-Item -Force "$($a.Src).sig" "$dest.sig"
+  $files += "$dest.sig"
 }
 
 # 6. Publish ------------------------------------------------------------------------------------
 if (-not $Publish) { Say 'dry run: nothing uploaded (use -Publish)'; exit 0 }
 
-$notes = "os-lab desktop app $Version. One installer per platform, each with a .sha256 file. Needs Python 3.9+ on PATH."
+$notes = "os-lab desktop app $Version. One installer per platform, each with a .sha256 file. The app can download managed Python on request."
 # gh writes to stderr for 'not logged in' and 'release not found'; that must not abort under Stop.
 $ErrorActionPreference = 'Continue'
 if (Get-Command gh -ErrorAction SilentlyContinue) { & gh auth status 2>$null | Out-Null; $haveGh = ($LASTEXITCODE -eq 0) } else { $haveGh = $false }

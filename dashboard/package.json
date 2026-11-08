@@ -9,7 +9,8 @@
     "build:local": "astro build --outDir build",
     "preview": "astro preview",
     "check": "tsc --noEmit",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:i18n": "node scripts/check-translations.mjs"
   },
   "dependencies": {
     "@astrojs/react": "^7.1.1",

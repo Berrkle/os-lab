@@ -1,0 +1,43 @@
+name: updater-manifest
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Fully published app version (for example 0.2.5)
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Download and verify release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]
+          tag="app-v$VERSION"
+          gh release view "$tag" >/dev/null
+          mkdir -p release-assets
+          gh release download "$tag" --dir release-assets
+          node app/scripts/build-update-manifest.mjs "$VERSION" release-assets latest.json
+      - name: Publish updater feed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if ! gh release view app-updates >/dev/null 2>&1; then
+            gh release create app-updates --target "$GITHUB_SHA" --title 'os-lab app update feed' \
+              --notes 'Signed app update manifest. Download installers from versioned app releases.' --prerelease
+          fi
+          gh release upload app-updates latest.json --clobber

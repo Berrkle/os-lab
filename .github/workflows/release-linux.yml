@@ -50,6 +50,8 @@ jobs:
           sudo apt-get install -y build-essential curl wget file pkg-config libssl-dev libxdo-dev \
             libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf xdg-utils xvfb xauth rpm
       - name: Build and verify Linux packages
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         run: ./app/scripts/release-deb.sh --all-formats
       - name: Install, launch and uninstall package
         shell: bash
@@ -57,9 +59,9 @@ jobs:
           deb="$(find app/out -name "os-lab_*_linux_${{ matrix.arch }}.deb" -type f -print -quit)"
           [[ -f "$deb" ]] || { echo 'Debian package missing' >&2; exit 1; }
           sudo apt-get install -y "./$deb"
-          command -v os-lab
+          command -v os-lab-app
           set +e
-          timeout 20s xvfb-run -a os-lab >/tmp/os-lab-smoke.log 2>&1
+          timeout 20s xvfb-run -a os-lab-app >/tmp/os-lab-smoke.log 2>&1
           result=$?
           set -e
           if [[ "$result" != 124 ]]; then

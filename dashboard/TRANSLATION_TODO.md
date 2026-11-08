@@ -22,7 +22,17 @@ native speaker checks the wording and technical vocabulary.
   native errors. Keep diagnostic commands and raw logs intact.
 - [ ] Review Persian and Arabic layout, punctuation, number formatting, and
   mixed left-to-right technical text with native speakers.
-- [ ] Add a translation workflow for new dashboard strings so additions do not
-  silently fall back to English.
+- [x] Add a catalog parity check in CI and a documented workflow for new strings.
+  Source copy still needs deliberate catalog updates; native review remains open.
+
+## Adding UI copy
+
+1. Add the English text in the component. Add the exact English phrase as a key in each
+   `src/i18n/generated/*.json` dictionary, with a draft translation when a reviewer is not
+   available. Preserve commands, file paths, product names and interpolation tokens.
+2. Run `npm run test:i18n`, `npm run build` and `npm run test:e2e`. The CI parity check fails when
+   a key is missing from any locale; the browser tests exercise the content and Health pages.
+3. Inspect the new copy in English and Turkish. Request native review for the other locales and
+   record unresolved wording or RTL issues in the queue above.
 
 The Firewall Lab has its own detailed [translation checklist](../firewall-lab/TRANSLATION_TODO.md).

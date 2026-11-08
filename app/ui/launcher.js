@@ -151,7 +151,77 @@
       if (path) start();
     }, function (err) { button.disabled = false; fail(err); });
   });
-  if (new URLSearchParams(window.location.search).get("settings") === "files") {
+  function checkAppUpdate() {
+    var panel = $("app-update"), check = $("app-update-check"), install = $("app-update-install"), download = $("app-update-download"), message = $("app-update-detail");
+    panel.hidden = false;
+    problem.hidden = true;
+    spinner.hidden = false;
+    statusEl.textContent = language === "tr" ? "Uygulama güncellemeleri kontrol ediliyor…" : "Checking for app updates…";
+    message.textContent = "";
+    check.disabled = true;
+    install.hidden = true;
+    download.hidden = true;
+    if (!invoke) { fail(t.bridge); return; }
+    invoke("app_update_check").then(function (offer) {
+      spinner.hidden = true;
+      check.disabled = false;
+      statusEl.textContent = language === "tr" ? "Uygulama güncellemeleri" : "App updates";
+      if (offer) {
+        message.textContent = (language === "tr" ? "Yeni sürüm hazır: " : "New version available: ") + offer.version;
+        install.hidden = !offer.installable;
+        download.hidden = !!offer.installable;
+        download.dataset.version = offer.version;
+      } else {
+        message.textContent = language === "tr" ? "os-lab güncel." : "os-lab is up to date.";
+      }
+    }, function (err) {
+      spinner.hidden = true;
+      check.disabled = false;
+      statusEl.textContent = language === "tr" ? "Güncellemeler kontrol edilemedi" : "Could not check for updates";
+      message.textContent = String(err && err.message ? err.message : err);
+    });
+  }
+  $("app-update-check").addEventListener("click", checkAppUpdate);
+  $("app-update-download").addEventListener("click", function () {
+    var version = $("app-update-download").dataset.version;
+    if (version) window.location.href = "https://github.com/keyvanarasteh/os-lab/releases/tag/app-v" + encodeURIComponent(version);
+  });
+  $("app-update-install").addEventListener("click", function () {
+    var button = $("app-update-install"), message = $("app-update-detail"), downloaded = 0;
+    button.disabled = true;
+    spinner.hidden = false;
+    message.textContent = language === "tr" ? "Güncelleme indiriliyor ve kuruluyor…" : "Downloading and installing the update…";
+    if (window.__TAURI__ && window.__TAURI__.event) {
+      window.__TAURI__.event.listen("app-update-progress", function (event) {
+        downloaded += event.payload.chunk || 0;
+        if (event.payload.total) {
+          message.textContent = Math.min(100, Math.floor(downloaded * 100 / event.payload.total)) + "%";
+        }
+      }).then(function (unlisten) {
+        invoke("app_update_install").then(function () { unlisten(); }, function (err) {
+          unlisten(); button.disabled = false; spinner.hidden = true;
+          message.textContent = String(err && err.message ? err.message : err);
+        });
+      }, function (err) {
+        button.disabled = false; spinner.hidden = true;
+        message.textContent = String(err && err.message ? err.message : err);
+      });
+    } else {
+      invoke("app_update_install").catch(function (err) {
+        button.disabled = false; spinner.hidden = true;
+        message.textContent = String(err && err.message ? err.message : err);
+      });
+    }
+  });
+  $("app-update-back").addEventListener("click", function () { $("app-update").hidden = true; start(); });
+  var settings = new URLSearchParams(window.location.search).get("settings");
+  if (settings === "updates") {
+    $("app-update-back").textContent = language === "tr" ? "Panoya dön" : "Return to dashboard";
+    $("app-update-check").textContent = language === "tr" ? "Yeniden kontrol et" : "Check again";
+    $("app-update-install").textContent = language === "tr" ? "Uygulama güncellemesini kur" : "Install app update";
+    $("app-update-download").textContent = language === "tr" ? "Uygulama sürümünü aç" : "Open app release";
+    checkAppUpdate();
+  } else if (settings === "files") {
     show(t.filesLabel, true);
     detail.textContent = "";
     if (invoke) invoke("console_files_dir").then(function (path) { filesWhere.textContent = t.filesLabel + ": " + path; }, fail);

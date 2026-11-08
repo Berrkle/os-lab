@@ -10,10 +10,31 @@ manually without publishing, to inspect its build artifacts.
 | `release-linux` | amd64 and arm64 Debian, RPM and AppImage packages, with SHA-256 files | yes |
 | `release-win` | x64 NSIS and MSI, with SHA-256 files | after SignPath is configured |
 | `release-mac` | universal signed and notarized DMG, with SHA-256 file | after Apple secrets and `MACOS_RELEASE_CI_ENABLED=true` are set |
+| `updater-manifest` | signed artifact URLs for the in-app updater | manual, after all platform installers are published |
 
 The Linux workflow runs on pull requests touching app or dashboard files. It installs, launches
-under Xvfb, and removes each Debian package before publishing. The macOS workflow uses
+under Xvfb, and removes each Debian package before publishing. Windows CI installs, launches and
+uninstalls the MSI. The macOS workflow uses
 `app/scripts/release-mac.sh`, which verifies both the app and DMG signatures and notarization.
+
+## App updater
+
+The desktop app checks `app-updates/latest.json` when the user chooses **File → Check for app
+updates**. It installs only updater bundles signed by the public key in `tauri.conf.json`, with
+the signature bound to the announced version. The private key is stored in the repository secret
+`TAURI_SIGNING_PRIVATE_KEY`; a local backup is in ignored `secrets/updater/os-lab.key`. Preserve
+an additional secure backup outside the repository and worktrees. Losing the private key prevents
+updates to existing app installations. Never commit or print it.
+
+The platform builds publish `.sig` files alongside their updater bundles. On Windows, the
+SignPath-signed installer is signed again with the Tauri key, because Authenticode changes its
+bytes. Debian, RPM and DMG downloads also have detached signatures for manual verification;
+apt and dnf do not treat those as repository signatures. After every macOS, Windows and Linux
+asset is present on `app-v<version>`, run the
+`updater-manifest` workflow with that version. It verifies the SHA-256 files and refuses to
+publish a partial platform set. The feed is stored in the `app-updates` prerelease so content
+releases cannot accidentally become the app update endpoint. A release is not available through
+in-app update until this step succeeds.
 
 ## macOS signing setup
 
@@ -46,5 +67,7 @@ still take time to build. Unsigned builds remain available as workflow artifacts
 2. Set the intended version, then create and push `app-v<version>` on that exact commit.
 3. Inspect the workflow results and release assets. Do not mark the release complete until the
    macOS, Windows and Linux files and SHA-256 checks are present.
-4. Install and launch at least one file on each OS; record any platform limitation in the release
+4. Run `updater-manifest` for the new version and verify `app-updates/latest.json` contains all
+   five platform entries. Exercise the update from the previous app version on each OS.
+5. Install and launch at least one file on each OS; record any platform limitation in the release
    notes and [INSTALL.md](INSTALL.md).

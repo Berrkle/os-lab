@@ -8,6 +8,12 @@ name: release-win
 on:
   push:
     tags: ['app-v*']
+  pull_request:
+    paths:
+      - '.github/workflows/release-win.yml'
+      - 'app/**'
+      - 'dashboard/**'
+      - 'console/**'
   workflow_dispatch:
     inputs:
       publish:
@@ -39,6 +45,8 @@ jobs:
 
       - name: Build the unsigned installers
         shell: pwsh
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         run: |
           npm ci --no-audit --no-fund --prefix dashboard
           ./app/scripts/release-win.ps1 -NoSign
@@ -80,6 +88,8 @@ jobs:
 
       - name: Collect the files to ship
         shell: pwsh
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         run: |
           $dir = if ($env:SIGN -eq 'true') { 'signed' } else { 'unsigned' }
           New-Item -ItemType Directory -Force ship | Out-Null
@@ -91,12 +101,39 @@ jobs:
             Write-Host "$($f.Name): $($sig.Status)"
             $hash = (Get-FileHash -Algorithm SHA256 $f.FullName).Hash.ToLower()
             [IO.File]::WriteAllText("$($f.FullName).sha256", "$hash  $($f.Name)`n", $utf8)
+            & ./app/node_modules/.bin/tauri.cmd signer sign --app-version '${{ steps.v.outputs.version }}' $f.FullName
+            if ($LASTEXITCODE -ne 0 -or -not (Test-Path "$($f.FullName).sig")) { throw "Could not sign updater artifact $($f.Name)" }
           }
 
       - uses: actions/upload-artifact@v4
         with:
           name: os-lab-windows
           path: ship/*
+
+      - name: Install, launch and uninstall MSI
+        shell: pwsh
+        run: |
+          $msi = (Get-ChildItem ship -Filter '*.msi' | Select-Object -First 1).FullName
+          if (-not $msi) { throw 'MSI missing for smoke test' }
+          $log = Join-Path $env:RUNNER_TEMP 'os-lab-msi-install.log'
+          $installed = $false
+          try {
+            $install = Start-Process msiexec.exe -ArgumentList @('/i', "`"$msi`"", '/qn', '/norestart', '/L*v', "`"$log`"") -Wait -PassThru
+            if ($install.ExitCode -notin @(0, 3010)) { throw "MSI install failed: $($install.ExitCode)" }
+            $installed = $true
+            $programDirs = @("$env:ProgramFiles\os-lab", "$env:LOCALAPPDATA\Programs\os-lab")
+            $binary = Get-ChildItem $programDirs -Filter 'os-lab-app.exe' -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+            if (-not $binary) { throw 'Installed os-lab-app.exe was not found' }
+            $app = Start-Process $binary.FullName -PassThru
+            Start-Sleep -Seconds 10
+            if ($app.HasExited) { throw "Installed app exited early: $($app.ExitCode)" }
+            Stop-Process -Id $app.Id -Force
+          } finally {
+            if ($installed) {
+              $remove = Start-Process msiexec.exe -ArgumentList @('/x', "`"$msi`"", '/qn', '/norestart') -Wait -PassThru
+              if ($remove.ExitCode -notin @(0, 3010)) { throw "MSI uninstall failed: $($remove.ExitCode)" }
+            }
+          }
 
       - name: Publish to the release
         if: env.PUBLISH == 'true'

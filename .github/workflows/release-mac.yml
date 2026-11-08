@@ -72,6 +72,7 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         run: |
           if [[ "$GITHUB_EVENT_NAME" == push || '${{ inputs.publish }}' == true ]]; then
             ./app/scripts/release-mac.sh --publish
@@ -82,5 +83,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: os-lab-macos-universal
-          path: app/out/*/os-lab_*_macos_universal.dmg*
+          path: app/out/*/os-lab_*_macos_universal.*
           if-no-files-found: error

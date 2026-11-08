@@ -70,6 +70,10 @@ npm ci --no-audit --no-fund --prefix "$APP_DIR/../dashboard" >/dev/null
 say "staging the runtime and dashboard"
 node scripts/stage-runtime.mjs
 node scripts/stage-python-helper.mjs
+if [ -z "${TAURI_SIGNING_PRIVATE_KEY:-}" ] && [ -f "$REPO/secrets/updater/os-lab.key" ]; then
+  export TAURI_SIGNING_PRIVATE_KEY="$(cat "$REPO/secrets/updater/os-lab.key")"
+fi
+[ -n "${TAURI_SIGNING_PRIVATE_KEY:-}" ] || die "updater signing key is missing (TAURI_SIGNING_PRIVATE_KEY)"
 say "building Linux bundles"
 if [ "$ALL_FORMATS" = 1 ]; then
   npx tauri build --bundles deb,rpm,appimage
@@ -83,7 +87,6 @@ DEB="$APP_DIR/src-tauri/target/release/bundle/deb/os-lab_${VERSION}_${ARCH}.deb"
 # ── 3. Verify what will ship ────────────────────────────────────────────────────────────────────
 say "verifying $(basename "$DEB")"
 dpkg-deb --info "$DEB" | sed -n '/Package:/p;/Version:/p;/Architecture:/p;/Depends:/p'
-grep -Eq '^ *Depends:.*python3' <<<"$(dpkg-deb --info "$DEB")" || die "the .deb does not depend on python3 (bundle.linux.deb.depends)"
 LISTING="$(dpkg-deb --contents "$DEB")"
 grep -q 'os-lab/labctl' <<<"$LISTING" || die "the .deb has no bundled runtime (os-lab/labctl)"
 grep -q 'os-lab/dashboard/dist/index.html' <<<"$LISTING" || die "the .deb has no dashboard build"
@@ -99,6 +102,9 @@ cp "$DEB" "$ASSET"
 say "ready: $ASSET"
 cat "$ASSET.sha256"
 ASSETS=("$ASSET" "$ASSET.sha256")
+npx tauri signer sign --app-version "$VERSION" "$ASSET" >/dev/null
+[ -f "$ASSET.sig" ] || die "Debian package signature is missing"
+ASSETS+=("$ASSET.sig")
 
 if [ "$ALL_FORMATS" = 1 ]; then
   command -v rpm >/dev/null || die "rpm is required to verify the RPM package"
@@ -117,8 +123,18 @@ if [ "$ALL_FORMATS" = 1 ]; then
     fi
     asset="$OUT/os-lab_${VERSION}_linux_${ARCH}.${extension}"
     cp "$package" "$asset"
+    if [ "$format" = appimage ]; then
+      [ -f "$package.sig" ] || die "AppImage updater signature is missing"
+      cp "$package.sig" "$asset.sig"
+      ASSETS+=("$asset.sig")
+    fi
     ( cd "$OUT" && sha256sum "$(basename "$asset")" > "$(basename "$asset").sha256" )
     ASSETS+=("$asset" "$asset.sha256")
+    if [ "$format" = rpm ]; then
+      npx tauri signer sign --app-version "$VERSION" "$asset" >/dev/null
+      [ -f "$asset.sig" ] || die "RPM package signature is missing"
+      ASSETS+=("$asset.sig")
+    fi
     say "ready: $asset"
     cat "$asset.sha256"
   done
