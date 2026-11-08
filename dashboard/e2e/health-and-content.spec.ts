@@ -38,6 +38,8 @@ async function mockApi(page: Page, os: "macos" | "windows" | "linux" = "macos") 
         support: { macos: { level: "full", note: "Native Xcode" }, windows: { level: "partial", note: "WSL2" }, linux: { level: "partial", note: "KVM" } }
       }] }]
     };
+    else if (/^\/api\/labs\/[a-z]+\/config$/.test(path)) body = { lab: path.split("/")[3], path: "config.env", exists: true, fields: [], profiles: [], backups: [], endpoints: [{ label: "Appium", address: "http://127.0.0.1:4723/" }] };
+    else if (/^\/api\/labs\/[a-z]+\/monitor$/.test(path)) body = { lab: path.split("/")[3], state: "stopped", containers: [] };
     else if (path === "/api/content/status" || path === "/api/content/check") body = content;
     else if (path === "/api/content/update") body = { ...content, installed: true, version: "content-149", sequence: 149, updateAvailable: false };
     else if (path === "/api/jobs") body = { jobs: [] };
@@ -105,3 +107,16 @@ for (const [os, hidden, shown] of [
     await expect(page.getByRole("link", { name: "See what each platform supports" })).toBeVisible();
   });
 }
+
+test("a lab that is missing requirements hides its runtime sections until they are met", async ({ page }) => {
+  await mockApi(page);
+  await page.goto("/labs/android/");
+  await expect(page.getByText("Start, stop and the other actions appear once the missing dependencies are installed.")).toBeVisible();
+  await expect(page.getByText("Live monitor")).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Endpoints" })).toHaveCount(0);
+  await page.goto("/labs/ios/");
+  await expect(page.getByRole("heading", { name: "Actions" })).toBeVisible();
+  await expect(page.getByText("Start, stop and the other actions appear once the missing dependencies are installed.")).toHaveCount(0);
+  await expect(page.getByText("Live monitor")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Endpoints" })).toBeVisible();
+});

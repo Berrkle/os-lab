@@ -1908,5 +1908,6 @@
   "Shut the iOS Simulator down.": "iOS Simülatörünü kapatır.",
   "Availability follows this host's OS, architecture, KVM and tools. Labs that cannot run here are left out.": "Kullanılabilirlik bu bilgisayarın işletim sistemine, mimarisine, KVM'ine ve araçlarına bağlıdır. Burada çalışamayan laboratuvarlar gösterilmez.",
   "See what each platform supports": "Her platformun neyi desteklediğini görün",
-  "Labs that do not run on this computer:": "Bu bilgisayarda çalışmayan laboratuvarlar:"
+  "Labs that do not run on this computer:": "Bu bilgisayarda çalışmayan laboratuvarlar:",
+  "Start, stop and the other actions appear once the missing dependencies are installed.": "Başlat, durdur ve diğer işlemler, eksik bağımlılıklar yüklendikten sonra görünür."
 }

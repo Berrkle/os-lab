@@ -1908,5 +1908,6 @@
   "Shut the iOS Simulator down.": "Fährt den iOS-Simulator herunter.",
   "Availability follows this host's OS, architecture, KVM and tools. Labs that cannot run here are left out.": "Die Verfügbarkeit hängt von Betriebssystem, Architektur, KVM und Tools dieses Hosts ab. Labs, die hier nicht laufen können, werden ausgeblendet.",
   "See what each platform supports": "Sehen, was jede Plattform unterstützt",
-  "Labs that do not run on this computer:": "Labs, die auf diesem Computer nicht laufen:"
+  "Labs that do not run on this computer:": "Labs, die auf diesem Computer nicht laufen:",
+  "Start, stop and the other actions appear once the missing dependencies are installed.": "Start, Stopp und die übrigen Aktionen erscheinen, sobald die fehlenden Abhängigkeiten installiert sind."
 }

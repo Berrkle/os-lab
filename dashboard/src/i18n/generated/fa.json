@@ -1908,5 +1908,6 @@
   "Shut the iOS Simulator down.": "شبیه‌ساز iOS را خاموش می‌کند.",
   "Availability follows this host's OS, architecture, KVM and tools. Labs that cannot run here are left out.": "در دسترس بودن به سیستم‌عامل، معماری، KVM و ابزارهای این میزبان بستگی دارد. آزمایشگاه‌هایی که اینجا اجرا نمی‌شوند پنهان‌اند.",
   "See what each platform supports": "ببینید هر پلتفرم چه چیزی را پشتیبانی می‌کند",
-  "Labs that do not run on this computer:": "آزمایشگاه‌هایی که روی این رایانه اجرا نمی‌شوند:"
+  "Labs that do not run on this computer:": "آزمایشگاه‌هایی که روی این رایانه اجرا نمی‌شوند:",
+  "Start, stop and the other actions appear once the missing dependencies are installed.": "شروع، توقف و سایر عملیات پس از نصب وابستگی‌های گم‌شده نمایش داده می‌شوند."
 }

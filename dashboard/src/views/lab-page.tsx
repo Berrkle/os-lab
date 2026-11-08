@@ -323,13 +323,13 @@ function Monitor({ lab }: { lab: LabId }) {
   );
 }
 
-function Configuration({ lab, onProfile }: { lab: LabId; onProfile: (profile: string) => void }) {
+function Configuration({ lab, ready, onProfile }: { lab: LabId; ready: boolean; onProfile: (profile: string) => void }) {
   const { data, error } = usePoll(() => api.config(lab), 0, [lab]);
   if (error) return <Section title="Configuration"><Status value={{ ok: false, text: error }} /></Section>;
   if (!data) return <Section title="Configuration"><Skeleton rows={2} /></Section>;
   return (
     <>
-      {data.endpoints.length ? (
+      {ready && data.endpoints.length ? (
         <Section icon={<PlayIcon size={16} />} title="Endpoints" description="Addresses from the lab's configuration; they answer once the lab is running.">
           <EndpointList items={data.endpoints} />
         </Section>
@@ -519,6 +519,11 @@ export default function LabPage({ lab: labId }: { lab: LabId }) {
 
                     <Section icon={<PlayIcon size={16} />} title="Actions" description="Each action is previewed before it runs.">
                       <div className="flex flex-col gap-4">
+                        {lab.state === "needs-setup" ? (
+                          <p className="text-xs text-(--iux-muted-foreground)">
+                            Start, stop and the other actions appear once the missing dependencies are installed.
+                          </p>
+                        ) : null}
                         {lab.provider === "wsl2" ? (
                           <Field label="WSL2 distribution">
                             <select className="iux-input" value={distro} onChange={(e) => setDistro(e.target.value)}>
@@ -599,8 +604,8 @@ export default function LabPage({ lab: labId }: { lab: LabId }) {
                     <JobPanel jobs={jobs} selected={selectedJob} onSelect={setSelectedJob} />
                   </section>
 
-                  <Monitor lab={labId} />
-                  <Configuration lab={labId} onProfile={(p) => void preview("profile", { profile: p })} />
+                  {lab.state === "ready" ? <Monitor lab={labId} /> : null}
+                  <Configuration lab={labId} ready={lab.state === "ready"} onProfile={(p) => void preview("profile", { profile: p })} />
                 </>
               )}
             </>

@@ -138,6 +138,9 @@ NATIVE_SIMULATOR_INFO = {
     "stop": ("Stop iOS Simulator", "Shut the iOS Simulator down."),
 }
 
+# Offered while a required dependency is missing: install it, install Appium, or run the preflight.
+SETUP_STATE_ACTIONS = {"setup", "appium-install", "doctor"}
+
 PRIVILEGED = {"setup", "service-install", "service-uninstall"}
 SECRET_PARTS = ("PASSWORD", "SECRET", "TOKEN", "API_KEY", "PRIVATE_KEY", "CREDENTIAL")
 ANSI = re.compile(r"\x1b\[[0-9;?]*[ -/]*[@-~]")
@@ -407,6 +410,10 @@ def lab_status(lab: str, host: dict) -> dict:
         reasons.append("Missing: " + ", ".join(r["label"] for r in reqs if r["required"] and not r["found"]) + ".")
 
     actions = actions_for(lab, provider) if state != "unavailable" else []
+    if state == "needs-setup":
+        # Something this lab requires is missing: only the ways to fix or diagnose that are offered.
+        # Start, stop, resize, logs and the rest come back once the requirements are met.
+        actions = [x for x in actions if x["id"] in SETUP_STATE_ACTIONS]
     if provider == "native-macos":
         # Installed Appium: offer start/stop, not install. Not installed: offer install, not start/stop.
         drop = {"appium-install"} if tools.get("appium") else {"appium-start", "appium-stop"}

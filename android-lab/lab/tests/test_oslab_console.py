@@ -361,3 +361,24 @@ def test_host_report_leaves_out_tools_and_providers_from_other_platforms(monkeyp
     assert not win & {"xcrun", "brew", "apt-get", "pkexec", "sudo"}
     linux = {t for t, _ in oslab.tools_for_host("linux")}
     assert {"apt-get", "pkexec", "sudo"} <= linux and not linux & {"xcrun", "brew", "wsl"}
+
+
+def test_a_lab_with_missing_requirements_offers_only_ways_to_fix_or_diagnose_it():
+    blocked = make_host(os_name="macos", kvm=False, runtime=None, tools=("xcrun", "brew", "adb"))
+    status = oslab.lab_status("android", blocked)
+    assert status["state"] == "needs-setup"
+    assert {a["id"] for a in status["actions"]} <= oslab.SETUP_STATE_ACTIONS
+    for hidden in ("start", "stop", "restart", "resize", "logs", "urls", "monitor", "status"):
+        assert hidden not in {a["id"] for a in status["actions"]}
+        with pytest.raises(oslab.PlanError):
+            oslab.plan(REPO_ROOT, {"lab": "android", "action": hidden, **({"profile": "lightweight"} if hidden in ("start", "restart") else {}), **({"cpus": "2"} if hidden == "resize" else {})}, blocked)
+    # Linux without a container engine: same rule for the VM labs
+    linux = oslab.lab_status("windows", make_host(runtime=None))
+    assert linux["state"] == "needs-setup" and {a["id"] for a in linux["actions"]} <= oslab.SETUP_STATE_ACTIONS
+    # Once the requirements are met the full set is back
+    ready = oslab.lab_status("windows", make_host())
+    assert ready["state"] == "ready" and {"start", "stop", "resize", "logs"} <= {a["id"] for a in ready["actions"]}
+    # Native macOS without Xcode: no simulator start/stop until it is installed
+    mac = oslab.lab_status("ios", make_host(os_name="macos", kvm=False, tools=("xcrun", "brew"),
+                                            xcode={"installed": False, "iosRuntime": False, "iosDevice": False}))
+    assert mac["state"] == "needs-setup" and not {"start", "stop"} & {a["id"] for a in mac["actions"]}
