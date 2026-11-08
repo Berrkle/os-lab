@@ -90,3 +90,18 @@ for (const os of ["macos", "windows", "linux"] as const) {
     await expect(page.getByRole("link", { name: /setup guide/i })).toBeVisible();
   });
 }
+
+for (const [os, hidden, shown] of [
+  ["macos", ["windows", "linux"], ["macos", "ios", "android"]],
+  ["windows", ["macos"], ["windows", "linux", "android"]],
+  ["linux", ["macos"], ["linux", "windows", "android"]]
+] as const) {
+  test(`${os} host leaves out labs it cannot run`, async ({ page }) => {
+    await mockApi(page, os);
+    await page.goto("/");
+    for (const id of shown) await expect(page.locator(`a[href$="/labs/${id}/"]`).first()).toBeVisible();
+    for (const id of hidden) await expect(page.locator(`a[href$="/labs/${id}/"]`)).toHaveCount(0);
+    await expect(page.getByText("Labs that do not run on this computer:")).toBeVisible();
+    await expect(page.getByRole("link", { name: "See what each platform supports" })).toBeVisible();
+  });
+}

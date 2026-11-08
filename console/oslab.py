@@ -96,6 +96,18 @@ TOOLS = [
     ("sudo", "sudo"),
 ]
 
+# Tools that only make sense on some hosts; everything else is reported everywhere.
+TOOL_HOSTS = {
+    "xcrun": {"macos"}, "brew": {"macos"},
+    "wsl": {"windows"},
+    "apt-get": {"linux"}, "pkexec": {"linux"}, "sudo": {"linux", "macos"},
+}
+
+
+def tools_for_host(os_name: str) -> list[tuple[str, str]]:
+    return [(t, label) for t, label in TOOLS if os_name in TOOL_HOSTS.get(t, {os_name})]
+
+
 LABCTL_ACTIONS = ["status", "doctor", "urls", "logs", "monitor", "start", "stop", "restart",
                   "profile", "resize", "setup", "backup", "service-install", "service-uninstall"]
 MAC_ACTIONS = ["status", "doctor", "setup", "start", "stop", "appium-install", "appium-start", "appium-stop"]
@@ -284,8 +296,8 @@ def host_info(root: str) -> dict:
         "xcode": xcode_status() if os_name == "macos" else None,
         "python": platform.python_version(),
         "root": root,
-        "tools": [{"id": t, "label": label, "found": bool(_which(t)), "path": _which(t)} for t, label in TOOLS],
-        "providers": provider_report(os_name, arch),
+        "tools": [{"id": t, "label": label, "found": bool(_which(t)), "path": _which(t)} for t, label in tools_for_host(os_name)],
+        "providers": [p for p in provider_report(os_name, arch) if p["candidate"]],
     }
 
 

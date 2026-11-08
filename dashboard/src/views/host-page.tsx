@@ -16,6 +16,7 @@ import { TopBar } from "../shell/top-bar";
 import { MinimalistHero } from "../apk-lab/components";
 import { Badge, Empty, Section, Skeleton } from "../components/ui";
 import { ContentPanel } from "./content-panel";
+import { localeFromPath, localePath } from "../i18n/paths";
 import { formatBytes, hostStore, type HostInfo, type LabStatus } from "../lib/api";
 
 const PROVIDER_LABEL: Record<string, string> = {
@@ -132,6 +133,9 @@ export default function HostPage() {
     stateOrder[a.lab.state] - stateOrder[b.lab.state] ||
     Number(b.lab.id === hostLab) - Number(a.lab.id === hostLab) || a.index - b.index
   );
+  // Labs this computer cannot run are not cards: one line says where they run instead.
+  const runnableLabs = orderedLabs.filter(({ lab }) => lab.state !== "unavailable");
+  const elsewhereLabs = orderedLabs.filter(({ lab }) => lab.state === "unavailable").map(({ lab }) => lab);
   const setupLab = orderedLabs.find(({ lab }) => lab.state === "needs-setup" && lab.actions.some((a) => a.id === "setup"))?.lab;
   const primaryLab = orderedLabs.find(({ lab }) => lab.state === "ready")?.lab;
   const iosSimulatorReady = !!(host?.xcode?.installed && host.xcode.iosRuntime && host.xcode.iosDevice);
@@ -155,7 +159,7 @@ export default function HostPage() {
               <MinimalistHero
                 badgeText={`${host.os} · ${host.arch}`}
                 headline={host.osPretty}
-                description={`${ready} of ${labs.length} labs can run on ${host.hostname || "this computer"} right now. Labs that need setup list what is missing, and Install dependencies previews exactly what will change before anything runs.`}
+                description={`${ready} of ${runnableLabs.length} labs can run on ${host.hostname || "this computer"} right now. Labs that need setup list what is missing, and Install dependencies previews exactly what will change before anything runs.`}
                 primaryCtaText={setupLab ? `Set up ${setupLab.label}` : primaryLab ? `Open ${primaryLab.label}` : "View lab requirements"}
                 primaryCtaHref={setupLab ? `${labHref(setupLab.id)}#action=setup` : primaryLab ? labHref(primaryLab.id) : "#labs"}
                 secondaryCtaText="View jobs"
@@ -204,7 +208,7 @@ export default function HostPage() {
                   <div>
                     <h2 className="text-base font-semibold">Labs on this computer</h2>
                     <p className="text-xs text-(--iux-muted-foreground)">
-                      Availability follows this host's OS, architecture, KVM and tools. Unavailable labs explain where they run instead.
+                      Availability follows this host's OS, architecture, KVM and tools. Labs that cannot run here are left out.
                     </p>
                   </div>
                   <button type="button" className="iux-btn" data-variant="outline" onClick={() => void refresh()}>
@@ -212,10 +216,19 @@ export default function HostPage() {
                   </button>
                 </div>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {orderedLabs.map(({ lab }) => (
+                  {runnableLabs.map(({ lab }) => (
                     <LabCard key={lab.id} lab={lab} />
                   ))}
                 </div>
+                {elsewhereLabs.length > 0 ? (
+                  <p className="text-xs text-(--iux-muted-foreground)">
+                    Labs that do not run on this computer: {elsewhereLabs.map((lab) => lab.label).join(", ")}.{" "}
+                    <a className="underline" href={localePath("/health/", typeof window === "undefined" ? "en" : localeFromPath(window.location.pathname))}>
+                      See what each platform supports
+                    </a>
+                    .
+                  </p>
+                ) : null}
               </section>
 
               <Section icon={<PackageIcon size={16} />} title="Host tools" description={`Found on PATH for ${host.root}.`}>

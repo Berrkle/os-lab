@@ -1905,5 +1905,8 @@
   "Start iOS Simulator": "تشغيل محاكي iOS",
   "Boot the configured iOS Simulator device on this Mac.": "يشغّل جهاز محاكي iOS المُعدّ على هذا الـ Mac.",
   "Stop iOS Simulator": "إيقاف محاكي iOS",
-  "Shut the iOS Simulator down.": "يطفئ محاكي iOS."
+  "Shut the iOS Simulator down.": "يطفئ محاكي iOS.",
+  "Availability follows this host's OS, architecture, KVM and tools. Labs that cannot run here are left out.": "يعتمد التوفر على نظام التشغيل والمعمارية وKVM وأدوات هذا الجهاز. المختبرات التي لا تعمل هنا مخفية.",
+  "See what each platform supports": "اطّلع على ما تدعمه كل منصة",
+  "Labs that do not run on this computer:": "المختبرات التي لا تعمل على هذا الحاسوب:"
 }
