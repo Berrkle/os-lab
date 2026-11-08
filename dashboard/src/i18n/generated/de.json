@@ -1898,5 +1898,8 @@
   "Docker or Podman is installed. Start its engine (or Colima/Podman machine), then check docker compose version or podman compose version and Re-check.": "Docker oder Podman ist installiert. Starten Sie die Engine (oder die Colima-/Podman-Maschine), prüfen Sie dann docker compose version oder podman compose version und wählen Sie Erneut prüfen.",
   "Install a container engine, start it, and check its Compose command. The Firewall Lab and native iOS Simulator do not need containers.": "Installieren und starten Sie eine Container-Engine und prüfen Sie den Compose-Befehl. Firewall Lab und der native iOS Simulator benötigen keine Container.",
   "setup guide": "Einrichtungsanleitung",
-  "Could not load platform capabilities:": "Plattformfunktionen konnten nicht geladen werden:"
+  "Could not load platform capabilities:": "Plattformfunktionen konnten nicht geladen werden:",
+  "Install Appium": "Appium installieren",
+  "Install Node (Homebrew if needed), Appium and the XCUITest driver for this user only. No administrator rights.": "Installiert Node (bei Bedarf über Homebrew), Appium und den XCUITest-Treiber nur für diesen Benutzer. Keine Administratorrechte nötig.",
+  "Install Appium (no administrator rights)": "Appium installieren (keine Administratorrechte nötig)"
 }

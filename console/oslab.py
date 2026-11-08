@@ -98,7 +98,7 @@ TOOLS = [
 
 LABCTL_ACTIONS = ["status", "doctor", "urls", "logs", "monitor", "start", "stop", "restart",
                   "profile", "resize", "setup", "backup", "service-install", "service-uninstall"]
-MAC_ACTIONS = ["status", "doctor", "setup", "start", "stop", "appium-start", "appium-stop"]
+MAC_ACTIONS = ["status", "doctor", "setup", "start", "stop", "appium-install", "appium-start", "appium-stop"]
 
 ACTION_INFO = {
     "status": ("Status", "One-shot state, endpoints and resource report."),
@@ -115,6 +115,7 @@ ACTION_INFO = {
     "backup": ("Backup", "Write a guest backup archive into the lab's backups/ folder."),
     "service-install": ("Install boot service", "Start this lab automatically at boot (systemd)."),
     "service-uninstall": ("Remove boot service", "Remove the systemd boot unit."),
+    "appium-install": ("Install Appium", "Install Node (Homebrew if needed), Appium and the XCUITest driver for this user only. No administrator rights."),
     "appium-start": ("Start Appium", "Start the Appium server with XCUITest."),
     "appium-stop": ("Stop Appium", "Stop the Appium server."),
 }
@@ -147,8 +148,16 @@ def host_arch() -> str:
     return {"amd64": "x86_64", "x64": "x86_64", "arm64": "aarch64"}.get(m, m)
 
 
+def _managed_appium() -> str | None:
+    """Appium installed by ios-lab/mac/appium.sh install (user folder, no global npm)."""
+    path = os.path.join(os.environ.get("OSLAB_APPIUM_HOME") or os.path.expanduser("~/.oslab/appium"),
+                        "node_modules", ".bin", "appium")
+    return path if os.path.isfile(path) and os.access(path, os.X_OK) else None
+
+
 def _which(name: str) -> str | None:
-    return shutil.which(name)
+    found = shutil.which(name)
+    return found or (_managed_appium() if name == "appium" else None)
 
 
 def _read(path: str) -> str:
@@ -346,7 +355,7 @@ def lab_status(lab: str, host: dict) -> dict:
             _req("ios-device", "Available iOS Simulator device", xcode.get("iosDevice"), hint="Add a simulator in Xcode"),
             _req("brew", "Homebrew", tools.get("brew"), required=False, hint="https://brew.sh (needed for automated Appium setup)"),
             _req("node", "Node.js", tools.get("node"), required=False, hint="brew install node"),
-            _req("appium", "Appium (XCUITest)", tools.get("appium"), required=False, hint="npm i -g appium"),
+            _req("appium", "Appium (XCUITest)", tools.get("appium"), required=False, hint="Install Appium (no administrator rights)"),
         ]
         if not tools.get("appium"):
             notes.append("Appium automation needs Appium and its XCUITest driver; the simulator can run without them.")
@@ -585,7 +594,7 @@ def plan(root: str, request: dict, host: dict | None = None) -> dict:
         script, extra = {
             "status": ("status-mac.sh", None), "doctor": ("doctor-mac.sh", None),
             "setup": ("setup-mac.sh", "--install"), "start": ("run-simulator.sh", None),
-            "stop": ("stop-simulator.sh", None), "appium-start": ("appium.sh", "start"),
+            "stop": ("stop-simulator.sh", None), "appium-install": ("appium.sh", "install"), "appium-start": ("appium.sh", "start"),
             "appium-stop": ("appium.sh", "stop"),
         }[action]
         path = _scoped(root, "ios-lab", "mac", script)
@@ -593,7 +602,7 @@ def plan(root: str, request: dict, host: dict | None = None) -> dict:
             raise PlanError("Provider script is missing: ios-lab/mac/" + script)
         program, args = "bash", [path] + ([extra] if extra else [])
         privileged = False
-        timeout = 3600 if action == "setup" else 300
+        timeout = 3600 if action == "setup" else 1800 if action == "appium-install" else 300
     else:
         labctl = _scoped(root, "labctl")
         if not os.path.isfile(labctl):

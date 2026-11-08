@@ -298,3 +298,38 @@ def test_monitor_without_runtime():
     host = make_host(runtime=None)
     assert oslab.monitor(REPO_ROOT, "windows", host)["state"] == "no-runtime"
     assert oslab.monitor(REPO_ROOT, "macos", host)["containers"] == []
+
+
+def test_appium_install_is_a_user_level_native_macos_action():
+    host = make_host(os_name="macos", kvm=False, tools=("xcrun", "brew"))
+    for lab in ("ios", "macos"):
+        status = oslab.lab_status(lab, host)
+        action = next(a for a in status["actions"] if a["id"] == "appium-install")
+        assert not action["privileged"]
+        plan = oslab.plan(REPO_ROOT, {"lab": lab, "action": "appium-install"}, host)
+        assert plan["program"] == "bash" and plan["args"][0].endswith("/ios-lab/mac/appium.sh")
+        assert plan["args"][1:] == ["install"] and plan["runnable"] and not plan["privileged"]
+    assert "appium-install" not in {a["id"] for a in oslab.lab_status("android", host)["actions"]}
+
+
+def test_managed_appium_counts_as_installed(tmp_path, monkeypatch):
+    monkeypatch.setenv("OSLAB_APPIUM_HOME", str(tmp_path))
+    monkeypatch.setattr(oslab.shutil, "which", lambda name: None)
+    assert oslab._which("appium") is None
+    binary = tmp_path / "node_modules" / ".bin" / "appium"
+    binary.parent.mkdir(parents=True)
+    binary.write_text("#!/bin/sh\n")
+    binary.chmod(0o755)
+    assert oslab._which("appium") == str(binary)
+
+
+@pytest.mark.skipif(sys.platform != "darwin", reason="appium.sh is macOS only")
+def test_appium_install_stops_clearly_without_node_or_homebrew(tmp_path):
+    import subprocess
+    script = os.path.join(REPO_ROOT, "ios-lab", "mac", "appium.sh")
+    done = subprocess.run(["/bin/bash", script, "install"], capture_output=True, text=True, timeout=60,
+                          env={"PATH": "/usr/bin:/bin", "HOME": str(tmp_path), "OSLAB_APPIUM_HOME": str(tmp_path / "a")})
+    assert done.returncode != 0
+    assert "##PROGRESS 1/5 Checking Node.js" in done.stdout
+    assert "Node.js 20.19+" in done.stderr and "Homebrew" in done.stderr
+    assert not (tmp_path / "a" / "node_modules").exists()
