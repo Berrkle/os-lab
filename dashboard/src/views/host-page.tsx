@@ -92,8 +92,8 @@ function LabCard({ lab }: { lab: LabStatus }) {
           {lab.state === "needs-setup" ? "View requirements" : "Open"}
         </a>
         {(missing.length > 0 || appiumMissing) && setupAvailable ? (
-          <a className="iux-btn bg-[#f36c21] text-white hover:bg-[#fa7b32]" href={`${href}#action=setup`}>
-            {appiumMissing && missing.length === 0 ? "Set up Appium" : "Install dependencies"}
+          <a className="iux-btn bg-[#f36c21] text-white hover:bg-[#fa7b32]" href={`${href}#action=${appiumMissing && missing.length === 0 ? "appium-install" : "setup"}`}>
+            {appiumMissing && missing.length === 0 ? "Install Appium" : "Install dependencies"}
           </a>
         ) : null}
       </div>
