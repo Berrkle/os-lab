@@ -346,3 +346,18 @@ def test_appium_install_stops_clearly_without_node_or_homebrew(tmp_path):
     assert "##PROGRESS 1/5 Checking Node.js" in done.stdout
     assert "Node.js 20.19+" in done.stderr and "Homebrew" in done.stderr
     assert not (tmp_path / "a" / "node_modules").exists()
+
+
+def test_host_report_leaves_out_tools_and_providers_from_other_platforms(monkeypatch):
+    monkeypatch.setattr(oslab, "host_os", lambda: "macos")
+    monkeypatch.setattr(oslab, "host_arch", lambda: "arm64")
+    mac = oslab.host_info(REPO_ROOT)
+    ids = {t["id"] for t in mac["tools"]}
+    assert {"xcrun", "brew"} <= ids and not ids & {"wsl", "apt-get", "pkexec"}
+    assert all(p["candidate"] for p in mac["providers"])
+    assert {p["id"] for p in mac["providers"]} == {"android-container", "native-macos"}
+    assert oslab.tools_for_host("windows") and {t for t, _ in oslab.tools_for_host("windows")} >= {"wsl", "docker", "bash"}
+    win = {t for t, _ in oslab.tools_for_host("windows")}
+    assert not win & {"xcrun", "brew", "apt-get", "pkexec", "sudo"}
+    linux = {t for t, _ in oslab.tools_for_host("linux")}
+    assert {"apt-get", "pkexec", "sudo"} <= linux and not linux & {"xcrun", "brew", "wsl"}

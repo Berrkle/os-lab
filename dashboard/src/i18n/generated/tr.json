@@ -1905,5 +1905,8 @@
   "Start iOS Simulator": "iOS Simülatörünü başlat",
   "Boot the configured iOS Simulator device on this Mac.": "Yapılandırılmış iOS Simülatör cihazını bu Mac'te başlatır.",
   "Stop iOS Simulator": "iOS Simülatörünü durdur",
-  "Shut the iOS Simulator down.": "iOS Simülatörünü kapatır."
+  "Shut the iOS Simulator down.": "iOS Simülatörünü kapatır.",
+  "Availability follows this host's OS, architecture, KVM and tools. Labs that cannot run here are left out.": "Kullanılabilirlik bu bilgisayarın işletim sistemine, mimarisine, KVM'ine ve araçlarına bağlıdır. Burada çalışamayan laboratuvarlar gösterilmez.",
+  "See what each platform supports": "Her platformun neyi desteklediğini görün",
+  "Labs that do not run on this computer:": "Bu bilgisayarda çalışmayan laboratuvarlar:"
 }

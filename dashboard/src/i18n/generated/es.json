@@ -1905,5 +1905,8 @@
   "Start iOS Simulator": "Iniciar simulador de iOS",
   "Boot the configured iOS Simulator device on this Mac.": "Arranca el dispositivo del simulador de iOS configurado en este Mac.",
   "Stop iOS Simulator": "Detener simulador de iOS",
-  "Shut the iOS Simulator down.": "Apaga el simulador de iOS."
+  "Shut the iOS Simulator down.": "Apaga el simulador de iOS.",
+  "Availability follows this host's OS, architecture, KVM and tools. Labs that cannot run here are left out.": "La disponibilidad depende del sistema, la arquitectura, KVM y las herramientas de este equipo. Los laboratorios que no pueden ejecutarse aquí se ocultan.",
+  "See what each platform supports": "Ver qué admite cada plataforma",
+  "Labs that do not run on this computer:": "Laboratorios que no se ejecutan en este equipo:"
 }

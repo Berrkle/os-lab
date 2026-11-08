@@ -1905,5 +1905,8 @@
   "Start iOS Simulator": "راه‌اندازی شبیه‌ساز iOS",
   "Boot the configured iOS Simulator device on this Mac.": "دستگاه شبیه‌ساز iOS پیکربندی‌شده را روی این مک روشن می‌کند.",
   "Stop iOS Simulator": "توقف شبیه‌ساز iOS",
-  "Shut the iOS Simulator down.": "شبیه‌ساز iOS را خاموش می‌کند."
+  "Shut the iOS Simulator down.": "شبیه‌ساز iOS را خاموش می‌کند.",
+  "Availability follows this host's OS, architecture, KVM and tools. Labs that cannot run here are left out.": "در دسترس بودن به سیستم‌عامل، معماری، KVM و ابزارهای این میزبان بستگی دارد. آزمایشگاه‌هایی که اینجا اجرا نمی‌شوند پنهان‌اند.",
+  "See what each platform supports": "ببینید هر پلتفرم چه چیزی را پشتیبانی می‌کند",
+  "Labs that do not run on this computer:": "آزمایشگاه‌هایی که روی این رایانه اجرا نمی‌شوند:"
 }

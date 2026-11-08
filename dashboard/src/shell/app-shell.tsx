@@ -85,7 +85,13 @@ function RunningDot() {
   return <span className="ml-auto size-2 animate-pulse rounded-full bg-[#00d084]" aria-label="running" />;
 }
 
-function buildGroups(labs: LabStatus[] | undefined, running: Set<string>, androidRunning: boolean, locale: FirewallLocale): SidebarGroup[] {
+/** Labs this computer cannot run are left out of navigation; the page of one you are on stays. */
+function labShown(labs: LabStatus[] | undefined, id: LabId, activeId: string): boolean {
+  const lab = labs?.find((l) => l.id === id);
+  return !lab || lab.state !== "unavailable" || activeId === `lab-${id}`;
+}
+
+function buildGroups(labs: LabStatus[] | undefined, running: Set<string>, androidRunning: boolean, locale: FirewallLocale, activeId: string): SidebarGroup[] {
   const lab = (id: LabId) => labs?.find((l) => l.id === id);
   const labItem = (id: LabId, label: string) => ({
     id: `lab-${id}`,
@@ -124,10 +130,10 @@ function buildGroups(labs: LabStatus[] | undefined, running: Set<string>, androi
             { id: "android-sitemap", label: "Routes & Sitemap" }
           ]
         },
-        labItem("ios", "iOS Lab"),
-        labItem("windows", "Windows Lab"),
-        labItem("macos", "macOS Lab"),
-        labItem("linux", "Linux Lab"),
+        ...(labShown(labs, "ios", activeId) ? [labItem("ios", "iOS Lab")] : []),
+        ...(labShown(labs, "windows", activeId) ? [labItem("windows", "Windows Lab")] : []),
+        ...(labShown(labs, "macos", activeId) ? [labItem("macos", "macOS Lab")] : []),
+        ...(labShown(labs, "linux", activeId) ? [labItem("linux", "Linux Lab")] : []),
         { id: "firewall", label: copy[locale].lab, icon: <FireIcon size={16} /> }
       ]
     },
@@ -272,8 +278,8 @@ export function AppShell({
 
   const running = useMemo(() => new Set((jobs ?? []).filter((j) => j.state === "running").map((j) => j.lab)), [jobs]);
   const groups = useMemo(
-    () => buildGroups(host?.labs, running, Boolean(androidLogs?.running), locale),
-    [host?.labs, running, androidLogs?.running, locale]
+    () => buildGroups(host?.labs, running, Boolean(androidLogs?.running), locale, activeId),
+    [host?.labs, running, androidLogs?.running, locale, activeId]
   );
   const meta = useMemo(buildMeta, []);
   const records = useMemo<SpotlightRecord[]>(
@@ -369,9 +375,9 @@ export function AppShell({
         records={records}
         tips={[
           { scope: "jobs", description: "Search recent jobs", icon: <ListChecksIcon size={16} /> },
-          { scope: "windows", description: "Windows Lab actions", icon: <WindowsLogoIcon size={16} /> },
+          ...(labShown(host?.labs, "windows", activeId) ? [{ scope: "windows", description: "Windows Lab actions", icon: <WindowsLogoIcon size={16} /> }] : []),
           { scope: "android", description: "Android Lab pages and actions", icon: <AndroidLogoIcon size={16} /> },
-          { scope: "linux", description: "Linux Lab actions", icon: <CpuIcon size={16} /> }
+          ...(labShown(host?.labs, "linux", activeId) ? [{ scope: "linux", description: "Linux Lab actions", icon: <CpuIcon size={16} /> }] : [])
         ]}
         onNavigate={(section, record) => {
           if (record && section === "jobs") return go(`${sectionHref("jobs")}#${record.id}`);
