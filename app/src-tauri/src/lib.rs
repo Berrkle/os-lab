@@ -143,8 +143,9 @@ async fn console_start(app: AppHandle, state: State<'_, Console>) -> Result<Star
         .unwrap_or(data_dir(&app)?.join("content"));
     let log = console::log_path(&log_dir(&app)?);
     let data = data_dir(&app)?;
+    let version = app.package_info().version.to_string();
     let console = state.inner().clone();
-    tauri::async_runtime::spawn_blocking(move || console.start(&root, source, &log, &data, &content))
+    tauri::async_runtime::spawn_blocking(move || console.start(&root, source, &log, &data, &content, &version))
         .await
         .map_err(|e| e.to_string())?
 }

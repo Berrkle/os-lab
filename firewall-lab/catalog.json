@@ -1,5 +1,72 @@
 {
   "generatedBy": "firewall-lab/scripts/catalog.py",
+  "contributors": [
+    {
+      "slug": "aegisai-global",
+      "company": "AegisAI & CyberSystems Global",
+      "github": "Winslowe"
+    },
+    {
+      "slug": "anadolunet-holding",
+      "company": "AnadoluNet Technology Holding",
+      "github": "Pireburak"
+    },
+    {
+      "slug": "atlas-holding",
+      "company": "Atlas Holding",
+      "github": "iremysv"
+    },
+    {
+      "slug": "cok-siteli-kurumsal-guvenlik-duvari",
+      "company": "Çok Siteli Kurumsal Güvenlik Duvarı Projesi",
+      "github": "RedRiveRR"
+    },
+    {
+      "slug": "guventek-bilisim",
+      "company": "GüvenTek Bilişim A.Ş.",
+      "github": "GvnTech-cmd"
+    },
+    {
+      "slug": "hayal-as-ag-guvenligi",
+      "company": "Hayal A.Ş. — Ağ Güvenliği Planlaması",
+      "github": "yusufiyilmaz"
+    },
+    {
+      "slug": "k1-fw-cok-lokasyonlu-ag",
+      "company": "K1-FW — Çok Lokasyonlu Kurumsal Ağ ve Güvenlik Duvarı",
+      "github": "frudotz"
+    },
+    {
+      "slug": "kurumsal-ag-planlamasi",
+      "company": "Kurumsal Ağ Güvenliği ve Altyapı Planlaması",
+      "github": "fatmayelizapaydin"
+    },
+    {
+      "slug": "kurumsal-cok-subeli-ngfw",
+      "company": "Kurumsal Çok Şubeli Ağ Mimarisi ve NGFW Tasarımı",
+      "github": "bfurkanyildiz"
+    },
+    {
+      "slug": "mt-technology-group",
+      "company": "MT Technology Group — Multi-Branch Firewall Design",
+      "github": "denizpekova"
+    },
+    {
+      "slug": "multi-branch-nftables-lab",
+      "company": "Multi-Branch nftables + QoS Lab",
+      "github": "apo536098-wq"
+    },
+    {
+      "slug": "siber-guvenlik-sirketi",
+      "company": "Kurumsal Ağ Topolojisi ve Güvenlik Mimarisi",
+      "github": "ufuk888"
+    },
+    {
+      "slug": "sirket-ag-guvenligi-policy-as-code",
+      "company": "Şirket Ağ Güvenliği — Policy-as-Code Çok Şubeli Tasarım",
+      "github": "mahmutcirka"
+    }
+  ],
   "summary": {
     "companies": 15,
     "branches": 62,
