@@ -1909,5 +1909,15 @@
   "Availability follows this host's OS, architecture, KVM and tools. Labs that cannot run here are left out.": "La disponibilità dipende da sistema operativo, architettura, KVM e strumenti di questo host. I lab che non possono girare qui sono nascosti.",
   "See what each platform supports": "Vedi cosa supporta ogni piattaforma",
   "Labs that do not run on this computer:": "Lab che non funzionano su questo computer:",
-  "Start, stop and the other actions appear once the missing dependencies are installed.": "Avvia, arresta e le altre azioni compaiono dopo l'installazione delle dipendenze mancanti."
+  "Start, stop and the other actions appear once the missing dependencies are installed.": "Avvia, arresta e le altre azioni compaiono dopo l'installazione delle dipendenze mancanti.",
+  "App update": "Aggiornamento dell'app",
+  "A newer os-lab desktop app is available from the signed release feed.": "Nel feed delle release firmate è disponibile una versione più recente dell'app desktop os-lab.",
+  "Release notes": "Note di rilascio",
+  "Update available": "Aggiornamento disponibile",
+  "The installer for this computer is downloaded, checked against its SHA-256 file, then opened so the operating system can finish the update.": "Il programma di installazione per questo computer viene scaricato, verificato con il suo file SHA-256 e poi aperto affinché il sistema operativo completi l'aggiornamento.",
+  "Downloading…": "Download in corso…",
+  "Opening installer…": "Apertura del programma di installazione…",
+  "Update again": "Aggiorna di nuovo",
+  "Downloading and verifying the update…": "Download e verifica dell'aggiornamento…",
+  "The new AppImage was saved beside your current one. Replace the running file with it, then start os-lab again.": "Il nuovo AppImage è stato salvato accanto al file corrente. Sostituisci il file in esecuzione con esso, quindi riavvia os-lab."
 }
