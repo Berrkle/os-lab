@@ -1392,6 +1392,78 @@ export const CURATED_TASKS: TodoTask[] = [
     targetPaths: ["linux-lab/scripts/"],
     suggestedBranch: "feat/class-reachability"
   },
+  {
+    id: "OS-37",
+    category: "os",
+    categoryLabel: "Open Source OS",
+    title: "DNS Resolver Inventory & Health Check",
+    priority: "High",
+    effort: "Small",
+    summary:
+      "Reads how the server resolves names — resolvectl status, /etc/resolv.conf, the systemd stub (127.0.0.53), and per-interface DNS — and flags the broken state where an interface has no usable resolver, the exact fault found live on 02.11.",
+    deliverables: [
+      "linux-lab/scripts/dns_health.py: resolvectl/resolv.conf parse → per-interface resolver table as JSON + readable report",
+      "Flags: no nameserver set, stub-only, and DHCP-provided vs manual DNS",
+      "Clear 'why no internet on Wi-Fi but fine on cable' explanation when the pattern matches"
+    ],
+    reference: "Teached 02.11 DNS çözümleme, resolvectl, 127.0.0.53 stub",
+    targetPaths: ["linux-lab/scripts/"],
+    suggestedBranch: "feat/dns-health"
+  },
+  {
+    id: "OS-38",
+    category: "os",
+    categoryLabel: "Open Source OS",
+    title: "Multi-Resolver nslookup/dig Comparator",
+    priority: "High",
+    effort: "Small",
+    summary:
+      "Queries one or more names against several DNS servers (campus, 8.8.8.8 Google, 1.1.1.1 Cloudflare), compares the answers and measures latency over N tries — the exact 02.11 homework, as a repeatable tool instead of by hand.",
+    deliverables: [
+      "linux-lab/scripts/dns_compare.py: query google.com / istinye.edu.tr / ois.istinye.edu.tr against a resolver list",
+      "Per-resolver answer set + min/median/max latency over N tries, written to a report (md/HTML)",
+      "Notes when a resolver returns internal vs external records (split-horizon)"
+    ],
+    reference: "Teached 02.11 nslookup, istinye/8.8.8.8/1.1.1.1 karşılaştırma + hız",
+    targetPaths: ["linux-lab/scripts/"],
+    suggestedBranch: "feat/dns-compare"
+  },
+  {
+    id: "OS-39",
+    category: "os",
+    categoryLabel: "Open Source OS",
+    title: "netplan DNS Configurator (approval-gated)",
+    priority: "Medium",
+    effort: "Small",
+    summary:
+      "Sets a persistent DNS server on an Ubuntu Server by editing /etc/netplan/*.yaml (e.g. 50-cloud-init.yaml), then netplan try/apply and verifies resolution — with the change shown and approved before it is written.",
+    deliverables: [
+      "linux-lab/scripts/netplan_dns.py: show current nameservers, propose a diff, apply on approval, verify with a test query",
+      "Supports a fallback list (e.g. 1.1.1.1 then 8.8.8.8) and static vs DHCP interfaces",
+      "Refuses to apply if it would break the active SSH session's resolution"
+    ],
+    reference: "Teached 02.11 /etc/netplan/*.yaml, sudo nano, kalıcı DNS",
+    targetPaths: ["linux-lab/scripts/"],
+    suggestedBranch: "feat/netplan-dns"
+  },
+  {
+    id: "OS-40",
+    category: "os",
+    categoryLabel: "Open Source OS",
+    title: "Wi-Fi / Interface DNS Troubleshooter",
+    priority: "High",
+    effort: "Small",
+    summary:
+      "Reproduces and fixes the 02.11 live fault: a Wi-Fi profile that rejects DHCP-provided DNS with none set manually, so names resolve on cable but not on Wi-Fi. Diagnoses the interface, explains the cause, and offers the nmcli fix.",
+    deliverables: [
+      "linux-lab/scripts/dns_troubleshoot.py: detect interface (eth/wlan), check ignore-auto-dns, compare cable vs Wi-Fi resolution",
+      "Suggested fix: nmcli connection modify <con> ipv4.ignore-auto-dns no (shown, applied only on approval)",
+      "DNS cache note (flush / Ctrl+Shift+R) and a short AP/router/switch primer in the report"
+    ],
+    reference: "Teached 02.11 ignore-auto-dns, DHCP vs manuel, AP/router/switch",
+    targetPaths: ["linux-lab/scripts/"],
+    suggestedBranch: "feat/dns-troubleshoot"
+  },
 
   // --- Firewall Solutions (BGT207) continued ---
   {
