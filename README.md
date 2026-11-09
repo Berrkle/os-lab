@@ -85,15 +85,13 @@ console with `scripts/capture-dashboard-screenshots.sh`.
 ### Download
 
 Get the newest desktop app from the
-[latest release](https://github.com/keyvanarasteh/os-lab/releases/latest)
-(the current one is [app-v0.2.7](https://github.com/keyvanarasteh/os-lab/releases/tag/app-v0.2.7)):
+[latest release](https://github.com/keyvanarasteh/os-lab/releases/latest):
 
 | Platform | Download | Also available |
 |:---|:---|:---|
 | macOS (Apple Silicon and Intel) | `os-lab_<version>_macos_universal.dmg` | `.app.tar.gz` for in-app updates |
 | Windows x64 | `os-lab_<version>_windows_x64-setup.exe` | `.msi` |
 | Linux amd64 | `os-lab_<version>_linux_amd64.deb` | `.rpm` and `.AppImage` |
-| Linux arm64 | `os-lab_<version>_linux_arm64.deb` | `.rpm` and `.AppImage` |
 
 Every file has a `.sha256` checksum and a detached `.sig` signature. Compare
 the checksum before running it, or verify the signature with
@@ -112,6 +110,19 @@ The [Privacy Notice](docs/legal/PRIVACY.md) explains what stays on your machine
 (os-lab sends no telemetry and disables Docker-Android's analytics by default),
 and the [Third-Party Notices](docs/legal/THIRD_PARTY_NOTICES.md) list component
 licences. The dashboard shows the same documents at `/legal/`.
+
+## Public website
+
+The [GitHub Pages site](https://keyvanarasteh.github.io/os-lab/) has a public
+home page with download links resolved from GitHub's latest release API, the
+one-line setup commands, and the Firewall Lab. Console-backed routes such as
+host status, jobs, and runnable labs are excluded from the Pages artifact. They
+remain available in the locally served dashboard.
+
+Run `scripts/deploy-page.sh --dry-run` to stage the public build in
+`dashboard/build-pages/`, then `scripts/deploy-page.sh` to publish it after
+merging. The Firewall Lab contributor list requests the current catalog from
+`master` when opened, with the bundled list available offline.
 
 ## Management CLI
 
