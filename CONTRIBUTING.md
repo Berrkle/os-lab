@@ -134,7 +134,7 @@ Course midterm reservations add a `course` (and an option number in `note`) — 
 | **OS-07** | **Lab Environment Selector: WSL vs VirtualBox** | Detects Windows constraints, recommends WSL2 or VirtualBox and runs the matching bootstrap (constrained lab PCs). (Teached 21.09) | **Medium** · Small |
 | **OS-08** | **Distro Comparison & Selector (Ubuntu/Debian/Kali/Alpine)** | Structured distro dataset + recommender and comparison-table generator. (Teached 28.09) | **Medium** · Tiny–Small |
 | **OS-09** | **Open-Source License Classifier (GPL/MIT/Apache)** | License/SPDX scan classifying copyleft vs permissive, flagging mixed/missing licenses. (Teached 28.09) | **Medium** · Small |
-| **OS-10** | **Linux Filesystem Hierarchy Explorer & Teaching Map** | Annotated walk of `/`, `/home`, `/etc`, `/opt`, `/root` with hidden-file explanation. (Teached 28.09) | **Medium** · Tiny–Small |
+| **OS-10** | **Linux Filesystem Hierarchy Explorer & Teaching Map** | Annotated walk of `/`, `/home`, `/etc`, `/opt`, `/root` with hidden-file explanation. (Teached 28.09) | **Medium** · Tiny–Small | Ahmet  Eyüp Keleş aahmetkeles
 | **OS-11** | **Guided Shell-Basics Practice & Auto-Grader** | Validates the week-3 `ali/eda/aleyna` directory/file exercise with per-path feedback. (Teached 05.10) | **High** · Small |
 | **OS-12** | **Directory-Structure Scaffolder (mkdir -p Templates)** | Generates nested trees from a template spec with a dry-run preview. (Teached 05.10) | **Medium** · Tiny–Small |
 | **OS-13** | **apt update/upgrade Safe Wrapper (Order + Dry-Run)** | Enforces update-before-upgrade order with dry-run and a guard when update fails. (Teached 05.10/19.10) | **High** · Small |
