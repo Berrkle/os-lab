@@ -12,7 +12,12 @@ import {
   CopyIcon,
   CheckIcon,
   TagIcon,
-  CaretRightIcon
+  CaretRightIcon,
+  LockKeyIcon,
+  LockKeyOpenIcon,
+  SealCheckIcon,
+  UserCircleIcon,
+  ArrowSquareOutIcon
 } from "@phosphor-icons/react";
 import { AppShell } from "../shell/app-shell";
 import { TopBar } from "../shell/top-bar";
@@ -1939,11 +1944,69 @@ export const CURATED_TASKS: TodoTask[] = [
   }
 ];
 
+/**
+ * Task reservations. Each claimed task is one file at repo-root
+ * `reservations/<TASK-ID>.json` (see reservations/README.md). A contributor
+ * reserves a task by opening a PR that adds their file; this reads them all at
+ * build time and the cards show Available / Reserved / PR open / Done.
+ */
+export type ReservationStatus = "reserved" | "in-progress" | "pr-open" | "done" | "released";
+
+export interface Reservation {
+  id: string;
+  name?: string;
+  github?: string;
+  course?: string;
+  note?: string;
+  status: ReservationStatus;
+  pr?: string;
+  date?: string;
+}
+
+const RESERVATION_FILES = import.meta.glob<{ default: Reservation }>(
+  "../../../reservations/*.json",
+  { eager: true }
+);
+
+const TASK_IDS = new Set(CURATED_TASKS.map((t) => t.id));
+
+/** id -> active reservation (released/unknown ids dropped; latest date wins on duplicates). */
+export const RESERVATIONS: Record<string, Reservation> = (() => {
+  const map: Record<string, Reservation> = {};
+  for (const path in RESERVATION_FILES) {
+    const base = path.split("/").pop() ?? "";
+    if (base.startsWith("_")) continue; // _schema.json and other underscore files
+    const r = RESERVATION_FILES[path]?.default;
+    if (!r || typeof r.id !== "string" || !TASK_IDS.has(r.id)) continue;
+    if (r.status === "released") continue;
+    const prev = map[r.id];
+    if (!prev || (r.date ?? "") >= (prev.date ?? "")) map[r.id] = r;
+  }
+  return map;
+})();
+
+/** GitHub "new file" editor, pre-filled, so a reserve click becomes a PR (auto-forks for non-collaborators). */
+function reserveViaPrUrl(id: string): string {
+  const today = new Date().toISOString().slice(0, 10);
+  const template = `${JSON.stringify(
+    { id, name: "", github: "", status: "reserved", pr: "", date: today },
+    null,
+    2
+  )}\n`;
+  return (
+    "https://github.com/keyvanarasteh/os-lab/new/master" +
+    `?filename=reservations/${id}.json` +
+    `&value=${encodeURIComponent(template)}` +
+    `&message=${encodeURIComponent(`reserve: ${id}`)}`
+  );
+}
+
 export default function ContributePage({ html }: { html: string }) {
   const [activeTab, setActiveTab] = useState<"guide" | "todos">("guide");
   const [selectedCategory, setSelectedCategory] = useState<TaskCategory>("all");
   const [selectedPriority, setSelectedPriority] = useState<TaskPriority>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState<"all" | "available" | "reserved" | "done">("all");
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Sync hash on initial mount and when hash changes
@@ -1977,8 +2040,15 @@ export default function ContributePage({ html }: { html: string }) {
       if (selectedPriority !== "all" && task.priority.toLowerCase() !== selectedPriority) {
         return false;
       }
+      if (selectedStatus !== "all") {
+        const res = RESERVATIONS[task.id];
+        if (selectedStatus === "available" && res) return false;
+        if (selectedStatus === "reserved" && !(res && res.status !== "done")) return false;
+        if (selectedStatus === "done" && res?.status !== "done") return false;
+      }
       if (!searchQuery.trim()) return true;
       const q = searchQuery.toLowerCase();
+      const res = RESERVATIONS[task.id];
       return (
         task.id.toLowerCase().includes(q) ||
         task.title.toLowerCase().includes(q) ||
@@ -1987,10 +2057,13 @@ export default function ContributePage({ html }: { html: string }) {
         task.targetPaths.some((p) => p.toLowerCase().includes(q)) ||
         task.deliverables.some((d) => d.toLowerCase().includes(q)) ||
         (task.prerequisite?.toLowerCase().includes(q) ?? false) ||
-        ("held".includes(q) && !!task.prerequisite)
+        ("held".includes(q) && !!task.prerequisite) ||
+        (res?.github?.toLowerCase().includes(q) ?? false) ||
+        (res?.name?.toLowerCase().includes(q) ?? false) ||
+        (("reserved".includes(q) || "taken".includes(q)) && !!res)
       );
     });
-  }, [selectedCategory, selectedPriority, searchQuery]);
+  }, [selectedCategory, selectedPriority, selectedStatus, searchQuery]);
 
   const categoryCounts = useMemo(() => {
     return {
@@ -2002,6 +2075,13 @@ export default function ContributePage({ html }: { html: string }) {
   }, []);
 
   const heldCount = useMemo(() => CURATED_TASKS.filter((t) => t.prerequisite).length, []);
+
+  const reservationCounts = useMemo(() => {
+    const values = Object.values(RESERVATIONS);
+    const done = values.filter((r) => r.status === "done").length;
+    const reserved = values.length - done;
+    return { reserved, done, available: CURATED_TASKS.length - values.length };
+  }, []);
 
   const copyToClipboard = (text: string, id: string) => {
     void navigator.clipboard?.writeText(text).catch(() => {});
@@ -2084,13 +2164,34 @@ export default function ContributePage({ html }: { html: string }) {
                       <strong className="text-(--iux-foreground)">Open Source Operating Systems</strong>, and{" "}
                       <strong className="text-(--iux-foreground)">Firewall Solutions</strong>. These items reflect
                       architectural gaps (local MCP hosting, capability discovery, single-instance execution, release optimization)
-                      and live security instrumentation priorities.
+                      and live security instrumentation priorities. <strong className="text-(--iux-foreground)">Reserve</strong> a
+                      task before you start so two people don&apos;t build the same thing — a reservation is just a PR adding
+                      one file under{" "}
+                      <a className="underline" href={`${REPO_BLOB}/reservations/README.md`} target="_blank" rel="noreferrer">
+                        reservations/
+                      </a>.
                     </p>
                   </div>
-                  <div className="flex shrink-0 items-center gap-2">
+                  <div className="flex shrink-0 flex-wrap items-center gap-2">
                     <span className="rounded-md border border-(--iux-border) bg-(--iux-muted)/50 px-2.5 py-1 text-xs font-medium text-(--iux-foreground)">
                       {CURATED_TASKS.length} tasks
                     </span>
+                    <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                      <LockKeyOpenIcon size={12} weight="bold" />
+                      {reservationCounts.available} open
+                    </span>
+                    {reservationCounts.reserved > 0 ? (
+                      <span className="inline-flex items-center gap-1 rounded-md border border-[#f36c21]/30 bg-[#f36c21]/10 px-2.5 py-1 text-xs font-medium text-[#f36c21]">
+                        <LockKeyIcon size={12} weight="bold" />
+                        {reservationCounts.reserved} reserved
+                      </span>
+                    ) : null}
+                    {reservationCounts.done > 0 ? (
+                      <span className="inline-flex items-center gap-1 rounded-md border border-blue-500/30 bg-blue-500/10 px-2.5 py-1 text-xs font-medium text-blue-600 dark:text-blue-400">
+                        <SealCheckIcon size={12} weight="bold" />
+                        {reservationCounts.done} done
+                      </span>
+                    ) : null}
                     {heldCount > 0 ? (
                       <span className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-600 dark:text-amber-400">
                         {heldCount} held
@@ -2186,6 +2287,18 @@ export default function ContributePage({ html }: { html: string }) {
                     <option value="medium">Medium Priority</option>
                   </select>
 
+                  <select
+                    value={selectedStatus}
+                    onChange={(e) => setSelectedStatus(e.target.value as typeof selectedStatus)}
+                    className="rounded-md border border-(--iux-border) bg-(--iux-background) px-2.5 py-1.5 text-xs text-(--iux-foreground) focus:outline-none"
+                    aria-label="Filter by reservation status"
+                  >
+                    <option value="all">Any status</option>
+                    <option value="available">Available</option>
+                    <option value="reserved">Reserved</option>
+                    <option value="done">Done</option>
+                  </select>
+
                   <div className="relative min-w-[180px] flex-1 sm:w-56">
                     <MagnifyingGlassIcon
                       size={14}
@@ -2211,11 +2324,16 @@ export default function ContributePage({ html }: { html: string }) {
                 <div className="space-y-4">
                   {filteredTasks.map((task) => {
                     const isCopied = copiedId === task.id;
+                    const res = RESERVATIONS[task.id];
+                    const isDone = res?.status === "done";
+                    const who = res?.github ? `@${res.github}` : res?.name || "a contributor";
                     return (
                       <div
                         key={task.id}
                         id={task.id.toLowerCase()}
-                        className="rounded-xl border border-(--iux-border) bg-(--iux-card) p-5 transition-shadow hover:shadow-sm space-y-4"
+                        className={`rounded-xl border bg-(--iux-card) p-5 transition-shadow hover:shadow-sm space-y-4 ${
+                          res ? "border-(--iux-border)/70" : "border-(--iux-border)"
+                        }`}
                       >
                         {/* Task Top Meta */}
                         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-(--iux-border) pb-3">
@@ -2254,9 +2372,69 @@ export default function ContributePage({ html }: { html: string }) {
                                 Held · needs {task.prerequisite}
                               </span>
                             ) : null}
+                            {res ? (
+                              <span
+                                className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
+                                  isDone
+                                    ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"
+                                    : "bg-[#f36c21]/10 text-[#f36c21] border-[#f36c21]/20"
+                                }`}
+                                title={
+                                  isDone
+                                    ? `Done by ${who}`
+                                    : `Reserved by ${who}${res.date ? ` on ${res.date}` : ""} (${res.status})`
+                                }
+                              >
+                                {isDone ? <SealCheckIcon size={12} weight="bold" /> : <LockKeyIcon size={12} weight="bold" />}
+                                {isDone ? "Done" : res.status === "pr-open" ? "PR open" : "Reserved"}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                                <LockKeyOpenIcon size={12} weight="bold" />
+                                Available
+                              </span>
+                            )}
                           </div>
 
                           <div className="flex items-center gap-1.5">
+                            {res ? (
+                              <span className="flex items-center gap-1 rounded border border-(--iux-border) bg-(--iux-muted)/40 px-2 py-1 text-[11px] text-(--iux-muted-foreground)">
+                                <UserCircleIcon size={13} weight="duotone" />
+                                {res.github ? (
+                                  <a
+                                    className="font-medium text-(--iux-foreground) hover:underline"
+                                    href={`https://github.com/${res.github}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                  >
+                                    @{res.github}
+                                  </a>
+                                ) : (
+                                  <span className="font-medium text-(--iux-foreground)">{res.name || "reserved"}</span>
+                                )}
+                                {res.pr ? (
+                                  <a
+                                    className="ml-1 inline-flex items-center gap-0.5 text-[#f36c21] hover:underline"
+                                    href={res.pr}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                  >
+                                    PR <ArrowSquareOutIcon size={11} />
+                                  </a>
+                                ) : null}
+                              </span>
+                            ) : (
+                              <a
+                                href={reserveViaPrUrl(task.id)}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex items-center gap-1 rounded border border-[#f36c21]/40 bg-[#f36c21]/10 px-2 py-1 text-[11px] font-semibold text-[#f36c21] transition-colors hover:bg-[#f36c21] hover:text-white"
+                                title="Reserve this task — opens a pre-filled os-lab PR"
+                              >
+                                <LockKeyIcon size={12} weight="bold" />
+                                <span>Reserve via PR</span>
+                              </a>
+                            )}
                             <button
                               type="button"
                               onClick={() => copyToClipboard(`${task.id}: ${task.title}`, task.id)}
