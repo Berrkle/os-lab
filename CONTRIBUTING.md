@@ -71,6 +71,16 @@ Looking for high-impact areas to contribute? The following curated tasks are cla
 
 These tasks are also interactively browsable and filterable inside the dashboard under the **Contribute → Roadmap & TODOs** tab.
 
+### Reserving a task
+
+So two people don't build the same thing, **reserve a task before you start**. A reservation is just a
+PR that adds one file, `reservations/<TASK-ID>.json` (one file per task, so reservations never conflict).
+The easiest way is the **Reserve via PR** button on each task card, which opens a pre-filled PR for you;
+by hand, copy the template in [`reservations/README.md`](reservations/README.md). The dashboard shows each
+task as Available, Reserved, PR open or Done, and you keep your file's `status`/`pr` current as you go.
+Course midterm reservations add a `course` (and an option number in `note`) — see the course's
+`vize/vize-projesi.md`.
+
 ### 1. Penetration Testing (Pentesting)
 
 | ID | Task | Scope & Reference | Priority / Effort |
