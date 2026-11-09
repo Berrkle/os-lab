@@ -67,6 +67,11 @@
       "github": "RFKaya"
     },
     {
+      "slug": "shcesama-tech",
+      "company": "Shcesama-tech",
+      "github": "Shcesama"
+    },
+    {
       "slug": "siber-guvenlik-sirketi",
       "company": "Kurumsal Ağ Topolojisi ve Güvenlik Mimarisi",
       "github": "ufuk888"
@@ -78,41 +83,42 @@
     }
   ],
   "summary": {
-    "companies": 17,
-    "branches": 70,
-    "firewalls": 85,
-    "rules": 1498,
+    "companies": 18,
+    "branches": 74,
+    "firewalls": 91,
+    "rules": 1563,
     "priceUsd": {
       "min": 0,
       "max": 205357,
-      "total": 1466136.0899999999
+      "total": 1717336.0899999999
     },
     "chosenByVendor": {
-      "Fortinet": 63,
+      "Fortinet": 67,
+      "Palo Alto Networks": 6,
       "Cloudflare": 6,
-      "Palo Alto Networks": 5,
       "Netfilter project": 5,
       "Açık kaynak": 2,
+      "Check Point": 2,
       "WatchGuard": 1,
-      "Check Point": 1,
       "Netgate": 1,
       "Deciso (açık kaynak)": 1
     },
     "chosenByProduct": {
       "Fortinet FortiGate 60F": 8,
       "Fortinet FortiGate 200F": 7,
+      "Fortinet FortiGate 200F (HA)": 6,
       "Netfilter project nftables on Kali Linux (central router/firewall)": 5,
       "Fortinet FortiGate 100F": 4,
-      "Fortinet FortiGate 200F (HA)": 4,
       "Fortinet Fortinet FortiGate 200F": 4,
       "Fortinet FortiGate 600F": 3,
+      "Fortinet FortiGate 3500F (HA)": 3,
       "Fortinet Fortinet FortiGate 3500F": 3,
-      "Fortinet FortiGate 3500F (HA)": 2,
       "Açık kaynak ModSecurity + OWASP Core Rule Set (Nginx, iki sunucu, aktif-pasif)": 2,
       "Fortinet FortiGate 70G": 2,
       "Fortinet FortiGate 900G": 2,
       "Fortinet FortiGate 90G": 2,
       "Fortinet Fortinet FortiGate 400F": 2,
+      "Fortinet FortiGate 400F (HA)": 2,
       "Cloudflare Cloudflare WAF (Business)": 2,
       "Palo Alto Networks Palo Alto PA-5420": 2,
       "Fortinet FortiGate 600F (HA)": 1,
@@ -136,23 +142,24 @@
       "Cloudflare Cloudflare WAF, Business planı (1 alan adı: Ankara kurumsal web sitesi ve web servisleri)": 1,
       "Fortinet FortiGate 900G (2 × HA, aktif-pasif)": 1,
       "Cloudflare Cloudflare WAF, Business planı (1 alan adı: kampüs LMS, web sitesi ve öğrenci portalının internete açık uçları)": 1,
-      "Fortinet FortiGate 400F (HA)": 1,
       "Palo Alto Networks Palo Alto Networks PA-5410": 1,
       "Fortinet Fortinet FortiGate 1000F": 1,
       "Palo Alto Networks Palo Alto Networks PA-1410": 1,
       "Netgate pfSense Plus (Netgate 4200)": 1,
       "Fortinet FortiGate 1000F": 1,
+      "Palo Alto Networks Palo Alto PA-460 (HA)": 1,
+      "Check Point Check Point Quantum 6600 (HA)": 1,
       "Fortinet FortiGate 80F": 1,
       "Fortinet FortiGate-VM08 (AWS)": 1,
       "Fortinet FortiGate 200F (ISFW)": 1,
       "Deciso (açık kaynak) OPNsense (Deciso DEC3800)": 1
     },
     "vendorsConsidered": {
-      "Fortinet": 93,
-      "Check Point": 64,
-      "Palo Alto Networks": 64,
-      "Sophos": 53,
-      "Cisco": 46,
+      "Fortinet": 103,
+      "Check Point": 70,
+      "Palo Alto Networks": 70,
+      "Sophos": 56,
+      "Cisco": 51,
       "Netgate": 21,
       "Deciso": 16,
       "Cloudflare": 10,
@@ -3708,6 +3715,300 @@
           "vendor": "Deciso",
           "throughputGbps": 8.0,
           "priceUsd": 8000
+        }
+      ]
+    },
+    {
+      "company": "Shcesama-tech",
+      "companySlug": "shcesama-tech",
+      "sector": "Technology / Education",
+      "author": "Batuhan Seydi",
+      "branch": "02 - İstanbul Ofisi (Genel Merkez)",
+      "branchId": "istanbul-hq",
+      "branchRole": "headquarters",
+      "location": "İstanbul, Turkey",
+      "segment": "perimeter",
+      "product": "FortiGate 400F (HA)",
+      "vendor": "Fortinet",
+      "throughputGbps": 9.0,
+      "priceUsd": 26000,
+      "ruleCount": 16,
+      "actions": {
+        "allow": 10,
+        "deny": 5,
+        "reject": 0,
+        "limit": 1
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "FortiGate 200F (HA)",
+          "vendor": "Fortinet",
+          "throughputGbps": 3.0,
+          "priceUsd": 14500
+        },
+        {
+          "product": "PA-1420 (HA)",
+          "vendor": "Palo Alto Networks",
+          "throughputGbps": 6.2,
+          "priceUsd": 34000
+        },
+        {
+          "product": "Quantum 6700 (HA)",
+          "vendor": "Check Point",
+          "throughputGbps": 6.5,
+          "priceUsd": 38000
+        },
+        {
+          "product": "Secure Firewall 3120 (HA)",
+          "vendor": "Cisco",
+          "throughputGbps": 11.0,
+          "priceUsd": 36000
+        }
+      ]
+    },
+    {
+      "company": "Shcesama-tech",
+      "companySlug": "shcesama-tech",
+      "sector": "Technology / Education",
+      "author": "Batuhan Seydi",
+      "branch": "02 - İstanbul Ofisi (Genel Merkez)",
+      "branchId": "istanbul-hq",
+      "branchRole": "headquarters",
+      "location": "İstanbul, Turkey",
+      "segment": "software",
+      "product": "Palo Alto PA-460 (HA)",
+      "vendor": "Palo Alto Networks",
+      "throughputGbps": 2.4,
+      "priceUsd": 9200,
+      "ruleCount": 7,
+      "actions": {
+        "allow": 5,
+        "deny": 2,
+        "reject": 0,
+        "limit": 0
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "FortiGate 200F (ISFW)",
+          "vendor": "Fortinet",
+          "throughputGbps": 3.0,
+          "priceUsd": 14500
+        },
+        {
+          "product": "Quantum 3600 (HA)",
+          "vendor": "Check Point",
+          "throughputGbps": 1.5,
+          "priceUsd": 13500
+        },
+        {
+          "product": "Secure Firewall 1210CE",
+          "vendor": "Cisco",
+          "throughputGbps": 4.5,
+          "priceUsd": 11000
+        },
+        {
+          "product": "XGS 3100 (HA)",
+          "vendor": "Sophos",
+          "throughputGbps": 2.0,
+          "priceUsd": 10500
+        }
+      ]
+    },
+    {
+      "company": "Shcesama-tech",
+      "companySlug": "shcesama-tech",
+      "sector": "Technology / Education",
+      "author": "Batuhan Seydi",
+      "branch": "02 - İstanbul Ofisi (Genel Merkez)",
+      "branchId": "istanbul-hq",
+      "branchRole": "headquarters",
+      "location": "İstanbul, Turkey",
+      "segment": "rnd",
+      "product": "Check Point Quantum 6600 (HA)",
+      "vendor": "Check Point",
+      "throughputGbps": 3.7,
+      "priceUsd": 22000,
+      "ruleCount": 8,
+      "actions": {
+        "allow": 4,
+        "deny": 3,
+        "reject": 0,
+        "limit": 1
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "FortiGate 400F / 3500F (VDOM)",
+          "vendor": "Fortinet",
+          "throughputGbps": 9.0,
+          "priceUsd": 26000
+        },
+        {
+          "product": "PA-1410 (HA)",
+          "vendor": "Palo Alto Networks",
+          "throughputGbps": 4.3,
+          "priceUsd": 24000
+        },
+        {
+          "product": "Secure Firewall 3110 (HA)",
+          "vendor": "Cisco",
+          "throughputGbps": 9.0,
+          "priceUsd": 25000
+        },
+        {
+          "product": "XGS 3100 (HA)",
+          "vendor": "Sophos",
+          "throughputGbps": 2.0,
+          "priceUsd": 10500
+        }
+      ]
+    },
+    {
+      "company": "Shcesama-tech",
+      "companySlug": "shcesama-tech",
+      "sector": "Technology / Education",
+      "author": "Batuhan Seydi",
+      "branch": "01 - Ankara Ofisi (Kamu & DR Merkezi)",
+      "branchId": "ankara-dr",
+      "branchRole": "branch",
+      "location": "Ankara, Turkey",
+      "segment": "perimeter",
+      "product": "FortiGate 200F (HA)",
+      "vendor": "Fortinet",
+      "throughputGbps": 3.0,
+      "priceUsd": 14500,
+      "ruleCount": 11,
+      "actions": {
+        "allow": 6,
+        "deny": 3,
+        "reject": 0,
+        "limit": 2
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "FortiGate 100F (HA)",
+          "vendor": "Fortinet",
+          "throughputGbps": 1.0,
+          "priceUsd": 9000
+        },
+        {
+          "product": "PA-1410 (HA)",
+          "vendor": "Palo Alto Networks",
+          "throughputGbps": 4.3,
+          "priceUsd": 24000
+        },
+        {
+          "product": "Quantum 6600 (HA)",
+          "vendor": "Check Point",
+          "throughputGbps": 3.7,
+          "priceUsd": 22000
+        },
+        {
+          "product": "Secure Firewall 3110 (HA)",
+          "vendor": "Cisco",
+          "throughputGbps": 9.0,
+          "priceUsd": 25000
+        }
+      ]
+    },
+    {
+      "company": "Shcesama-tech",
+      "companySlug": "shcesama-tech",
+      "sector": "Technology / Education",
+      "author": "Batuhan Seydi",
+      "branch": "03 - Londra Ofisi (Uluslararası Operasyonlar & UK-GDPR)",
+      "branchId": "london-office",
+      "branchRole": "branch",
+      "location": "London, UK",
+      "segment": "perimeter",
+      "product": "FortiGate 200F (HA)",
+      "vendor": "Fortinet",
+      "throughputGbps": 3.0,
+      "priceUsd": 14500,
+      "ruleCount": 11,
+      "actions": {
+        "allow": 6,
+        "deny": 3,
+        "reject": 0,
+        "limit": 2
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "FortiGate 100F (HA)",
+          "vendor": "Fortinet",
+          "throughputGbps": 1.0,
+          "priceUsd": 9000
+        },
+        {
+          "product": "PA-1410 (HA)",
+          "vendor": "Palo Alto Networks",
+          "throughputGbps": 4.3,
+          "priceUsd": 24000
+        },
+        {
+          "product": "Quantum 6600 (HA)",
+          "vendor": "Check Point",
+          "throughputGbps": 3.7,
+          "priceUsd": 22000
+        },
+        {
+          "product": "XGS 3100 (HA)",
+          "vendor": "Sophos",
+          "throughputGbps": 2.0,
+          "priceUsd": 10500
+        }
+      ]
+    },
+    {
+      "company": "Shcesama-tech",
+      "companySlug": "shcesama-tech",
+      "sector": "Technology / Education",
+      "author": "Batuhan Seydi",
+      "branch": "04 - Akademik Şube (Üniversite-Sanayi Kampüsü)",
+      "branchId": "academic-branch",
+      "branchRole": "campus",
+      "location": "İstanbul, Turkey",
+      "segment": "perimeter",
+      "product": "FortiGate 3500F (HA)",
+      "vendor": "Fortinet",
+      "throughputGbps": 60.0,
+      "priceUsd": 165000,
+      "ruleCount": 12,
+      "actions": {
+        "allow": 7,
+        "deny": 3,
+        "reject": 0,
+        "limit": 2
+      },
+      "alternativesCount": 4,
+      "alternatives": [
+        {
+          "product": "FortiGate 1800F (HA)",
+          "vendor": "Fortinet",
+          "throughputGbps": 15.0,
+          "priceUsd": 78000
+        },
+        {
+          "product": "PA-5430 (HA)",
+          "vendor": "Palo Alto Networks",
+          "throughputGbps": 38.5,
+          "priceUsd": 220000
+        },
+        {
+          "product": "Quantum 16200 (HA)",
+          "vendor": "Check Point",
+          "throughputGbps": 20.0,
+          "priceUsd": 185000
+        },
+        {
+          "product": "Secure Firewall 4145 (HA)",
+          "vendor": "Cisco",
+          "throughputGbps": 35.0,
+          "priceUsd": 195000
         }
       ]
     },
