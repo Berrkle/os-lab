@@ -1,4 +1,8 @@
 {
-  "task_id": "OS-10",
-  "github_username": "aahmetkeles"
+  "id": "OS-10",
+  "name": "Ahmet Eyüp Keleş",
+  "github": "aahmetkeles",
+  "status": "reserved",
+  "pr": "",
+  "date": "2026-11-09"
 }
