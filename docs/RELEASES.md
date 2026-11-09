@@ -1,29 +1,37 @@
 # App releases
 
 Release packages are built and published locally on the matching host with the scripts in
-`app/scripts/`; the GitHub Actions release workflows are kept for reference but disabled. The
-release note for each version follows.
+`app/scripts/`; the GitHub Actions artifact workflows are kept for reference but disabled. The
+only enabled workflow is `updater-manifest`, which publishes the signed feed after the assets
+exist. The release note for each version follows.
 
 ## Publish the updater feed ("latest" detection)
 
 The desktop app and the dashboard's **App update** card read the signed feed at
-`app-updates/latest.json`. Publish it after all platform assets are on the release:
+`app-updates/latest.json`. It is published automatically: `.github/workflows/updater-manifest.yml`
+runs every 20 minutes, on release changes, and on demand. It picks the newest non-draft
+`app-v*` release whose five signed assets are all present, builds the manifest, verifies every
+signature with the pinned public key, uploads `latest.json` and marks that release as GitHub
+Latest. A newer release with incomplete assets is skipped, and the feed is never downgraded, so
+uploading the platforms one by one is safe.
+
+No command is needed. To run it by hand (or pin a version before the schedule catches up):
 
 ```bash
-# use app/src-tauri/tauri.conf.json
-node scripts/publish-app-update.mjs
-
-# smart auto-detect: newest app-v* tag with a complete asset set
-node scripts/publish-app-update.mjs --detect-latest
-
-# explicit version, and mark the GitHub release as Latest
-node scripts/publish-app-update.mjs 0.2.7 --mark-latest
+node scripts/publish-app-update.mjs --detect-latest --check   # what would be published
+node scripts/publish-app-update.mjs --detect-latest --mark-latest --verify
+node scripts/publish-app-update.mjs 0.2.8 --mark-latest --verify
 ```
 
 The script reads assets from `app/out/<version>` when present, otherwise downloads them from the
 release with `gh`, verifies every SHA-256 through `app/scripts/build-update-manifest.mjs`, and
-uploads `latest.json` to the `app-updates` prerelease. GitHub marks the newest non-prerelease as
-Latest automatically; `--mark-latest` sets it explicitly.
+uploads `latest.json` to the `app-updates` prerelease.
+
+## 0.2.8
+
+- Add the **App update** card; it checks the signed feed and appears only when a newer build exists.
+- Show the content card only when a newer signed pack is available.
+- Publish the updater feed automatically through the `updater-manifest` workflow.
 
 ## 0.2.7
 
