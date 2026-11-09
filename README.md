@@ -3,6 +3,8 @@
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
+![os-lab security workbench](docs/media/os-lab-promo.png)
+
 Four research-backed, runnable operating-system security labs in one repository,
 each a reproducible, isolated guest driven by `make` and a shared management CLI.
 
@@ -59,6 +61,45 @@ what each still needs, one page per lab to install dependencies and start,
 stop or inspect it (every action is previewed before it runs), a jobs log,
 and the Android Lab workbench.
 
+The dashboard and desktop app offer **English (default), Turkish, German,
+French, Spanish, Italian, Persian and Arabic**. Choose a language from the top
+bar; the desktop app starts in the system language. Each dashboard route keeps
+its locale when you move between labs. Persian and Arabic use right-to-left
+layout. See [translation review notes](dashboard/TRANSLATION_TODO.md) for
+content that still needs a native-speaker review.
+
+### Dashboard gallery
+
+| Android security workbench | Firewall company network |
+|:---:|:---:|
+| ![Android Lab overview](docs/media/screenshots/android-overview.png) | ![Firewall company network](docs/media/screenshots/firewall-company.png) |
+
+| Workflow view | Firewall audit |
+|:---:|:---:|
+| ![Android workflows](docs/media/screenshots/android-workflows.png) | ![Firewall gap audit](docs/media/screenshots/firewall-audit.png) |
+
+The [Persian dashboard preview](docs/media/screenshots/firewall-persian.png)
+shows the right-to-left layout. Regenerate the images from a running local
+console with `scripts/capture-dashboard-screenshots.sh`.
+
+### Download
+
+Get the newest desktop app from the
+[latest release](https://github.com/keyvanarasteh/os-lab/releases/latest):
+
+| Platform | Download | Also available |
+|:---|:---|:---|
+| macOS (Apple Silicon and Intel) | `os-lab_<version>_macos_universal.dmg` | `.app.tar.gz` for in-app updates |
+| Windows x64 | `os-lab_<version>_windows_x64-setup.exe` | `.msi` |
+| Linux amd64 | `os-lab_<version>_linux_amd64.deb` | `.rpm` and `.AppImage` |
+
+Every file has a `.sha256` checksum and a detached `.sig` signature. Compare
+the checksum before running it, or verify the signature with
+`app/scripts/verify-release-signature.py`. Installation steps and removal are in
+[app/INSTALL.md](app/INSTALL.md). In-app updates read the signed feed that the
+`updater-manifest` workflow publishes automatically, and release notes live in
+[docs/RELEASES.md](docs/RELEASES.md).
+
 ## Legal
 
 os-lab is licensed under the [Apache License 2.0](LICENSE). Before running the
@@ -69,6 +110,19 @@ The [Privacy Notice](docs/legal/PRIVACY.md) explains what stays on your machine
 (os-lab sends no telemetry and disables Docker-Android's analytics by default),
 and the [Third-Party Notices](docs/legal/THIRD_PARTY_NOTICES.md) list component
 licences. The dashboard shows the same documents at `/legal/`.
+
+## Public website
+
+The [GitHub Pages site](https://keyvanarasteh.github.io/os-lab/) has a public
+home page with download links resolved from GitHub's latest release API, the
+one-line setup commands, and the Firewall Lab. Console-backed routes such as
+host status, jobs, and runnable labs are excluded from the Pages artifact. They
+remain available in the locally served dashboard.
+
+Run `scripts/deploy-page.sh --dry-run` to stage the public build in
+`dashboard/build-pages/`, then `scripts/deploy-page.sh` to publish it after
+merging. The Firewall Lab contributor list requests the current catalog from
+`master` when opened, with the bundled list available offline.
 
 ## Management CLI
 
