@@ -71,6 +71,16 @@ Looking for high-impact areas to contribute? The following curated tasks are cla
 
 These tasks are also interactively browsable and filterable inside the dashboard under the **Contribute → Roadmap & TODOs** tab.
 
+### Reserving a task
+
+So two people don't build the same thing, **reserve a task before you start**. A reservation is just a
+PR that adds one file, `reservations/<TASK-ID>.json` (one file per task, so reservations never conflict).
+The easiest way is the **Reserve via PR** button on each task card, which opens a pre-filled PR for you;
+by hand, copy the template in [`reservations/README.md`](reservations/README.md). The dashboard shows each
+task as Available, Reserved, PR open or Done, and you keep your file's `status`/`pr` current as you go.
+Course midterm reservations add a `course` (and an option number in `note`) — see the course's
+`vize/vize-projesi.md`.
+
 ### 1. Penetration Testing (Pentesting)
 
 | ID | Task | Scope & Reference | Priority / Effort |
@@ -151,6 +161,10 @@ These tasks are also interactively browsable and filterable inside the dashboard
 | **OS-34** | **Bridged vs NAT Network Adapter Configurator & Checker** | Reads/sets adapter mode and verifies a reachable LAN IP (root cause of SSH failures). (Teached 12.10) | **Medium** · Small |
 | **OS-35** | **Browser-Extension Injection Detector (Static)** | `sha256sum`/`unzip`/`jq`/`rg` pipeline → H1–H5 clue report, detector/evidence/risk-rule kept distinct. (Teached ders06) | **Medium** · Small |
 | **OS-36** | **Classroom Server Reachability Checker (ping + SSH sweep)** | Sweeps the class subnet (e.g. `10.25.130.x`), reporting up/down and optional local roster mapping. (Teached 26.10) | **Medium** · Tiny–Small |
+| **OS-37** | **DNS Resolver Inventory & Health Check** | `resolvectl`/`resolv.conf`/stub (`127.0.0.53`) + per-interface DNS → report; flags the no-usable-resolver fault (Wi-Fi vs cable). (Teached 02.11) | **High** · Small |
+| **OS-38** | **Multi-Resolver nslookup/dig Comparator** | Queries a name against campus / `8.8.8.8` / `1.1.1.1`, compares answers and latency over N tries → report (the 02.11 homework). (Teached 02.11) | **High** · Small |
+| **OS-39** | **netplan DNS Configurator (approval-gated)** | Persistent DNS via `/etc/netplan/*.yaml` with a shown diff, `netplan try`/apply and a verify query; static vs DHCP. (Teached 02.11) | **Medium** · Small |
+| **OS-40** | **Wi-Fi / Interface DNS Troubleshooter** | Reproduces the 02.11 fault (DHCP `ignore-auto-dns`, empty resolver on Wi-Fi) and offers the `nmcli` fix; cache + AP/router/switch primer. (Teached 02.11) | **High** · Small |
 
 ### 3. Firewall Solutions
 
