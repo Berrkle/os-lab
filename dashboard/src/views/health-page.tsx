@@ -12,14 +12,14 @@ import {
 import { AppShell, LAB_ICON, labHref } from "../shell/app-shell";
 import { TopBar } from "../shell/top-bar";
 import { Badge, CopyButton, Empty, Section, Skeleton } from "../components/ui";
-import { ago, contentStore, formatBytes, healthStore, hostStore, type LabStatus } from "../lib/api";
+import { ago, api, contentStore, formatBytes, healthStore, hostStore, usePoll, type LabStatus } from "../lib/api";
 import {
-  CAPABILITIES,
   LEVEL_LABEL,
-  PLATFORMS,
   hostPlatform,
   summarize,
   type Capability,
+  type CapabilityCatalog,
+  type CapabilityGroup,
   type Level,
   type PlatformId,
   type Support
@@ -32,6 +32,8 @@ interface Check {
   state: CheckState;
   detail: string;
   fix?: string;
+  helpUrl?: string;
+  helpLabel?: string;
 }
 
 const STATE_ICON: Record<CheckState, React.ReactNode> = {
@@ -139,7 +141,7 @@ function LiveDetail({ lab }: { lab: LabStatus }) {
   );
 }
 
-function CapabilityTree({ platform, hostOs, labs }: { platform: PlatformId; hostOs: PlatformId | null; labs: LabStatus[] }) {
+function CapabilityTree({ groups, platform, hostOs, labs }: { groups: CapabilityGroup[]; platform: PlatformId; hostOs: PlatformId | null; labs: LabStatus[] }) {
   const [filter, setFilter] = useState<Level | "all">("all");
   const live = platform === hostOs;
   const byLab = useMemo(() => new Map(labs.map((l) => [l.id, l])), [labs]);
@@ -160,7 +162,7 @@ function CapabilityTree({ platform, hostOs, labs }: { platform: PlatformId; host
           </button>
         ))}
       </div>
-      {CAPABILITIES.map((group) => {
+      {groups.map((group) => {
         const items = group.items.filter(keep);
         if (!items.length) return null;
         return (
@@ -204,16 +206,16 @@ function CapabilityTree({ platform, hostOs, labs }: { platform: PlatformId; host
   );
 }
 
-function PlatformTabs({ hostOs, labs }: { hostOs: PlatformId | null; labs: LabStatus[] }) {
+function PlatformTabs({ catalog, hostOs, labs }: { catalog: CapabilityCatalog; hostOs: PlatformId | null; labs: LabStatus[] }) {
   const [platform, setPlatform] = useState<PlatformId>(hostOs ?? "macos");
-  const info = PLATFORMS.find((p) => p.id === platform)!;
-  const counts = summarize(platform);
+  const info = catalog.platforms.find((p) => p.id === platform)!;
+  const counts = summarize(catalog.groups, platform);
   const total = counts.full + counts.partial + counts.none;
   return (
     <div className="space-y-4">
       <div role="tablist" aria-label="Platform" className="grid grid-cols-3 gap-2">
-        {PLATFORMS.map((p) => {
-          const c = summarize(p.id);
+        {catalog.platforms.map((p) => {
+          const c = summarize(catalog.groups, p.id);
           const active = p.id === platform;
           return (
             <button
@@ -244,7 +246,7 @@ function PlatformTabs({ hostOs, labs }: { hostOs: PlatformId | null; labs: LabSt
         <p><strong className="text-(--iux-foreground)">Runs labs with:</strong> {info.engine}</p>
       </div>
       <div role="tabpanel">
-        <CapabilityTree key={platform} platform={platform} hostOs={hostOs} labs={labs} />
+        <CapabilityTree key={platform} groups={catalog.groups} platform={platform} hostOs={hostOs} labs={labs} />
       </div>
     </div>
   );
@@ -254,6 +256,7 @@ export default function HealthPage() {
   const { data: health, error: healthError, refresh: refreshHealth } = healthStore.use();
   const { data: hostData, error: hostError, refresh: refreshHost } = hostStore.use();
   const { data: content } = contentStore.use();
+  const capabilities = usePoll(api.capabilities, 0);
   const host = hostData?.host;
   const labs = hostData?.labs ?? [];
   const engineUp = health?.status === "ok" && !healthError;
@@ -279,6 +282,12 @@ export default function HealthPage() {
   }
   if (host) {
     const hostLab = labs.find((l) => l.state === "ready");
+    const containerCli = host.tools.some((tool) => (tool.id === "docker" || tool.id === "podman") && tool.found);
+    const containerHelp = host.os === "macos"
+      ? { url: "https://docs.docker.com/desktop/setup/install/mac-install/", label: "Docker Desktop for Mac" }
+      : host.os === "windows"
+        ? { url: "https://docs.docker.com/desktop/setup/install/windows-install/", label: "Docker Desktop for Windows" }
+        : { url: "https://docs.docker.com/engine/install/", label: "Docker Engine for Linux" };
     checks.push({
       id: "host",
       label: "This computer",
@@ -297,7 +306,11 @@ export default function HealthPage() {
       label: "Container engine",
       state: host.runtime ? "ok" : "warn",
       detail: host.runtime ? `${host.runtime} with Compose` : "No working Docker or Podman with Compose",
-      fix: host.runtime ? undefined : "Install Docker or Podman and start it. The Firewall Lab and the iOS Simulator do not need it."
+      fix: host.runtime ? undefined : containerCli
+        ? "Docker or Podman is installed. Start its engine (or Colima/Podman machine), then check docker compose version or podman compose version and Re-check."
+        : "Install a container engine, start it, and check its Compose command. The Firewall Lab and native iOS Simulator do not need containers.",
+      helpUrl: host.runtime ? undefined : containerHelp.url,
+      helpLabel: host.runtime ? undefined : containerHelp.label
     });
     if (host.os === "linux") {
       checks.push({
@@ -400,6 +413,7 @@ export default function HealthPage() {
                         <span className="block text-sm font-medium">{c.label}</span>
                         <span className="block text-xs text-(--iux-muted-foreground)">{c.detail}</span>
                         {c.fix ? <span className="mt-1 block text-xs">{c.fix}</span> : null}
+                        {c.helpUrl ? <a className="mt-1 inline-block text-xs text-[#f36c21] underline" href={c.helpUrl} target="_blank" rel="noreferrer">{c.helpLabel} setup guide</a> : null}
                       </span>
                     </li>
                   ))}
@@ -413,7 +427,9 @@ export default function HealthPage() {
             title="What os-lab supports"
             description="Pick a platform to see which labs and features it can run. Your own computer is marked and shows live status."
           >
-            <PlatformTabs hostOs={hostOs} labs={labs} />
+            {capabilities.error ? <Empty>Could not load platform capabilities: {capabilities.error}</Empty>
+              : capabilities.data ? <PlatformTabs catalog={capabilities.data} hostOs={hostOs} labs={labs} />
+                : <Skeleton rows={5} />}
           </Section>
 
           <details className="iux-card px-5 py-4">

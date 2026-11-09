@@ -39,6 +39,7 @@ import { copy, firewallPath, type FirewallLocale } from "../firewall/locale";
 import { localeFromPath, localePath } from "../i18n/paths";
 
 export const REPO_URL = "https://github.com/keyvanarasteh/os-lab";
+const PUBLIC_PAGES = import.meta.env.PUBLIC_SITE_MODE === "pages";
 
 export const LAB_ICON: Record<LabId, (size?: number) => ReactNode> = {
   android: (s = 16) => <AndroidLogoIcon size={s} />,
@@ -51,7 +52,7 @@ export const LAB_ICON: Record<LabId, (size?: number) => ReactNode> = {
 /** Where a section id leads. Pages are static files, so every section is a plain href. */
 export function sectionHref(id: string): string {
   const localized = (path: string) => localePath(path, typeof window === "undefined" ? "en" : localeFromPath(window.location.pathname));
-  if (id === "host") return localized("/");
+  if (id === "host") return PUBLIC_PAGES ? `${import.meta.env.BASE_URL.replace(/\/$/, "")}/` : localized("/");
   if (id === "jobs") return localized("/jobs/");
   if (id === "repo") return REPO_URL;
   if (id === "health") return localized("/health/");
@@ -85,7 +86,20 @@ function RunningDot() {
   return <span className="ml-auto size-2 animate-pulse rounded-full bg-[#00d084]" aria-label="running" />;
 }
 
-function buildGroups(labs: LabStatus[] | undefined, running: Set<string>, androidRunning: boolean, locale: FirewallLocale): SidebarGroup[] {
+/** Labs this computer cannot run are left out of navigation; the page of one you are on stays. */
+function labShown(labs: LabStatus[] | undefined, id: LabId, activeId: string): boolean {
+  const lab = labs?.find((l) => l.id === id);
+  return !lab || lab.state !== "unavailable" || activeId === `lab-${id}`;
+}
+
+function buildGroups(labs: LabStatus[] | undefined, running: Set<string>, androidRunning: boolean, locale: FirewallLocale, activeId: string): SidebarGroup[] {
+  if (PUBLIC_PAGES) return [
+    { label: "os-lab", items: [
+      { id: "host", label: "Home", icon: <DesktopTowerIcon size={16} /> },
+      { id: "firewall", label: copy[locale].lab, icon: <FireIcon size={16} /> },
+      { id: "repo", label: "Repository", icon: <BookOpenIcon size={16} /> }
+    ] }
+  ];
   const lab = (id: LabId) => labs?.find((l) => l.id === id);
   const labItem = (id: LabId, label: string) => ({
     id: `lab-${id}`,
@@ -124,10 +138,10 @@ function buildGroups(labs: LabStatus[] | undefined, running: Set<string>, androi
             { id: "android-sitemap", label: "Routes & Sitemap" }
           ]
         },
-        labItem("ios", "iOS Lab"),
-        labItem("windows", "Windows Lab"),
-        labItem("macos", "macOS Lab"),
-        labItem("linux", "Linux Lab"),
+        ...(labShown(labs, "ios", activeId) ? [labItem("ios", "iOS Lab")] : []),
+        ...(labShown(labs, "windows", activeId) ? [labItem("windows", "Windows Lab")] : []),
+        ...(labShown(labs, "macos", activeId) ? [labItem("macos", "macOS Lab")] : []),
+        ...(labShown(labs, "linux", activeId) ? [labItem("linux", "Linux Lab")] : []),
         { id: "firewall", label: copy[locale].lab, icon: <FireIcon size={16} /> }
       ]
     },
@@ -272,8 +286,8 @@ export function AppShell({
 
   const running = useMemo(() => new Set((jobs ?? []).filter((j) => j.state === "running").map((j) => j.lab)), [jobs]);
   const groups = useMemo(
-    () => buildGroups(host?.labs, running, Boolean(androidLogs?.running), locale),
-    [host?.labs, running, androidLogs?.running, locale]
+    () => buildGroups(host?.labs, running, Boolean(androidLogs?.running), locale, activeId),
+    [host?.labs, running, androidLogs?.running, locale, activeId]
   );
   const meta = useMemo(buildMeta, []);
   const records = useMemo<SpotlightRecord[]>(
@@ -300,14 +314,14 @@ export function AppShell({
   const allCommands = useMemo<SpotlightCommand[]>(
     () => [
       ...commands,
-      {
+      ...(!PUBLIC_PAGES ? [{
         id: "refresh",
         label: "Re-detect this computer",
         description: "Refresh OS, tools and lab availability",
         aliases: ["refresh", "detect", "rescan"],
         icon: <ArrowClockwiseIcon size={16} />,
         run: () => void hostStore.refresh()
-      },
+      }] : []),
       {
         id: "theme",
         label: "Toggle theme",
@@ -330,10 +344,10 @@ export function AppShell({
   const connected = health?.status === "ok" && !healthError;
   const footer = () => (
     <div className="flex items-center justify-between border-t border-(--iux-border) px-4 py-3 text-[10px] text-(--iux-muted-foreground)/70">
-      <span className="inline-flex items-center gap-1.5">
+      {!PUBLIC_PAGES && <span className="inline-flex items-center gap-1.5">
         <CircleIcon size={7} weight="fill" className={connected ? "text-(--iux-success)" : "text-(--iux-danger)"} />
         {connected ? "Lab engine connected" : healthError ? "Lab engine offline" : "Connecting…"}
-      </span>
+      </span>}
       <span>{host ? `${host.host.os} · ${host.host.arch}` : "os-lab"}</span>
     </div>
   );
@@ -366,12 +380,12 @@ export function AppShell({
         groups={groups}
         meta={meta}
         commands={allCommands}
-        records={records}
-        tips={[
+        records={PUBLIC_PAGES ? [] : records}
+        tips={PUBLIC_PAGES ? [] : [
           { scope: "jobs", description: "Search recent jobs", icon: <ListChecksIcon size={16} /> },
-          { scope: "windows", description: "Windows Lab actions", icon: <WindowsLogoIcon size={16} /> },
+          ...(labShown(host?.labs, "windows", activeId) ? [{ scope: "windows", description: "Windows Lab actions", icon: <WindowsLogoIcon size={16} /> }] : []),
           { scope: "android", description: "Android Lab pages and actions", icon: <AndroidLogoIcon size={16} /> },
-          { scope: "linux", description: "Linux Lab actions", icon: <CpuIcon size={16} /> }
+          ...(labShown(host?.labs, "linux", activeId) ? [{ scope: "linux", description: "Linux Lab actions", icon: <CpuIcon size={16} /> }] : [])
         ]}
         onNavigate={(section, record) => {
           if (record && section === "jobs") return go(`${sectionHref("jobs")}#${record.id}`);

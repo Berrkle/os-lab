@@ -39,6 +39,10 @@ try:
     import content as content_packs  # noqa: E402  (console/content.py: signed content updates)
 except ImportError:
     content_packs = None
+try:
+    import app_update as app_updates  # noqa: E402  (console/app_update.py: signed app releases)
+except ImportError:
+    app_updates = None
 ARTIFACTS_DIR = os.path.join(SCRIPT_DIR, "artifacts")
 SCRIPTS_DIR = os.path.join(SCRIPT_DIR, "scripts")
 
@@ -118,6 +122,7 @@ HOST_CACHE = {"at": 0.0, "value": None}
 HOST_LOCK = threading.Lock()
 CONTENT = (content_packs.ContentStore(content_packs.default_content_dir(), REPO_ROOT)
            if content_packs else None)
+APP = app_updates.AppUpdateStore() if app_updates else None
 JOBS = oslab.JobService(REPO_ROOT) if oslab else None
 SIGNER = oslab.PlanSigner() if oslab else None
 
@@ -135,7 +140,7 @@ def cached_host():
 class LabHttpHandler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):
         # Polling is frequent; keep the terminal for errors
-        if not self.path.startswith(("/api/logs", "/api/jobs", "/api/health", "/api/host", "/api/labs/")):
+        if not self.path.startswith(("/api/logs", "/api/jobs", "/api/health", "/api/host", "/api/labs/", "/api/capabilities")):
             super().log_message(fmt, *args)
 
     def _host_ok(self) -> bool:
@@ -167,7 +172,10 @@ class LabHttpHandler(BaseHTTPRequestHandler):
         if path.startswith("/api/content"):
             self._content_get(path, urllib.parse.parse_qs(parsed.query))
             return
-        if path.startswith(("/api/host", "/api/labs", "/api/jobs")):
+        if path.startswith("/api/app/update"):
+            self._app_get(path)
+            return
+        if path.startswith(("/api/host", "/api/labs", "/api/jobs", "/api/capabilities")):
             if not oslab:
                 self._json(501, {"error": "The console module (console/oslab.py) is not installed"})
                 return
@@ -216,6 +224,8 @@ class LabHttpHandler(BaseHTTPRequestHandler):
         if path == "/api/host":
             host = cached_host()
             self._json(200, {"host": host, "labs": oslab.lab_catalog(REPO_ROOT, host)["labs"]})
+        elif path == "/api/capabilities":
+            self._json(200, oslab.capability_catalog())
         elif len(parts) == 4 and parts[:2] == ["api", "labs"] and parts[2] in oslab.LABS and parts[3] == "config":
             self._json(200, oslab.lab_config(REPO_ROOT, parts[2]))
         elif len(parts) == 4 and parts[:2] == ["api", "labs"] and parts[2] in oslab.LABS and parts[3] == "monitor":
@@ -242,6 +252,9 @@ class LabHttpHandler(BaseHTTPRequestHandler):
         path = urllib.parse.urlparse(self.path).path
         if path.startswith("/api/content"):
             self._content_post(path)
+            return
+        if path.startswith("/api/app/update"):
+            self._app_post(path)
             return
         if path.startswith(("/api/labs", "/api/jobs")):
             if not oslab:
@@ -288,6 +301,33 @@ class LabHttpHandler(BaseHTTPRequestHandler):
             else:
                 self._json(404, {"error": "Not found"})
         except content_packs.ContentError as e:
+            self._json(400, {"error": str(e)})
+        except ValueError as e:
+            self._json(400, {"error": str(e)})
+
+    def _app_get(self, path: str):
+        """App updates: the newest signed release and any install in progress (see console/app_update.py)."""
+        if not APP:
+            self._json(501, {"error": "The app update module (console/app_update.py) is not installed"})
+            return
+        if path == "/api/app/update":
+            self._json(200, APP.state())
+        else:
+            self._json(404, {"error": "Not found"})
+
+    def _app_post(self, path: str):
+        if not APP:
+            self._json(501, {"error": "The app update module (console/app_update.py) is not installed"})
+            return
+        try:
+            self._read_json()
+            if path == "/api/app/update/check":
+                self._json(200, APP.check())
+            elif path == "/api/app/update/install":
+                self._json(202, APP.install())
+            else:
+                self._json(404, {"error": "Not found"})
+        except app_updates.AppUpdateError as e:
             self._json(400, {"error": str(e)})
         except ValueError as e:
             self._json(400, {"error": str(e)})

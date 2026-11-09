@@ -96,9 +96,21 @@ TOOLS = [
     ("sudo", "sudo"),
 ]
 
+# Tools that only make sense on some hosts; everything else is reported everywhere.
+TOOL_HOSTS = {
+    "xcrun": {"macos"}, "brew": {"macos"},
+    "wsl": {"windows"},
+    "apt-get": {"linux"}, "pkexec": {"linux"}, "sudo": {"linux", "macos"},
+}
+
+
+def tools_for_host(os_name: str) -> list[tuple[str, str]]:
+    return [(t, label) for t, label in TOOLS if os_name in TOOL_HOSTS.get(t, {os_name})]
+
+
 LABCTL_ACTIONS = ["status", "doctor", "urls", "logs", "monitor", "start", "stop", "restart",
                   "profile", "resize", "setup", "backup", "service-install", "service-uninstall"]
-MAC_ACTIONS = ["status", "doctor", "setup", "start", "stop", "appium-start", "appium-stop"]
+MAC_ACTIONS = ["status", "doctor", "setup", "start", "stop", "appium-install", "appium-start", "appium-stop"]
 
 ACTION_INFO = {
     "status": ("Status", "One-shot state, endpoints and resource report."),
@@ -115,9 +127,19 @@ ACTION_INFO = {
     "backup": ("Backup", "Write a guest backup archive into the lab's backups/ folder."),
     "service-install": ("Install boot service", "Start this lab automatically at boot (systemd)."),
     "service-uninstall": ("Remove boot service", "Remove the systemd boot unit."),
+    "appium-install": ("Install Appium", "Install Node (Homebrew if needed), Appium and the XCUITest driver for this user only. No administrator rights."),
     "appium-start": ("Start Appium", "Start the Appium server with XCUITest."),
     "appium-stop": ("Stop Appium", "Stop the Appium server."),
 }
+
+# On the native Mac path "start" and "stop" drive the iOS Simulator, not a container stack.
+NATIVE_SIMULATOR_INFO = {
+    "start": ("Start iOS Simulator", "Boot the configured iOS Simulator device on this Mac."),
+    "stop": ("Stop iOS Simulator", "Shut the iOS Simulator down."),
+}
+
+# Offered while a required dependency is missing: install it, install Appium, or run the preflight.
+SETUP_STATE_ACTIONS = {"setup", "appium-install", "doctor"}
 
 PRIVILEGED = {"setup", "service-install", "service-uninstall"}
 SECRET_PARTS = ("PASSWORD", "SECRET", "TOKEN", "API_KEY", "PRIVATE_KEY", "CREDENTIAL")
@@ -147,8 +169,16 @@ def host_arch() -> str:
     return {"amd64": "x86_64", "x64": "x86_64", "arm64": "aarch64"}.get(m, m)
 
 
+def _managed_appium() -> str | None:
+    """Appium installed by ios-lab/mac/appium.sh install (user folder, no global npm)."""
+    path = os.path.join(os.environ.get("OSLAB_APPIUM_HOME") or os.path.expanduser("~/.oslab/appium"),
+                        "node_modules", ".bin", "appium")
+    return path if os.path.isfile(path) and os.access(path, os.X_OK) else None
+
+
 def _which(name: str) -> str | None:
-    return shutil.which(name)
+    found = shutil.which(name)
+    return found or (_managed_appium() if name == "appium" else None)
 
 
 def _read(path: str) -> str:
@@ -269,8 +299,8 @@ def host_info(root: str) -> dict:
         "xcode": xcode_status() if os_name == "macos" else None,
         "python": platform.python_version(),
         "root": root,
-        "tools": [{"id": t, "label": label, "found": bool(_which(t)), "path": _which(t)} for t, label in TOOLS],
-        "providers": provider_report(os_name, arch),
+        "tools": [{"id": t, "label": label, "found": bool(_which(t)), "path": _which(t)} for t, label in tools_for_host(os_name)],
+        "providers": [p for p in provider_report(os_name, arch) if p["candidate"]],
     }
 
 
@@ -346,7 +376,7 @@ def lab_status(lab: str, host: dict) -> dict:
             _req("ios-device", "Available iOS Simulator device", xcode.get("iosDevice"), hint="Add a simulator in Xcode"),
             _req("brew", "Homebrew", tools.get("brew"), required=False, hint="https://brew.sh (needed for automated Appium setup)"),
             _req("node", "Node.js", tools.get("node"), required=False, hint="brew install node"),
-            _req("appium", "Appium (XCUITest)", tools.get("appium"), required=False, hint="npm i -g appium"),
+            _req("appium", "Appium (XCUITest)", tools.get("appium"), required=False, hint="Install Appium (no administrator rights)"),
         ]
         if not tools.get("appium"):
             notes.append("Appium automation needs Appium and its XCUITest driver; the simulator can run without them.")
@@ -380,6 +410,17 @@ def lab_status(lab: str, host: dict) -> dict:
         reasons.append("Missing: " + ", ".join(r["label"] for r in reqs if r["required"] and not r["found"]) + ".")
 
     actions = actions_for(lab, provider) if state != "unavailable" else []
+    if state == "needs-setup":
+        # Something this lab requires is missing: only the ways to fix or diagnose that are offered.
+        # Start, stop, resize, logs and the rest come back once the requirements are met.
+        actions = [x for x in actions if x["id"] in SETUP_STATE_ACTIONS]
+    if provider == "native-macos":
+        # Installed Appium: offer start/stop, not install. Not installed: offer install, not start/stop.
+        drop = {"appium-install"} if tools.get("appium") else {"appium-start", "appium-stop"}
+        actions = [a for a in actions if a["id"] not in drop]
+        for a in actions:
+            if a["id"] in NATIVE_SIMULATOR_INFO:
+                a["label"], a["description"] = NATIVE_SIMULATOR_INFO[a["id"]]
     summary = ("Run the iOS Simulator with this Mac's Xcode; Appium automation is optional."
                if lab == "ios" and provider == "native-macos" else meta["summary"])
     return {"id": lab, "label": meta["label"], "summary": summary, "state": state, "provider": provider,
@@ -404,6 +445,27 @@ def lab_catalog(root: str, host: dict | None = None) -> dict:
     host = host or host_info(root)
     return {"host": {"os": host["os"], "arch": host["arch"]},
             "labs": [lab_status(lab, host) for lab in LAB_ORDER]}
+
+
+def capability_catalog() -> dict:
+    """Health's platform tree. Lab support levels follow the same provider rules as lab_status."""
+    with open(os.path.join(os.path.dirname(__file__), "capabilities.json"), encoding="utf-8") as f:
+        catalog = json.load(f)
+    for group in catalog["groups"]:
+        for item in group["items"]:
+            lab = item.get("lab")
+            if not lab:
+                continue
+            for platform in ("macos", "windows", "linux"):
+                provider = provider_for(lab, platform)
+                if provider is None:
+                    level = "none"
+                elif provider in ("wsl2", "macos-containers") or (lab == "ios" and platform == "linux"):
+                    level = "partial"
+                else:
+                    level = "full"
+                item["support"][platform]["level"] = level
+    return catalog
 
 
 # ── Configuration ────────────────────────────────────────────────────────────
@@ -564,7 +626,7 @@ def plan(root: str, request: dict, host: dict | None = None) -> dict:
         script, extra = {
             "status": ("status-mac.sh", None), "doctor": ("doctor-mac.sh", None),
             "setup": ("setup-mac.sh", "--install"), "start": ("run-simulator.sh", None),
-            "stop": ("stop-simulator.sh", None), "appium-start": ("appium.sh", "start"),
+            "stop": ("stop-simulator.sh", None), "appium-install": ("appium.sh", "install"), "appium-start": ("appium.sh", "start"),
             "appium-stop": ("appium.sh", "stop"),
         }[action]
         path = _scoped(root, "ios-lab", "mac", script)
@@ -572,7 +634,7 @@ def plan(root: str, request: dict, host: dict | None = None) -> dict:
             raise PlanError("Provider script is missing: ios-lab/mac/" + script)
         program, args = "bash", [path] + ([extra] if extra else [])
         privileged = False
-        timeout = 3600 if action == "setup" else 300
+        timeout = 3600 if action == "setup" else 1800 if action == "appium-install" else 300
     else:
         labctl = _scoped(root, "labctl")
         if not os.path.isfile(labctl):

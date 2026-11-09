@@ -116,6 +116,17 @@ def test_only_unsupported_labs_are_unavailable_across_hosts():
                    for lab in labs if lab["state"] == "needs-setup")
 
 
+def test_capability_catalog_uses_lab_provider_rules():
+    catalog = oslab.capability_catalog()
+    assert {p["id"] for p in catalog["platforms"]} == {"macos", "windows", "linux"}
+    labs = {item["lab"]: item for group in catalog["groups"] for item in group["items"] if item.get("lab")}
+    assert set(labs) == set(oslab.LAB_ORDER)
+    for lab, item in labs.items():
+        for platform in ("macos", "windows", "linux"):
+            provider = oslab.provider_for(lab, platform)
+            assert (item["support"][platform]["level"] == "none") == (provider is None)
+
+
 def test_job_failure_before_process_start_is_reported(monkeypatch):
     def fail(_root):
         raise RuntimeError("cannot read configuration")
@@ -287,3 +298,87 @@ def test_monitor_without_runtime():
     host = make_host(runtime=None)
     assert oslab.monitor(REPO_ROOT, "windows", host)["state"] == "no-runtime"
     assert oslab.monitor(REPO_ROOT, "macos", host)["containers"] == []
+
+
+def test_appium_install_is_a_user_level_native_macos_action():
+    host = make_host(os_name="macos", kvm=False, tools=("xcrun", "brew"))
+    for lab in ("ios", "macos"):
+        status = oslab.lab_status(lab, host)
+        action = next(a for a in status["actions"] if a["id"] == "appium-install")
+        assert not action["privileged"]
+        plan = oslab.plan(REPO_ROOT, {"lab": lab, "action": "appium-install"}, host)
+        assert plan["program"] == "bash" and plan["args"][0].endswith("/ios-lab/mac/appium.sh")
+        assert plan["args"][1:] == ["install"] and plan["runnable"] and not plan["privileged"]
+    assert "appium-install" not in {a["id"] for a in oslab.lab_status("android", host)["actions"]}
+
+
+def test_native_macos_actions_follow_whether_appium_is_installed():
+    missing = oslab.lab_status("macos", make_host(os_name="macos", kvm=False, tools=("xcrun", "brew")))
+    ids = {a["id"] for a in missing["actions"]}
+    assert "appium-install" in ids and not ids & {"appium-start", "appium-stop"}
+    present = oslab.lab_status("macos", make_host(os_name="macos", kvm=False, tools=("xcrun", "brew", "appium")))
+    ids = {a["id"] for a in present["actions"]}
+    assert {"appium-start", "appium-stop"} <= ids and "appium-install" not in ids
+    labels = {a["id"]: a["label"] for a in present["actions"]}
+    assert labels["start"] == "Start iOS Simulator" and labels["stop"] == "Stop iOS Simulator"
+    # Linux/container labs keep their own wording
+    assert {a["id"]: a["label"] for a in oslab.lab_status("windows", make_host())["actions"]}["start"] == "Start"
+
+
+def test_managed_appium_counts_as_installed(tmp_path, monkeypatch):
+    monkeypatch.setenv("OSLAB_APPIUM_HOME", str(tmp_path))
+    monkeypatch.setattr(oslab.shutil, "which", lambda name: None)
+    assert oslab._which("appium") is None
+    binary = tmp_path / "node_modules" / ".bin" / "appium"
+    binary.parent.mkdir(parents=True)
+    binary.write_text("#!/bin/sh\n")
+    binary.chmod(0o755)
+    assert oslab._which("appium") == str(binary)
+
+
+@pytest.mark.skipif(sys.platform != "darwin", reason="appium.sh is macOS only")
+def test_appium_install_stops_clearly_without_node_or_homebrew(tmp_path):
+    import subprocess
+    script = os.path.join(REPO_ROOT, "ios-lab", "mac", "appium.sh")
+    done = subprocess.run(["/bin/bash", script, "install"], capture_output=True, text=True, timeout=60,
+                          env={"PATH": "/usr/bin:/bin", "HOME": str(tmp_path), "OSLAB_APPIUM_HOME": str(tmp_path / "a")})
+    assert done.returncode != 0
+    assert "##PROGRESS 1/5 Checking Node.js" in done.stdout
+    assert "Node.js 20.19+" in done.stderr and "Homebrew" in done.stderr
+    assert not (tmp_path / "a" / "node_modules").exists()
+
+
+def test_host_report_leaves_out_tools_and_providers_from_other_platforms(monkeypatch):
+    monkeypatch.setattr(oslab, "host_os", lambda: "macos")
+    monkeypatch.setattr(oslab, "host_arch", lambda: "arm64")
+    mac = oslab.host_info(REPO_ROOT)
+    ids = {t["id"] for t in mac["tools"]}
+    assert {"xcrun", "brew"} <= ids and not ids & {"wsl", "apt-get", "pkexec"}
+    assert all(p["candidate"] for p in mac["providers"])
+    assert {p["id"] for p in mac["providers"]} == {"android-container", "native-macos"}
+    assert oslab.tools_for_host("windows") and {t for t, _ in oslab.tools_for_host("windows")} >= {"wsl", "docker", "bash"}
+    win = {t for t, _ in oslab.tools_for_host("windows")}
+    assert not win & {"xcrun", "brew", "apt-get", "pkexec", "sudo"}
+    linux = {t for t, _ in oslab.tools_for_host("linux")}
+    assert {"apt-get", "pkexec", "sudo"} <= linux and not linux & {"xcrun", "brew", "wsl"}
+
+
+def test_a_lab_with_missing_requirements_offers_only_ways_to_fix_or_diagnose_it():
+    blocked = make_host(os_name="macos", kvm=False, runtime=None, tools=("xcrun", "brew", "adb"))
+    status = oslab.lab_status("android", blocked)
+    assert status["state"] == "needs-setup"
+    assert {a["id"] for a in status["actions"]} <= oslab.SETUP_STATE_ACTIONS
+    for hidden in ("start", "stop", "restart", "resize", "logs", "urls", "monitor", "status"):
+        assert hidden not in {a["id"] for a in status["actions"]}
+        with pytest.raises(oslab.PlanError):
+            oslab.plan(REPO_ROOT, {"lab": "android", "action": hidden, **({"profile": "lightweight"} if hidden in ("start", "restart") else {}), **({"cpus": "2"} if hidden == "resize" else {})}, blocked)
+    # Linux without a container engine: same rule for the VM labs
+    linux = oslab.lab_status("windows", make_host(runtime=None))
+    assert linux["state"] == "needs-setup" and {a["id"] for a in linux["actions"]} <= oslab.SETUP_STATE_ACTIONS
+    # Once the requirements are met the full set is back
+    ready = oslab.lab_status("windows", make_host())
+    assert ready["state"] == "ready" and {"start", "stop", "resize", "logs"} <= {a["id"] for a in ready["actions"]}
+    # Native macOS without Xcode: no simulator start/stop until it is installed
+    mac = oslab.lab_status("ios", make_host(os_name="macos", kvm=False, tools=("xcrun", "brew"),
+                                            xcode={"installed": False, "iosRuntime": False, "iosDevice": False}))
+    assert mac["state"] == "needs-setup" and not {"start", "stop"} & {a["id"] for a in mac["actions"]}

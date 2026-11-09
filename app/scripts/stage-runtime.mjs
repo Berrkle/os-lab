@@ -23,7 +23,7 @@ export const INCLUDE = ["labctl", "console", "android-lab", "linux-lab", "win-la
 
 // These are the entry points used by the installed console and every supported lab path.
 export const REQUIRED = [
-  "labctl", "console/oslab.py", "console/content.py", "android-lab/lab/web_ui.py",
+  "labctl", "console/oslab.py", "console/content.py", "console/capabilities.json", "android-lab/lab/web_ui.py",
   "android-lab/lab/scripts/setup-ubuntu.sh", "android-lab/lab/docker-compose.yml",
   "android-lab/lab/scripts/preflight.sh", "android-lab/lab/scripts/install-service.sh",
   "android-lab/lab/scripts/uninstall-service.sh", "android-lab/lab/.env.example",

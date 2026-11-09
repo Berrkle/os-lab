@@ -118,6 +118,12 @@ def test_host_reports_every_lab(web_server):
         assert lab["state"] in ("ready", "needs-setup", "unavailable")
 
 
+def test_health_capabilities_are_served_by_console(web_server):
+    data = json.loads(urllib.request.urlopen(f"{web_server}/api/capabilities").read().decode("utf-8"))
+    assert len(data["platforms"]) == 3
+    assert any(item.get("lab") == "ios" for group in data["groups"] for item in group["items"])
+
+
 def test_lab_start_requires_a_previewed_plan(web_server):
     status, data = _post(f"{web_server}/api/labs/start",
                          {"request": {"lab": "android", "action": "status"}, "token": "forged"},
@@ -163,3 +169,10 @@ def test_content_posts_need_the_oslab_header_and_respect_the_offline_switch(web_
     assert _content_post(f"{web_server}/api/content/update").code == 403
     resp = _content_post(f"{web_server}/api/content/check", headers={"X-OSLab": "1"})
     assert resp.code == 400 and b"switched off" in resp.read()
+
+
+def test_app_update_status_is_reported_without_network(web_server):
+    data = json.load(urllib.request.urlopen(f"{web_server}/api/app/update"))
+    assert "supported" in data and "updateAvailable" in data
+    assert data["install"] is None
+

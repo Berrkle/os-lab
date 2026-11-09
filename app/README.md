@@ -85,21 +85,38 @@ by the operator; it is never redistributed by the app.
 `app/scripts/release-mac.sh` builds a universal DMG, signs it (Developer ID), notarizes the app and the DMG, staples, verifies with `codesign`/`spctl`/`stapler`, and with `--publish` uploads it to the GitHub release `app-v<version>` with a SHA-256 file. Without `--publish` it uploads nothing; `--no-notarize` signs only. Credentials come from the environment, the git-ignored `secrets/` folder or the login keychain, never from the repo (`secrets/README.md`); the script refuses to run if a key or secrets file is tracked.
 The Python helpers must be signed before Tauri bundles them, so this release path needs the Developer ID identity available in the keychain.
 
-## Release (Windows installers, Debian package)
+## Release (Windows installers, Linux packages)
 
-Run these on the machine that matches the platform; all three publish into the same GitHub release
-`app-v<version>` (whichever runs first creates it), each asset with a `.sha256` file.
+Releases are built and published locally on the machine that matches the platform; the GitHub
+Actions release workflows are kept for reference but disabled. All scripts publish into the same
+GitHub release `app-v<version>` (whichever runs first creates it), each asset with a `.sha256`
+file. The release version must match `app/src-tauri/tauri.conf.json` and the tag must point at the
+published commit.
 
 - `app\scripts\release-win.ps1 [-Publish] [-NoSign]` (PowerShell on Windows) builds the NSIS setup `.exe` and the WiX `.msi`
   as `os-lab_<v>_windows_x64-setup.exe` / `.msi`. Authenticode signing is optional: it is used when a certificate
   thumbprint or `.pfx` is configured (`secrets/README.md`), otherwise the installers are unsigned and SmartScreen warns.
   `-Publish` uses `gh`, or the credential git already stores for pushes.
-- `app/scripts/release-deb.sh [--publish] [--install-deps]` (Debian/Ubuntu) builds `os-lab_<v>_linux_<arch>.deb`, checks that
-  it depends on `python3`, bundles the runtime and contains no secret-looking file. Nothing to sign.
+- `app/scripts/release-deb.sh [--publish] [--install-deps] [--all-formats]` (Debian/Ubuntu) builds
+  `os-lab_<v>_linux_<arch>.deb`, checks that it bundles the runtime and dashboard and contains no
+  secret-looking file, then signs it with the Tauri updater key. `--all-formats` also builds and
+  verifies the `.rpm` and `.AppImage`. It builds for the host architecture, so run it on an arm64
+  host to refresh the `arm64` assets. `--publish` uploads to `app-v<version>` when the tag points
+  at the current checkout.
 
-Signed Windows installers (free, through SignPath Foundation and GitHub Actions) are described in [SIGNING.md](SIGNING.md).
+The updater signing key is read from `TAURI_SIGNING_PRIVATE_KEY` or the git-ignored
+`secrets/updater/os-lab.key`. Signed Windows installers (free, through SignPath Foundation) are
+described in [SIGNING.md](SIGNING.md), though that pipeline is not used for releases.
 
-Like the macOS script, both refuse to run if anything under `secrets/` (except its README) or a key file is tracked.
+The updater feed is published automatically by `.github/workflows/updater-manifest.yml` as soon
+as a release has all five signed assets: it picks the newest complete release, verifies every
+signature, uploads `latest.json` and marks it as GitHub Latest. Uploading platforms one at a time
+is safe; incomplete releases are skipped and the feed never downgrades. The desktop app's
+**File → Check for app updates** and the dashboard's **App update** card read that signed feed;
+the card appears only when this build is older than the feed.
+
+All scripts refuse to run if anything under `secrets/` other than its README, or any key file,
+is tracked by git. See [Release notes](../docs/RELEASES.md) for published versions.
 
 ## Content updates
 

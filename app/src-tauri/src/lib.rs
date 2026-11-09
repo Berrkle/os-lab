@@ -18,11 +18,12 @@ mod runtime;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use tauri::{AppHandle, Manager, State, WebviewUrl, WebviewWindowBuilder};
+use tauri::{AppHandle, Emitter, Manager, State, WebviewUrl, WebviewWindowBuilder};
 use tauri::menu::{MenuBuilder, SubmenuBuilder};
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_opener::OpenerExt;
 use tauri_plugin_store::StoreExt;
+use tauri_plugin_updater::UpdaterExt;
 
 use console::{Console, Started};
 use runtime::Source;
@@ -142,8 +143,9 @@ async fn console_start(app: AppHandle, state: State<'_, Console>) -> Result<Star
         .unwrap_or(data_dir(&app)?.join("content"));
     let log = console::log_path(&log_dir(&app)?);
     let data = data_dir(&app)?;
+    let version = app.package_info().version.to_string();
     let console = state.inner().clone();
-    tauri::async_runtime::spawn_blocking(move || console.start(&root, source, &log, &data, &content))
+    tauri::async_runtime::spawn_blocking(move || console.start(&root, source, &log, &data, &content, &version))
         .await
         .map_err(|e| e.to_string())?
 }
@@ -225,6 +227,46 @@ fn console_logs(app: AppHandle) -> Result<String, String> {
     Ok(console::tail(&console::log_path(&log_dir(&app)?), 200))
 }
 
+/// The updater accepts only release artifacts signed by the key embedded in tauri.conf.json.
+#[derive(serde::Serialize)]
+struct UpdateOffer {
+    version: String,
+    installable: bool,
+}
+
+#[tauri::command]
+async fn app_update_check(app: AppHandle) -> Result<Option<UpdateOffer>, String> {
+    app.updater().map_err(|e| e.to_string())?
+        .check().await.map_err(|e| e.to_string())
+        .map(|update| update.map(|item| UpdateOffer {
+            version: item.version,
+            installable: cfg!(not(target_os = "linux")) || std::env::var_os("APPIMAGE").is_some(),
+        }))
+}
+
+#[tauri::command]
+async fn app_update_install(app: AppHandle) -> Result<(), String> {
+    #[cfg(target_os = "linux")]
+    if std::env::var_os("APPIMAGE").is_none() {
+        return Err("Debian and RPM installs must be updated with their package manager. Download the new package from the app release.".into());
+    }
+    let Some(update) = app.updater().map_err(|e| e.to_string())?
+        .check().await.map_err(|e| e.to_string())? else {
+        return Err("No newer app version is available.".into());
+    };
+    let progress_app = app.clone();
+    update.download_and_install(
+        move |chunk, total| {
+            let _ = progress_app.emit("app-update-progress", serde_json::json!({
+                "chunk": chunk,
+                "total": total,
+            }));
+        },
+        || {},
+    ).await.map_err(|e| e.to_string())?;
+    app.restart();
+}
+
 /// Pick an os-lab checkout to run instead of the bundled copy. Returns the path, or None when
 /// the dialog was cancelled.
 #[tauri::command]
@@ -275,13 +317,17 @@ fn open_external(app: &AppHandle, url: &url::Url) {
     }
 }
 
-fn build_window(app: &AppHandle, files_settings: bool) -> tauri::Result<()> {
+fn build_window(app: &AppHandle, settings: Option<&str>) -> tauri::Result<()> {
     if let Some(old) = app.get_webview_window("main") {
         let _ = old.destroy();
     }
     let nav = app.clone();
     let popup = app.clone();
-    let page = if files_settings { "index.html?settings=files" } else { "index.html" };
+    let page = match settings {
+        Some("files") => "index.html?settings=files",
+        Some("updates") => "index.html?settings=updates",
+        _ => "index.html",
+    };
     WebviewWindowBuilder::new(app, "main", WebviewUrl::App(page.into()))
         .title("os-lab")
         .inner_size(1280.0, 840.0)
@@ -323,11 +369,15 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(Console::new())
         .on_menu_event(|app, event| {
             if event.id().as_ref() == "files_settings" {
                 app.state::<Console>().stop();
-                let _ = build_window(app, true);
+                let _ = build_window(app, Some("files"));
+            } else if event.id().as_ref() == "check_updates" {
+                app.state::<Console>().stop();
+                let _ = build_window(app, Some("updates"));
             }
         })
         .invoke_handler(tauri::generate_handler![
@@ -342,17 +392,20 @@ pub fn run() {
             python_install,
             container_status,
             container_recover,
-            container_get
+            container_get,
+            app_update_check,
+            app_update_install
         ])
         .setup(|app| {
             let file_menu = SubmenuBuilder::new(app, "File")
                 .text("files_settings", "Files folder…")
+                .text("check_updates", "Check for app updates…")
                 .separator()
                 .quit()
                 .build()?;
             let menu = MenuBuilder::new(app).item(&file_menu).build()?;
             app.set_menu(menu)?;
-            build_window(app.handle(), false)?;
+            build_window(app.handle(), None)?;
             Ok(())
         })
         .build(tauri::generate_context!())

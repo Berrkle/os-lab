@@ -143,53 +143,56 @@ pub fn status() -> Status {
         return Status { ready, cli_present, can_download, recovery: None, detail: String::new() };
     }
     if docker_engine || podman_engine {
-        return Status { ready, cli_present, can_download, recovery: None,
+        return Status { ready, cli_present, can_download: false, recovery: None,
             detail: "A container engine is running, but its Compose command is missing. Install the Compose plugin for Docker or Podman, then retry.".into() };
     }
-    let (recovery, detail) = match std::env::consts::OS {
+    let (recovery, detail, no_engine) = match std::env::consts::OS {
         "macos" => {
             let context = output("docker", &["context", "show"]).unwrap_or_default();
             if context == "colima" {
                 if let Some(problem) = missing_colima_storage() {
                     if podman_machine().is_some() {
-                        (Some("podman".into()), format!("{problem} An existing Podman machine can be started instead."))
-                    } else { (None, problem) }
+                        (Some("podman".into()), format!("{problem} An existing Podman machine can be started instead."), false)
+                    } else { (None, problem, false) }
                 } else if cli_present && output("colima", &["version"]).is_some() {
-                    (Some("colima".into()), "Colima is installed. os-lab can start it and recheck the container engine.".into())
-                } else { (None, "The selected Docker context is Colima, but Colima is unavailable. Reconnect it or choose another engine.".into()) }
+                    (Some("colima".into()), "Colima is installed. os-lab can start it and recheck the container engine.".into(), false)
+                } else { (None, "The selected Docker context is Colima, but Colima is unavailable. Reconnect it or choose another engine.".into(), false) }
             } else if Command::new("open").args(["-Ra", "Docker"]).stdout(Stdio::null()).stderr(Stdio::null()).status().is_ok_and(|s| s.success()) {
-                (Some("desktop".into()), "Docker Desktop is installed. os-lab can open it and wait for the engine.".into())
+                (Some("desktop".into()), "Docker Desktop is installed. os-lab can open it and wait for the engine.".into(), false)
             } else if output("colima", &["version"]).is_some() && missing_colima_storage().is_none() {
-                (Some("colima".into()), "Colima is installed. os-lab can start it and recheck the container engine.".into())
+                (Some("colima".into()), "Colima is installed. os-lab can start it and recheck the container engine.".into(), false)
             } else if podman_machine().is_some() {
-                (Some("podman".into()), "An existing Podman machine is available. os-lab can start it.".into())
+                (Some("podman".into()), "An existing Podman machine is available. os-lab can start it.".into(), false)
             } else {
-                (None, "No installed container engine can be started automatically. Get Docker Desktop or configure a Colima or Podman machine.".into())
+                (None, "No installed container engine can be started automatically. Get Docker Desktop or configure a Colima or Podman machine.".into(), true)
             }
         }
         "windows" => {
             if desktop_executable().is_some() {
-                (Some("desktop".into()), "Docker Desktop is installed. os-lab can open it and wait for the engine.".into())
+                (Some("desktop".into()), "Docker Desktop is installed. os-lab can open it and wait for the engine.".into(), false)
             } else if podman_machine().is_some() {
-                (Some("podman".into()), "An existing Podman machine is available. os-lab can start it.".into())
+                (Some("podman".into()), "An existing Podman machine is available. os-lab can start it.".into(), false)
             } else {
-                (None, "No installed container engine can be started automatically. Get Docker Desktop or configure a Podman machine.".into())
+                (None, "No installed container engine can be started automatically. Get Docker Desktop or configure a Podman machine.".into(), true)
             }
         }
         "linux" => {
             if output("podman", &["--version"]).is_some()
                 && output("systemctl", &["--user", "list-unit-files", "podman.socket", "--no-legend"]).is_some_and(|s| s.contains("podman.socket")) {
-                (Some("podman-socket".into()), "os-lab can start the existing Podman user socket.".into())
+                (Some("podman-socket".into()), "os-lab can start the existing Podman user socket.".into(), false)
             } else if output("docker", &["--version"]).is_some()
                 && Command::new("pkexec").arg("--version").stdout(Stdio::null()).stderr(Stdio::null()).status().is_ok_and(|s| s.success())
                 && output("systemctl", &["list-unit-files", "docker.service", "--no-legend"]).is_some_and(|s| s.contains("docker.service")) {
-                (Some("docker-service".into()), "os-lab can request authorization to start the Docker service.".into())
+                (Some("docker-service".into()), "os-lab can request authorization to start the Docker service.".into(), false)
             } else {
-                (None, "No running engine was found. Start Docker or Podman, then retry.".into())
+                (None, "No running engine was found. Start Docker or Podman, then retry.".into(), false)
             }
         }
-        _ => (None, "No running container engine was found.".into()),
+        _ => (None, "No running container engine was found.".into(), false),
     };
+    // Offer the Docker Desktop download only when no engine is installed at all. An engine that is
+    // installed but unavailable (disconnected Colima volume, stopped machine) needs recovery, not a download.
+    let can_download = can_download && no_engine && recovery.is_none();
     Status { ready, cli_present, can_download, recovery, detail }
 }
 

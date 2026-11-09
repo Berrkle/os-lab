@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "os-lab",
-  "version": "0.2.4",
+  "version": "0.2.8",
   "identifier": "com.keyvanarasteh.oslab",
   "build": {
     "frontendDist": "../ui"
@@ -15,6 +15,7 @@
   },
   "bundle": {
     "active": true,
+    "createUpdaterArtifacts": true,
     "targets": "all",
     "publisher": "Keyvan Arasteh",
     "copyright": "© 2026 Keyvan Arasteh",
@@ -29,7 +30,13 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "macOS": { "minimumSystemVersion": "12.0" },
-    "linux": { "deb": { "depends": ["python3 (>= 3.9)"] } }
+    "macOS": { "minimumSystemVersion": "12.0" }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDVDRUIxMkZFNzhEREJEODgKUldTSXZkMTQvaExyWEJ1M2F1L3BvcmFiQVpXcXJLQmdiUXdrZW9VajBZNDR4Q2t5bnBheW1aclAK",
+      "requireSignedVersion": true,
+      "endpoints": ["https://github.com/keyvanarasteh/os-lab/releases/download/app-updates/latest.json"]
+    }
   }
 }

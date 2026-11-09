@@ -48,12 +48,22 @@ const REFERENCE: Record<LabId, { check: string; setup: string; where: string }> 
 };
 
 const ACTION_GROUPS: { title: string; ids: string[] }[] = [
-  { title: "Lifecycle", ids: ["start", "stop", "restart", "appium-start", "appium-stop"] },
+  { title: "Lifecycle", ids: ["start", "stop", "restart", "appium-install", "appium-start", "appium-stop"] },
   { title: "Inspect", ids: ["status", "doctor", "urls", "logs", "monitor"] },
   { title: "Maintenance", ids: ["backup", "service-install", "service-uninstall"] }
 ];
 
-function Requirements({ lab }: { lab: LabStatus }) {
+/** Scripts print `##PROGRESS n/total label` per step; the last one drives the bar and the lines stay out of the output. */
+const PROGRESS = /^##PROGRESS (\d+)\/(\d+) (.*)$/;
+export function readProgress(lines: string[]): { step: number; total: number; label: string } | null {
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const m = PROGRESS.exec(lines[i].trim());
+    if (m && Number(m[2]) > 0) return { step: Math.min(Number(m[1]), Number(m[2])), total: Number(m[2]), label: m[3] };
+  }
+  return null;
+}
+
+function Requirements({ lab, onInstall }: { lab: LabStatus; onInstall?: (action: string) => void }) {
   if (!lab.requirements.length) return <Empty>No host prerequisites are tracked for this lab.</Empty>;
   return (
     <ul className="divide-y divide-(--iux-border)">
@@ -66,8 +76,15 @@ function Requirements({ lab }: { lab: LabStatus }) {
           ) : (
             <WarningCircleIcon size={16} className="shrink-0 text-(--iux-muted-foreground)" />
           )}
-          <span className="min-w-0 flex-1">{r.label}</span>
-          {!r.found && r.hint ? <span className="text-xs text-(--iux-muted-foreground)">{r.hint}</span> : null}
+          <span className="min-w-0 flex-1 basis-40">
+            {r.label}
+            {!r.found && r.hint ? <span className="block text-xs text-(--iux-muted-foreground)">{r.hint}</span> : null}
+          </span>
+          {!r.found && r.id === "appium" && onInstall && lab.actions.some((a) => a.id === "appium-install") ? (
+            <button type="button" className="iux-btn" onClick={() => onInstall("appium-install")}>
+              Install Appium
+            </button>
+          ) : null}
           <Badge tone={r.found ? "success" : r.required ? "danger" : undefined}>
             {r.found ? "found" : r.required ? "missing" : "optional"}
           </Badge>
@@ -177,7 +194,9 @@ function JobPanel({ jobs, selected, onSelect }: { jobs: LabJob[]; selected: stri
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
   if (!jobs.length) return <Empty>No jobs for this lab yet. Preview an action above to start one.</Empty>;
-  const logs = detail.data?.id === id ? detail.data.logs ?? [] : [];
+  const rawLogs = detail.data?.id === id ? detail.data.logs ?? [] : [];
+  const progress = readProgress(rawLogs);
+  const logs = rawLogs.filter((line) => !PROGRESS.test(line.trim()));
   return (
     <div className="iux-card gap-4 p-5" aria-busy={current?.state === "running"}>
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -194,9 +213,24 @@ function JobPanel({ jobs, selected, onSelect }: { jobs: LabJob[]; selected: stri
       </div>
       {current?.state === "running" ? (
         <div role="status" className="space-y-1.5 text-xs text-(--iux-muted-foreground)">
-          <p>{current.action === "setup" ? "Installing and checking dependencies…" : "Running action…"} Output appears below as each step completes.</p>
-          <div className="h-1.5 overflow-hidden rounded-full bg-(--iux-muted)">
-            <div className="h-full w-1/3 animate-pulse rounded-full bg-[#f36c21]" />
+          <p>
+            {progress
+              ? `Step ${progress.step} of ${progress.total}: ${progress.label}`
+              : current.action === "setup" ? "Installing and checking dependencies…" : "Running action…"}{" "}
+            Output appears below as each step completes.
+          </p>
+          <div
+            className="h-1.5 overflow-hidden rounded-full bg-(--iux-muted)"
+            role={progress ? "progressbar" : undefined}
+            aria-valuemin={progress ? 0 : undefined}
+            aria-valuemax={progress?.total}
+            aria-valuenow={progress ? progress.step : undefined}
+          >
+            {progress ? (
+              <div className="h-full rounded-full bg-[#f36c21] transition-[width] duration-500" style={{ width: `${(progress.step / progress.total) * 100}%` }} />
+            ) : (
+              <div className="h-full w-1/3 animate-pulse rounded-full bg-[#f36c21]" />
+            )}
           </div>
         </div>
       ) : null}
@@ -289,13 +323,13 @@ function Monitor({ lab }: { lab: LabId }) {
   );
 }
 
-function Configuration({ lab, onProfile }: { lab: LabId; onProfile: (profile: string) => void }) {
+function Configuration({ lab, ready, onProfile }: { lab: LabId; ready: boolean; onProfile: (profile: string) => void }) {
   const { data, error } = usePoll(() => api.config(lab), 0, [lab]);
   if (error) return <Section title="Configuration"><Status value={{ ok: false, text: error }} /></Section>;
   if (!data) return <Section title="Configuration"><Skeleton rows={2} /></Section>;
   return (
     <>
-      {data.endpoints.length ? (
+      {ready && data.endpoints.length ? (
         <Section icon={<PlayIcon size={16} />} title="Endpoints" description="Addresses from the lab's configuration; they answer once the lab is running.">
           <EndpointList items={data.endpoints} />
         </Section>
@@ -480,11 +514,16 @@ export default function LabPage({ lab: labId }: { lab: LabId }) {
                         ) : null
                       }
                     >
-                      <Requirements lab={lab} />
+                      <Requirements lab={lab} onInstall={(action) => void preview(action)} />
                     </Section>
 
                     <Section icon={<PlayIcon size={16} />} title="Actions" description="Each action is previewed before it runs.">
                       <div className="flex flex-col gap-4">
+                        {lab.state === "needs-setup" ? (
+                          <p className="text-xs text-(--iux-muted-foreground)">
+                            Start, stop and the other actions appear once the missing dependencies are installed.
+                          </p>
+                        ) : null}
                         {lab.provider === "wsl2" ? (
                           <Field label="WSL2 distribution">
                             <select className="iux-input" value={distro} onChange={(e) => setDistro(e.target.value)}>
@@ -565,8 +604,8 @@ export default function LabPage({ lab: labId }: { lab: LabId }) {
                     <JobPanel jobs={jobs} selected={selectedJob} onSelect={setSelectedJob} />
                   </section>
 
-                  <Monitor lab={labId} />
-                  <Configuration lab={labId} onProfile={(p) => void preview("profile", { profile: p })} />
+                  {lab.state === "ready" ? <Monitor lab={labId} /> : null}
+                  <Configuration lab={labId} ready={lab.state === "ready"} onProfile={(p) => void preview("profile", { profile: p })} />
                 </>
               )}
             </>
