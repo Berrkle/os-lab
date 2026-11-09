@@ -108,6 +108,11 @@ The updater signing key is read from `TAURI_SIGNING_PRIVATE_KEY` or the git-igno
 `secrets/updater/os-lab.key`. Signed Windows installers (free, through SignPath Foundation) are
 described in [SIGNING.md](SIGNING.md), though that pipeline is not used for releases.
 
+After every platform has uploaded its assets, publish the updater feed with
+`node scripts/publish-app-update.mjs --detect-latest` (or `--mark-latest` to also set the GitHub
+Latest release). The desktop app's **File → Check for app updates** and the dashboard's **App
+update** card read that signed feed; the card appears only when this build is older than the feed.
+
 All scripts refuse to run if anything under `secrets/` other than its README, or any key file,
 is tracked by git. See [Release notes](../docs/RELEASES.md) for published versions.
 

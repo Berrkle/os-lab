@@ -82,6 +82,26 @@ The [Persian dashboard preview](docs/media/screenshots/firewall-persian.png)
 shows the right-to-left layout. Regenerate the images from a running local
 console with `scripts/capture-dashboard-screenshots.sh`.
 
+### Download
+
+Get the newest desktop app from the
+[latest release](https://github.com/keyvanarasteh/os-lab/releases/latest)
+(the current one is [app-v0.2.7](https://github.com/keyvanarasteh/os-lab/releases/tag/app-v0.2.7)):
+
+| Platform | Download | Also available |
+|:---|:---|:---|
+| macOS (Apple Silicon and Intel) | `os-lab_<version>_macos_universal.dmg` | `.app.tar.gz` for in-app updates |
+| Windows x64 | `os-lab_<version>_windows_x64-setup.exe` | `.msi` |
+| Linux amd64 | `os-lab_<version>_linux_amd64.deb` | `.rpm` and `.AppImage` |
+| Linux arm64 | `os-lab_<version>_linux_arm64.deb` | `.rpm` and `.AppImage` |
+
+Every file has a `.sha256` checksum and a detached `.sig` signature. Compare
+the checksum before running it, or verify the signature with
+`app/scripts/verify-release-signature.py`. Installation steps and removal are in
+[app/INSTALL.md](app/INSTALL.md). In-app updates read the signed feed published by
+`scripts/publish-app-update.mjs`, and release notes live in
+[docs/RELEASES.md](docs/RELEASES.md).
+
 ## Legal
 
 os-lab is licensed under the [Apache License 2.0](LICENSE). Before running the
