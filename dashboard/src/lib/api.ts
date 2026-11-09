@@ -283,7 +283,7 @@ export function createStore<T>(load: () => Promise<T>, intervalMs: number) {
   }
   function use() {
     const [, rerender] = useReducer((n: number) => n + 1, 0);
-    useEffect(() => subscribe(rerender), []);
+    useEffect(() => import.meta.env.PUBLIC_SITE_MODE === "pages" ? undefined : subscribe(rerender), []);
     return { data, error, refresh };
   }
   return { use, refresh, get: () => data };
