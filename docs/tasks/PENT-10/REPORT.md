@@ -7,7 +7,7 @@
 | Branch | `feat/electron-injection-mapper` (base `d7cfc18`) |
 | Deliverables | [`source-lab/engine/source_lab/electron/inject_map.py`](../../../source-lab/engine/source_lab/electron/inject_map.py) (v1.0.0), [`__main__.py`](../../../source-lab/engine/source_lab/electron/__main__.py), [`__init__.py`](../../../source-lab/engine/source_lab/electron/__init__.py), tests [`tests/test_electron_inject.py`](../../../source-lab/engine/tests/test_electron_inject.py), this report |
 | Reservation | [`reservations/PENT-10.json`](../../../reservations/PENT-10.json) |
-| Demo video | `<DRIVE-OR-YOUTUBE-UNLISTED-LINK>` — see §6 |
+| Demo video | `https://drive.google.com/file/d/1X-joayZ28onqNDNmInpn6esQ4nwoD7L5/view` — see §6 |
 
 ## 1. Scope
 
@@ -115,7 +115,7 @@ they pass in the lab's own environment.)
 
 A 2–4 min screen recording: the weak app flagged (exit 1) and the hardened app clean
 (exit 0), showing run → output → verification. Uploaded as an unlisted link
-(`<DRIVE-OR-YOUTUBE-UNLISTED-LINK>`); no personal paths or unauthorized targets on screen.
+(`https://drive.google.com/file/d/1X-joayZ28onqNDNmInpn6esQ4nwoD7L5/view`); no personal paths or unauthorized targets on screen.
 
 ## 7. Limitations
 
