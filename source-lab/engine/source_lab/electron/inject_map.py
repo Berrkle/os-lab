@@ -225,27 +225,59 @@ def _within(base_real: str, full: str) -> bool:
 # Loading / unpacking
 # --------------------------------------------------------------------------- #
 
-def _read_asar_sources(data: bytes, limitations: List[str],
-                       max_entries: int) -> Dict[str, str]:
+def _in_skipped_dir(member: str) -> bool:
+    return any(part in SKIP_DIRS for part in member.split("/")[:-1])
+
+
+def _read_asar_sources(data: bytes, limitations: List[str], max_entries: int,
+                       unpacked_dir: Optional[Path] = None) -> Dict[str, str]:
     header, data_base, packed, unpacked, notes = load_asar(data, max_entries=max_entries)
-    limitations.extend(notes)
+    for note in notes:
+        # entry/byte caps mean members were never mounted -> the scan is partial
+        if "cap" in note and "reached" in note:
+            limitations.append("INCOMPLETE: " + note)
+        else:
+            limitations.append(note)
     out: Dict[str, str] = {}
     for member, (offset, size) in packed.items():
         ext = os.path.splitext(member)[1].lower()
-        if ext not in SOURCE_EXTS:
-            continue
+        if ext not in SOURCE_EXTS or _in_skipped_dir(member):
+            continue  # node_modules/.git etc. are excluded inside archives too
         if size > MAX_FILE_BYTES:
             limitations.append(f"INCOMPLETE: asar member too large, skipped: {member}")
             continue
         start = data_base + offset
+        if start < 0 or start + size > len(data):
+            # declared range runs past the bytes we have (truncated/capped archive)
+            limitations.append(f"INCOMPLETE: asar member truncated, not scanned: {member}")
+            continue
         chunk = data[start:start + size]
         if not _is_probably_text(chunk):
             continue
         out[member] = chunk.decode("utf-8", "replace")
-    if unpacked:
-        limitations.append(
-            "asar: %d member(s) live in app.asar.unpacked and were read from disk when present"
-            % len(unpacked))
+    wanted = sorted(m for m in unpacked
+                    if os.path.splitext(m)[1].lower() in SOURCE_EXTS and not _in_skipped_dir(m))
+    if wanted:
+        if unpacked_dir is not None and unpacked_dir.is_dir() and not unpacked_dir.is_symlink():
+            base_real = os.path.realpath(unpacked_dir)
+            missing = 0
+            for member in wanted:
+                full = os.path.join(unpacked_dir, *member.split("/"))
+                if os.path.islink(full) or not _within(base_real, full) or not os.path.isfile(full):
+                    missing += 1
+                    continue
+                if os.path.getsize(full) > MAX_FILE_BYTES:
+                    limitations.append(f"INCOMPLETE: unpacked member too large, skipped: {member}")
+                    continue
+                with open(full, "rb") as fh:
+                    blob = fh.read(MAX_FILE_BYTES + 1)
+                if _is_probably_text(blob):
+                    out.setdefault(member, blob.decode("utf-8", "replace"))
+            if missing:
+                limitations.append(f"INCOMPLETE: {missing} unpacked member(s) missing from .asar.unpacked")
+        else:
+            limitations.append(
+                f"INCOMPLETE: {len(wanted)} source member(s) live in .asar.unpacked, which was not found")
     return out
 
 
@@ -296,38 +328,64 @@ def _load_sources(root: Path, limitations: List[str],
     """Return (member->text, asar paths found, is_electron_evidence)."""
     sources: Dict[str, str] = {}
     asar_paths: List[str] = []
+    if root.is_symlink():
+        # never follow a symlinked target out of the requested tree
+        raise ValueError(f"refusing to analyze a symlinked target: {root}")
     if root.is_file() and root.suffix.lower() == ".asar":
-        data = root.read_bytes()
-        sources.update(_read_asar_sources(data, limitations, max_files))
+        with open(root, "rb") as fh:
+            data = fh.read(MAX_TOTAL_BYTES + 1)
+        if len(data) > MAX_TOTAL_BYTES:
+            limitations.append("INCOMPLETE: archive larger than the total-bytes cap; tail not scanned")
+            data = data[:MAX_TOTAL_BYTES]
+        overlay = root.with_name(root.name + ".unpacked")
+        sources.update(_read_asar_sources(data, limitations, max_files, overlay))
         asar_paths.append(root.name)
         return sources, asar_paths, True
     if not root.is_dir():
         raise FileNotFoundError(f"not a directory or .asar file: {root}")
     # loose files first
     sources.update(_walk_disk_sources(root, limitations, max_files))
-    # any app.asar under the tree (resources/app.asar is the usual spot)
+    # any app.asar under the tree (resources/app.asar is the usual spot).
+    # Archives share ONE file budget and ONE byte budget with the loose files.
     root_real = os.path.realpath(root)
+    bytes_used = sum(len(t) for t in sources.values())
+    stop = False
     for dirpath, dirnames, filenames in os.walk(root):  # followlinks=False (default)
+        if stop:
+            break
         dirnames[:] = sorted(d for d in dirnames if d not in SKIP_DIRS and not os.path.islink(os.path.join(dirpath, d)))
         for name in sorted(filenames):
-            if name.endswith(".asar"):
-                full = os.path.join(dirpath, name)
-                if os.path.islink(full) or not _within(root_real, full):
-                    continue
-                rel = os.path.relpath(full, root).replace(os.sep, "/")
-                try:
-                    data = open(full, "rb").read(MAX_TOTAL_BYTES + 1)
-                except OSError:
-                    continue
-                try:
-                    members = _read_asar_sources(data, limitations, max_files)
-                except AsarError as exc:
-                    limitations.append(f"INCOMPLETE: asar {rel} could not be parsed: {exc}")
-                    continue
-                asar_paths.append(rel)
-                for mname, text in members.items():
-                    key = mname if mname not in sources else f"{rel}!/{mname}"
-                    sources.setdefault(key, text)
+            if not name.endswith(".asar"):
+                continue
+            full = os.path.join(dirpath, name)
+            if os.path.islink(full) or not _within(root_real, full):
+                continue
+            rel = os.path.relpath(full, root).replace(os.sep, "/")
+            files_left = max_files - len(sources)
+            bytes_left = MAX_TOTAL_BYTES - bytes_used
+            if files_left <= 0 or bytes_left <= 0:
+                limitations.append(f"INCOMPLETE: scan budget exhausted before archive {rel}")
+                stop = True
+                break
+            try:
+                with open(full, "rb") as fh:
+                    data = fh.read(bytes_left + 1)
+            except OSError:
+                continue
+            if len(data) > bytes_left:
+                limitations.append(f"INCOMPLETE: archive {rel} exceeds the remaining byte budget; tail not scanned")
+                data = data[:bytes_left]
+            bytes_used += len(data)
+            try:
+                members = _read_asar_sources(data, limitations, files_left,
+                                             Path(full + ".unpacked"))
+            except AsarError as exc:
+                limitations.append(f"INCOMPLETE: asar {rel} could not be parsed: {exc}")
+                continue
+            asar_paths.append(rel)
+            for mname, text in members.items():
+                key = mname if mname not in sources else f"{rel}!/{mname}"
+                sources.setdefault(key, text)
     is_electron = bool(asar_paths)
     # package.json electron evidence
     pkg = sources.get("package.json")
@@ -504,6 +562,9 @@ def _scan_preload(sf: SourceFile, starts: List[int], out: List[Finding]) -> None
            re.search(r"\bipcRenderer\s*(?:,|})", window) or \
            re.search(r":\s*ipcRenderer\b", window):
             sev, why = "high", "the raw ipcRenderer object"
+        elif re.search(r"\(\s*(\w+)\s*(?:,[^)]*)?\)\s*=>\s*ipcRenderer\.(?:send|sendSync|invoke)\s*\(\s*\1\b", window) or \
+                re.search(r"\(\s*\.\.\.(\w+)\s*\)\s*=>\s*ipcRenderer\.(?:send|sendSync|invoke)\s*\(\s*\.\.\.\1\b", window):
+            sev, why = "high", "a generic IPC forwarder (renderer chooses the channel)"
         elif re.search(r"require\s*\(", window) or re.search(r"child_process|\bfs\b", window):
             sev, why = "high", "require/child_process/fs"
         else:
