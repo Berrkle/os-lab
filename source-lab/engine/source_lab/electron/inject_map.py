@@ -73,7 +73,7 @@ except Exception:  # pragma: no cover - allow running the file directly
     from source_lab.sourcemap.archives.asar import load_asar, AsarError
 
 TOOL = "electron_inject"
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 MIN_PYTHON = (3, 11)
 
 SOURCE_EXTS = {".js", ".mjs", ".cjs", ".ts", ".jsx", ".tsx", ".html", ".htm", ".json"}
@@ -212,6 +212,15 @@ def _is_probably_text(data: bytes) -> bool:
     return True
 
 
+def _within(base_real: str, full: str) -> bool:
+    """True only if ``full`` resolves to a path inside ``base_real`` (no symlink escape)."""
+    try:
+        fr = os.path.realpath(full)
+    except OSError:
+        return False
+    return fr == base_real or fr.startswith(base_real + os.sep)
+
+
 # --------------------------------------------------------------------------- #
 # Loading / unpacking
 # --------------------------------------------------------------------------- #
@@ -226,7 +235,7 @@ def _read_asar_sources(data: bytes, limitations: List[str],
         if ext not in SOURCE_EXTS:
             continue
         if size > MAX_FILE_BYTES:
-            limitations.append(f"asar: member too large, skipped: {member}")
+            limitations.append(f"INCOMPLETE: asar member too large, skipped: {member}")
             continue
         start = data_base + offset
         chunk = data[start:start + size]
@@ -245,29 +254,30 @@ def _walk_disk_sources(root: Path, limitations: List[str],
     out: Dict[str, str] = {}
     total = 0
     count = 0
-    for dirpath, dirnames, filenames in os.walk(root):
+    root_real = os.path.realpath(root)
+    for dirpath, dirnames, filenames in os.walk(root):  # followlinks=False (default)
         dirnames[:] = sorted(d for d in dirnames if d not in SKIP_DIRS and not os.path.islink(os.path.join(dirpath, d)))
         for name in sorted(filenames):
             ext = os.path.splitext(name)[1].lower()
             if ext not in SOURCE_EXTS:
                 continue
             full = os.path.join(dirpath, name)
-            if os.path.islink(full):
+            if os.path.islink(full) or not _within(root_real, full):
                 continue
             rel = os.path.relpath(full, root).replace(os.sep, "/")
             if count >= max_files:
-                limitations.append(f"disk: file cap {max_files} reached, remaining files not scanned")
+                limitations.append(f"INCOMPLETE: disk file cap {max_files} reached, remaining files not scanned")
                 return out
             try:
                 size = os.path.getsize(full)
             except OSError:
                 continue
             if size > MAX_FILE_BYTES:
-                limitations.append(f"disk: file too large, skipped: {rel}")
+                limitations.append(f"INCOMPLETE: disk file too large, skipped: {rel}")
                 continue
             total += size
             if total > MAX_TOTAL_BYTES:
-                limitations.append("disk: total-bytes cap reached, remaining files not scanned")
+                limitations.append("INCOMPLETE: disk total-bytes cap reached, remaining files not scanned")
                 return out
             try:
                 with open(full, "rb") as fh:
@@ -296,11 +306,14 @@ def _load_sources(root: Path, limitations: List[str],
     # loose files first
     sources.update(_walk_disk_sources(root, limitations, max_files))
     # any app.asar under the tree (resources/app.asar is the usual spot)
-    for dirpath, dirnames, filenames in os.walk(root):
-        dirnames[:] = sorted(d for d in dirnames if d not in SKIP_DIRS)
+    root_real = os.path.realpath(root)
+    for dirpath, dirnames, filenames in os.walk(root):  # followlinks=False (default)
+        dirnames[:] = sorted(d for d in dirnames if d not in SKIP_DIRS and not os.path.islink(os.path.join(dirpath, d)))
         for name in sorted(filenames):
             if name.endswith(".asar"):
                 full = os.path.join(dirpath, name)
+                if os.path.islink(full) or not _within(root_real, full):
+                    continue
                 rel = os.path.relpath(full, root).replace(os.sep, "/")
                 try:
                     data = open(full, "rb").read(MAX_TOTAL_BYTES + 1)
@@ -309,7 +322,7 @@ def _load_sources(root: Path, limitations: List[str],
                 try:
                     members = _read_asar_sources(data, limitations, max_files)
                 except AsarError as exc:
-                    limitations.append(f"asar: {rel}: {exc}")
+                    limitations.append(f"INCOMPLETE: asar {rel} could not be parsed: {exc}")
                     continue
                 asar_paths.append(rel)
                 for mname, text in members.items():
@@ -340,18 +353,31 @@ def _resolve_entrypoints(sources: Dict[str, str]) -> Dict[str, List[str]]:
     if pkg_text:
         try:
             pkg = json.loads(pkg_text)
-            main_hint = pkg.get("main")
-            preload_hint = pkg.get("preload")
         except (ValueError, TypeError):
-            pass
+            pkg = None
+        if isinstance(pkg, dict):
+            # package.json fields can be any JSON type; only strings are usable hints.
+            mh = pkg.get("main")
+            ph = pkg.get("preload")
+            main_hint = mh if isinstance(mh, str) else None
+            preload_hint = ph if isinstance(ph, str) else None
 
     def _match(hint: Optional[str]) -> Optional[str]:
-        if not hint:
+        if not isinstance(hint, str) or not hint.strip():
             return None
-        hint = hint.lstrip("./")
-        for key in sources:
-            if key == hint or key.endswith("/" + hint) or key.endswith("!/" + hint):
-                return key
+        h = hint.strip().replace("\\", "/")
+        h = re.sub(r"^\.?/+", "", h)  # drop leading ./ or / (prefix, not char-set)
+        candidates = [h]
+        if not os.path.splitext(h)[1]:
+            # Node resolves an extensionless or directory "main" to <h>.js / <h>/index.js
+            base = h.rstrip("/")
+            candidates += [base + ".js", base + ".cjs", base + ".mjs", base + "/index.js"]
+        for cand in candidates:
+            if not cand:
+                continue
+            for key in sources:
+                if key == cand or key.endswith("/" + cand) or key.endswith("!/" + cand):
+                    return key
         return None
 
     m = _match(main_hint) or _match("index.js") or _match("main.js")
@@ -360,16 +386,16 @@ def _resolve_entrypoints(sources: Dict[str, str]) -> Dict[str, List[str]]:
     p = _match(preload_hint)
     if p:
         preload.append(p)
-    # preload referenced inside any webPreferences
+    # preload referenced inside any webPreferences (.js / .cjs / .mjs)
     for key, text in sources.items():
-        for pm in re.finditer(r"preload\s*:\s*[^,}\n]*?['\"]([^'\"]+?\.js)['\"]", text):
+        for pm in re.finditer(r"preload\s*:\s*[^,}\n]*?['\"]([^'\"]+?\.(?:js|cjs|mjs))['\"]", text):
             cand = _match(os.path.basename(pm.group(1)))
             if cand and cand not in preload:
                 preload.append(cand)
-    # files named preload*
+    # files named preload* (any JS extension)
     for key in sources:
         base = key.rsplit("/", 1)[-1].lower()
-        if base.startswith("preload") and key.endswith(".js") and key not in preload:
+        if base.startswith("preload") and base.endswith((".js", ".cjs", ".mjs")) and key not in preload:
             preload.append(key)
     for key in sources:
         if key.lower().endswith(HTML_EXTS):
@@ -536,8 +562,20 @@ def _scan_dynamic_and_shell(sf: SourceFile, starts: List[int], out: List[Finding
 
 def _scan_csp(sf: SourceFile, starts: List[int], out: List[Finding]) -> None:
     text = sf.text
-    csp = re.search(r'http-equiv\s*=\s*["\']Content-Security-Policy["\'][^>]*content\s*=\s*["\']([^"\']*)',
-                    text, re.I)
+    # Find the CSP meta tag regardless of attribute order, then read the WHOLE
+    # content value (delimited by its own quote) - a CSP value legitimately
+    # contains single quotes ('self', 'unsafe-inline'), so a [^"']* capture
+    # would stop early and miss a weak policy.
+    csp = None
+    value = ""
+    for mtag in re.finditer(r"<meta\b[^>]*>", text, re.I):
+        tag = mtag.group(0)
+        if not re.search(r"http-equiv\s*=\s*(['\"])\s*Content-Security-Policy\s*\1", tag, re.I):
+            continue
+        csp = mtag
+        cm = re.search(r"content\s*=\s*(['\"])(.*?)\1", tag, re.I | re.S)
+        value = cm.group(2) if cm else ""
+        break
     if not csp:
         out.append(Finding(
             id="electron.csp.missing",
@@ -546,7 +584,6 @@ def _scan_csp(sf: SourceFile, starts: List[int], out: List[Finding]) -> None:
             rationale="Without a CSP a renderer bug has no second line of defence against injected scripts.",
             remediation="Add a restrictive CSP meta tag (no unsafe-inline / unsafe-eval; default-src 'self')."))
         return
-    value = csp.group(1)
     weak = [tok for tok in ("unsafe-eval", "unsafe-inline") if tok in value]
     if weak:
         out.append(Finding(
@@ -604,6 +641,10 @@ def analyze_app(root, *, max_files: int = DEFAULT_MAX_FILES) -> dict:
     for f in unique:
         counts[f.severity] = counts.get(f.severity, 0) + 1
 
+    # A scan that hit a cap or skipped/failed to read a member is not a clean
+    # pass: callers (CI) must be able to tell an incomplete scan from a clean one.
+    complete = not any(l.startswith("INCOMPLETE:") for l in limitations)
+
     return {
         "tool": TOOL,
         "version": VERSION,
@@ -615,6 +656,7 @@ def analyze_app(root, *, max_files: int = DEFAULT_MAX_FILES) -> dict:
         },
         "entrypoints": entry,
         "counts": counts,
+        "complete": complete,
         "findings": [asdict(f) for f in unique],
         "limitations": limitations,
         "disclaimer": DISCLAIMER,
@@ -624,6 +666,11 @@ def analyze_app(root, *, max_files: int = DEFAULT_MAX_FILES) -> dict:
 def has_failing(report: dict) -> bool:
     c = report.get("counts", {})
     return bool(c.get("high", 0) or c.get("medium", 0))
+
+
+def should_fail(report: dict) -> bool:
+    """Exit-non-zero condition: a high/medium finding OR an incomplete scan."""
+    return has_failing(report) or not report.get("complete", True)
 
 
 # --------------------------------------------------------------------------- #
@@ -655,6 +702,8 @@ def _format_text(report: dict) -> str:
     ]
     c = report["counts"]
     lines.append(f"findings: {c['high']} high, {c['medium']} medium, {c['low']} low, {c['info']} info")
+    if not report.get("complete", True):
+        lines.append("scan: INCOMPLETE (a cap was hit or a member could not be read - see limitations)")
     lines.append("")
     for f in report["findings"]:
         lines.append(f"[{_SEV_LABEL.get(f['severity'], f['severity'])}] {f['title']}  ({f['surface']})")
@@ -746,7 +795,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             return 2
     else:
         sys.stdout.write(text + "\n")
-    return 1 if has_failing(report) else 0
+    return 1 if should_fail(report) else 0
 
 
 if __name__ == "__main__":  # pragma: no cover
