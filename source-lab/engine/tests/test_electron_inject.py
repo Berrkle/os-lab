@@ -411,3 +411,55 @@ def test_direct_asar_reads_unpacked_overlay(tmp_path):
     assert rep["complete"] is True
     assert any(f["file"] == "lib/native.js" and f["id"] == "electron.code.dynamic-eval"
                for f in rep["findings"])
+
+
+def test_dynamic_open_external_and_report_escaping(tmp_path):
+    files = dict(hardened_files())
+    files["main.js"] = files["main.js"] + (
+        b"shell.openExternal('https://x.example/?q=' + q);\n"
+        b"shell.openExternal(`https://${host}/`);\n"
+        b"shell.openExternal('https://fixed.example/');\n"
+    )
+    rep = analyze_app(write_tree(tmp_path / "ext", files))
+    hits = [f for f in rep["findings"] if f["id"] == "electron.shell.open-external"]
+    assert len(hits) == 2                       # concatenation + interpolation, not the literal
+    # newlines / bidi in app-controlled text never reach the report raw
+    assert "\n" not in _clean("a\nb") and "\\u000a" in _clean("a\nb")
+    assert "‮" not in format_report({**rep, "findings": [{**hits[0], "title": "x‮y"}]}, "json")
+
+
+def test_fifo_is_not_opened(tmp_path):
+    root = write_tree(tmp_path / "fifo-app", hardened_files())
+    if not hasattr(os, "mkfifo"):
+        pytest.skip("no FIFOs on this platform")
+    os.mkfifo(root / "pipe.js")
+    rep = analyze_app(root)                     # must return, not block
+    assert "pipe.js" not in {f["file"] for f in rep["findings"]}
+
+
+def test_unreadable_archive_is_reported(tmp_path, monkeypatch):
+    root = tmp_path / "app"
+    (root / "resources").mkdir(parents=True)
+    (root / "resources" / "app.asar").write_bytes(build_asar(vuln_files()))
+    real_open = open
+
+    def flaky_open(path, *a, **k):
+        if str(path).endswith("app.asar"):
+            raise PermissionError("denied")
+        return real_open(path, *a, **k)
+
+    monkeypatch.setattr("builtins.open", flaky_open)
+    rep = analyze_app(root)
+    assert rep["complete"] is False
+    assert main([str(root / "resources" / "app.asar")]) == 2
+
+
+def test_packaged_manifest_wins_over_loose_root(tmp_path):
+    root = tmp_path / "app"
+    (root / "resources").mkdir(parents=True)
+    (root / "package.json").write_text(json.dumps({"name": "installer-shell"}))
+    packed = {"package.json": json.dumps({"main": "boot/start.js"}).encode(),
+              "boot/start.js": b"const { app } = require('electron');\n"}
+    (root / "resources" / "app.asar").write_bytes(build_asar(packed))
+    rep = analyze_app(root)
+    assert rep["entrypoints"]["main"] == ["boot/start.js"]
