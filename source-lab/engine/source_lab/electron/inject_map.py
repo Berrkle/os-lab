@@ -49,8 +49,8 @@ Usage::
     python3 -m source_lab.electron <app_dir | app.asar> [--format text|md|json]
         [-o OUT] [--max-files N]
 
-Exit codes: ``0`` = no high/medium findings, ``1`` = high/medium findings,
-``2`` = usage/input error. Use only on applications you own or are authorized
+Exit codes: ``0`` = complete scan, no high/medium findings, ``1`` = high/medium
+findings or an incomplete scan, ``2`` = usage/input error. Use only on applications you own or are authorized
 to assess.
 """
 
