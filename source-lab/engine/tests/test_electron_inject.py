@@ -13,10 +13,13 @@ import struct
 
 import pytest
 
+import os
+
 from source_lab.electron.inject_map import (
     analyze_app,
     format_report,
     has_failing,
+    should_fail,
     main,
     _clean,
 )
@@ -230,3 +233,117 @@ def test_determinism_and_control_char_escaping(tmp_path):
     assert "\x07" not in _clean("a\x07b")
     assert "\\u0007" in _clean("a\x07b")
     assert _clean("‮evil") == "\\u202eevil"
+
+
+# --------------------------------------------------------------------------- #
+# Regression tests for PENT-10 review fixes (v1.0.1)
+# --------------------------------------------------------------------------- #
+
+def test_weak_csp_with_quoted_tokens_is_detected(tmp_path):
+    # The CSP value contains single quotes; a naive [^"']* capture stops early
+    # and misses unsafe-inline. The fix reads the whole content attribute.
+    files = {
+        "package.json": json.dumps({"main": "main.js"}).encode(),
+        "main.js": b"const { app } = require('electron');\n",
+        "index.html": (
+            b"<html><head>\n"
+            b"<meta http-equiv=\"Content-Security-Policy\" "
+            b"content=\"default-src 'self'; script-src 'self' 'unsafe-inline'\">\n"
+            b"</head><body></body></html>\n"
+        ),
+    }
+    root = write_tree(tmp_path / "csp-app", files)
+    rep = analyze_app(root)
+    weak = [f for f in rep["findings"] if f["id"] == "electron.csp.weak"]
+    assert weak, "weak CSP (unsafe-inline inside quotes) should be detected"
+    assert "unsafe-inline" in weak[0]["title"]
+    # attribute order reversed (content before http-equiv) must also work
+    files["index.html"] = (
+        b"<html><head><meta content=\"default-src 'self'; script-src 'unsafe-eval'\" "
+        b"http-equiv='Content-Security-Policy'></head><body></body></html>\n"
+    )
+    root2 = write_tree(tmp_path / "csp-app2", files)
+    rep2 = analyze_app(root2)
+    assert any(f["id"] == "electron.csp.weak" for f in rep2["findings"])
+
+
+def test_cjs_preload_is_resolved_and_scanned(tmp_path):
+    files = {
+        "package.json": json.dumps({"main": "main.js", "preload": "preload.cjs"}).encode(),
+        "main.js": (
+            b"const { app, BrowserWindow } = require('electron');\n"
+            b"const win = new BrowserWindow({ webPreferences: { preload: 'preload.cjs' } });\n"
+        ),
+        "preload.cjs": (
+            b"const { contextBridge, ipcRenderer } = require('electron');\n"
+            b"contextBridge.exposeInMainWorld('api', { ipc: ipcRenderer });\n"
+        ),
+    }
+    root = write_tree(tmp_path / "cjs-app", files)
+    rep = analyze_app(root)
+    assert "preload.cjs" in rep["entrypoints"]["preload"]
+    assert any(f["id"] == "electron.preload.expose" for f in rep["findings"])
+
+
+def test_malformed_package_json_does_not_crash(tmp_path):
+    for i, bad in enumerate([
+        b"{ this is : not valid json",      # not JSON at all
+        b'{"main": 123}',                    # main is not a string
+        b'["not", "a", "dict"]',             # top-level not an object
+        b'{"main": {"nested": true}}',       # main is an object
+    ]):
+        root = write_tree(tmp_path / f"bad-{i}", {
+            "package.json": bad,
+            "main.js": b"const { app } = require('electron');\n",
+        })
+        rep = analyze_app(root)  # must not raise
+        assert isinstance(rep, dict)
+        assert "counts" in rep
+
+
+def test_extensionless_and_directory_main_resolve(tmp_path):
+    # Node resolves "main": "app" -> app.js, and "main": "lib" -> lib/index.js
+    r1 = write_tree(tmp_path / "ext-app", {
+        "package.json": json.dumps({"main": "app"}).encode(),
+        "app.js": b"const { app } = require('electron');\n",
+    })
+    assert "app.js" in analyze_app(r1)["entrypoints"]["main"]
+
+    r2 = write_tree(tmp_path / "dir-app", {
+        "package.json": json.dumps({"main": "lib"}).encode(),
+        "lib/index.js": b"const { app } = require('electron');\n",
+    })
+    assert "lib/index.js" in analyze_app(r2)["entrypoints"]["main"]
+
+
+def test_incomplete_scan_is_flagged_and_fails(tmp_path):
+    # Three benign files; a max-files cap of 1 leaves the scan incomplete.
+    files = {f"f{i}.js": b"const x = 1;\n" for i in range(3)}
+    root = write_tree(tmp_path / "big-app", files)
+    rep = analyze_app(root, max_files=1)
+    assert rep["complete"] is False
+    assert rep["counts"]["high"] == 0 and rep["counts"]["medium"] == 0
+    assert should_fail(rep) is True            # incomplete => non-clean
+    assert main([str(root), "--max-files", "1"]) == 1
+    # a full scan of the same tree is complete and clean
+    full = analyze_app(root)
+    assert full["complete"] is True
+    assert should_fail(full) is False
+
+
+def test_symlink_outside_root_is_not_followed(tmp_path):
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (outside / "secret.js").write_text("document.title = eval(location.hash);\n")
+    app = tmp_path / "app"
+    app.mkdir()
+    (app / "package.json").write_text(json.dumps({"main": "main.js"}))
+    (app / "main.js").write_text("const { app } = require('electron');\n")
+    try:
+        os.symlink(outside / "secret.js", app / "link.js")
+    except (OSError, NotImplementedError):
+        pytest.skip("symlinks not supported on this platform")
+    rep = analyze_app(app)
+    files_seen = {f["file"] for f in rep["findings"]}
+    assert "link.js" not in files_seen          # the escaping symlink is skipped
+    assert not any(f["id"] == "electron.code.dynamic-eval" for f in rep["findings"])
