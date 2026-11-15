@@ -29,7 +29,7 @@ from source_lab.electron.inject_map import (
 # Helpers
 # --------------------------------------------------------------------------- #
 
-def build_asar(files: dict) -> bytes:
+def build_asar(files: dict, unpacked: dict | None = None) -> bytes:
     """Serialize {member path: bytes} into packed asar bytes."""
     def node_for(path):
         node = header["files"]
@@ -44,6 +44,9 @@ def build_asar(files: dict) -> bytes:
         node, leaf = node_for(path)
         node[leaf] = {"size": len(files[path]), "offset": str(offset)}
         offset += len(files[path])
+    for path, size in (unpacked or {}).items():
+        node, leaf = node_for(path)
+        node[leaf] = {"size": size, "unpacked": True}
     body = b"".join(files[p] for p in sorted(files))
     blob = json.dumps(header, separators=(",", ":")).encode("utf-8")
     padded = blob + b"\x00" * ((4 - len(blob) % 4) % 4)
@@ -186,6 +189,8 @@ def test_hardened_app_has_no_failing_findings(tmp_path):
     ids = {f["id"] for f in rep["findings"]}
     assert "electron.webpref.nodeIntegration" not in ids
     assert "electron.csp.missing" not in ids
+    bridge = [f for f in rep["findings"] if f["id"] == "electron.preload.expose"]
+    assert bridge and bridge[0]["severity"] == "info"   # scoped bridge still reported
 
 
 def test_directory_target_with_unpacked_asar(tmp_path):
@@ -198,6 +203,8 @@ def test_directory_target_with_unpacked_asar(tmp_path):
     ids = {f["id"] for f in rep["findings"]}
     assert "electron.webpref.nodeIntegration" in ids   # from inside the asar
     assert "electron.code.dynamic-eval" in ids         # from the loose file
+    eval_files = {f["file"] for f in rep["findings"] if f["id"] == "electron.code.dynamic-eval"}
+    assert "extra/renderer2.js" in eval_files         # the loose file itself was scanned
     assert rep["target"]["asar"] == ["resources/app.asar"]
 
 
@@ -347,3 +354,60 @@ def test_symlink_outside_root_is_not_followed(tmp_path):
     files_seen = {f["file"] for f in rep["findings"]}
     assert "link.js" not in files_seen          # the escaping symlink is skipped
     assert not any(f["id"] == "electron.code.dynamic-eval" for f in rep["findings"])
+
+
+def test_truncated_asar_is_incomplete(tmp_path):
+    blob = build_asar(vuln_files())
+    archive = tmp_path / "app.asar"
+    archive.write_bytes(blob[:-40])                 # cut the tail of the last member
+    rep = analyze_app(archive)
+    assert rep["complete"] is False
+    assert any("truncated" in l for l in rep["limitations"])
+
+
+def test_node_modules_inside_asar_is_skipped(tmp_path):
+    files = dict(hardened_files())
+    files["node_modules/dep/index.js"] = b"eval(x);\n"
+    archive = tmp_path / "app.asar"
+    archive.write_bytes(build_asar(files))
+    rep = analyze_app(archive)
+    assert not any(f["file"].startswith("node_modules/") for f in rep["findings"])
+
+
+def test_symlinked_target_is_refused(tmp_path):
+    real = write_tree(tmp_path / "real", hardened_files())
+    link = tmp_path / "link"
+    try:
+        os.symlink(real, link)
+    except (OSError, NotImplementedError):
+        pytest.skip("symlinks not supported on this platform")
+    assert main([str(link)]) == 2
+
+
+def test_generic_ipc_forwarder_is_high(tmp_path):
+    files = dict(hardened_files())
+    files["preload.js"] = (
+        b"const { contextBridge, ipcRenderer } = require('electron');\n"
+        b"contextBridge.exposeInMainWorld('api', { call: (ch, ...a) => ipcRenderer.invoke(ch, ...a) });\n"
+    )
+    rep = analyze_app(write_tree(tmp_path / "fwd", files))
+    exp = [f for f in rep["findings"] if f["id"] == "electron.preload.expose"]
+    assert exp and exp[0]["severity"] == "high"
+
+
+def test_direct_asar_reads_unpacked_overlay(tmp_path):
+    packed = {"package.json": json.dumps({"main": "main.js"}).encode(),
+              "main.js": b"const { app } = require('electron');\n"}
+    native = b"document.title = eval(location.hash);\n"
+    archive = tmp_path / "app.asar"
+    archive.write_bytes(build_asar(packed, unpacked={"lib/native.js": len(native)}))
+    # without the overlay the scan must say it is incomplete
+    rep = analyze_app(archive)
+    assert rep["complete"] is False
+    # with the overlay the member is scanned and the scan is complete
+    (tmp_path / "app.asar.unpacked" / "lib").mkdir(parents=True)
+    (tmp_path / "app.asar.unpacked" / "lib" / "native.js").write_bytes(native)
+    rep = analyze_app(archive)
+    assert rep["complete"] is True
+    assert any(f["file"] == "lib/native.js" and f["id"] == "electron.code.dynamic-eval"
+               for f in rep["findings"])
