@@ -5,7 +5,7 @@
 | Task | PENT-10 (MYO062) |
 | Author | Mehmet Berkle Yavuz (`Berrkle`) |
 | Branch | `feat/electron-injection-mapper` (base `d7cfc18`) |
-| Deliverables | [`source-lab/engine/source_lab/electron/inject_map.py`](../../../source-lab/engine/source_lab/electron/inject_map.py) (v1.0.0), [`__main__.py`](../../../source-lab/engine/source_lab/electron/__main__.py), [`__init__.py`](../../../source-lab/engine/source_lab/electron/__init__.py), tests [`tests/test_electron_inject.py`](../../../source-lab/engine/tests/test_electron_inject.py), this report |
+| Deliverables | [`source-lab/engine/source_lab/electron/inject_map.py`](../../../source-lab/engine/source_lab/electron/inject_map.py) (v1.0.1), [`__main__.py`](../../../source-lab/engine/source_lab/electron/__main__.py), [`__init__.py`](../../../source-lab/engine/source_lab/electron/__init__.py), tests [`tests/test_electron_inject.py`](../../../source-lab/engine/tests/test_electron_inject.py), this report |
 | Reservation | [`reservations/PENT-10.json`](../../../reservations/PENT-10.json) |
 | Demo video | `https://drive.google.com/file/d/1X-joayZ28onqNDNmInpn6esQ4nwoD7L5/view` — see §6 |
 
@@ -52,7 +52,9 @@ snippet, a rationale and a concrete fix.
 - **Dynamic code & CSP:** `eval` / `new Function`, `shell.openExternal` with a non-literal
   argument, and renderer HTML with no CSP or an `unsafe-eval` / `unsafe-inline` CSP.
 
-Exit code: `0` = no high/medium findings, `1` = high/medium findings, `2` = usage/input error.
+Exit code: `0` = complete scan with no high/medium findings, `1` = high/medium findings **or an
+incomplete scan** (a cap was hit, or a member was truncated, missing or unreadable; the report
+then carries `"complete": false`), `2` = usage/input error.
 
 ## 3. Usage
 
@@ -95,15 +97,20 @@ info only (never dropped silently) and a clean exit.
 
 ## 5. Tests
 
-`tests/test_electron_inject.py` adds 5 offline tests (vulnerable asar flags every injection
-point; hardened app has zero high/medium; a directory target with an embedded `app.asar`
-plus a loose file; output formats and CLI exit codes; determinism and control-char
-escaping). Every fixture is synthesized in `tmp_path` using the real asar pickle layout —
+`tests/test_electron_inject.py` has 20 offline tests: the 5 original ones (vulnerable asar
+flags every injection point; hardened app has zero high/medium and keeps the scoped bridge
+as info; a directory target with an embedded `app.asar` plus a loose file; output formats
+and CLI exit codes; determinism and control-char escaping) and 15 regression tests added
+after review (weak CSP with quoted tokens and either attribute order; `.cjs` preloads;
+malformed `package.json`; extensionless/directory `main`; incomplete scans fail; symlinks
+and symlinked targets; truncated archives; `.asar.unpacked` overlay; `node_modules` inside
+archives; generic IPC forwarders; dynamic `openExternal`; FIFOs; unreadable archives;
+packaged-manifest priority). Every fixture is synthesized in `tmp_path` using the real asar pickle layout —
 nothing is executed or contacted.
 
 ```
 $ cd source-lab/engine && python3 -m pytest tests -q
-181 passed
+196 passed
 ```
 
 `./scripts/run-tests.sh`'s Source Lab engine stage passes. (Two unrelated suites —
@@ -117,9 +124,20 @@ A 2–4 min screen recording: the weak app flagged (exit 1) and the hardened app
 (exit 0), showing run → output → verification. Uploaded as an unlisted link
 (`https://drive.google.com/file/d/1X-joayZ28onqNDNmInpn6esQ4nwoD7L5/view`); no personal paths or unauthorized targets on screen.
 
-## 7. Limitations
+## 7. Review fixes (v1.0.1)
+
+After review the analyzer was fixed for: weak CSP not detected, `.cjs`/`.mjs` preloads
+skipped, crash on malformed `package.json`, valid `main` entries not resolving, and
+incomplete scans passing CI. The Sourcery findings on symlink boundaries, truncated and
+unpacked archives, shared scan budgets, `node_modules` inside archives, generic IPC
+forwarders, dynamic `openExternal` URLs, FIFOs, archive I/O errors, packaged-manifest
+priority and report escaping were fixed as well. Every review thread was answered as
+fixed or out of scope with a reason.
+
+## 8. Limitations
 
 Static analysis sees configuration and literal patterns, not values computed at runtime: a
 `webPreferences` object assembled dynamically, a `loadURL` built from a variable, or a flag
-set through a helper are not resolved. The tool reports the surface to review, not a proof
+set through a helper are not resolved; aliased `eval`, cross-file navigation guards and
+commented-out `webPreferences` values need a real JS parser and are out of scope. The tool reports the surface to review, not a proof
 of exploitability, and is scoped to Electron apps you own or are authorized to assess.
