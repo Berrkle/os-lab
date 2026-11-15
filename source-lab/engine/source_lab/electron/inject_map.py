@@ -100,6 +100,10 @@ _LOCAL_HOST_RE = re.compile(
     r"https?://(?:localhost|127\.0\.0\.1|\[::1\]|0\.0\.0\.0)(?:[:/]|$)", re.I)
 
 # A webPreferences boolean flag -> (severity, title, rationale, remediation).
+# Calibration: "high" = the flag alone hands page JS a path to Node/main.
+# sandbox:false, allowRunningInsecureContent and webviewTag widen the blast
+# radius of *another* bug, so they are "medium" here (windows_rules rates them
+# high). Both levels fail the run (exit 1), so CI behaviour is identical.
 # `expected_bad` is the value that is the weakening one.
 _WEBPREF_FLAGS: Tuple[Tuple[str, bool, str, str, str, str], ...] = (
     ("nodeIntegration", True, "high",
@@ -173,7 +177,7 @@ class SourceFile:
 # Text helpers
 # --------------------------------------------------------------------------- #
 
-_CTRL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f\u200b-\u200f\u2028\u2029\u202a-\u202e]")
+_CTRL_RE = re.compile(r"[\x00-\x1f\x7f\u200b-\u200f\u2028\u2029\u202a-\u202e]")
 
 
 def _clean(s: str) -> str:
@@ -294,8 +298,8 @@ def _walk_disk_sources(root: Path, limitations: List[str],
             if ext not in SOURCE_EXTS:
                 continue
             full = os.path.join(dirpath, name)
-            if os.path.islink(full) or not _within(root_real, full):
-                continue
+            if os.path.islink(full) or not _within(root_real, full) or not os.path.isfile(full):
+                continue  # isfile(): regular files only - a FIFO would block on open()
             rel = os.path.relpath(full, root).replace(os.sep, "/")
             if count >= max_files:
                 limitations.append(f"INCOMPLETE: disk file cap {max_files} reached, remaining files not scanned")
@@ -332,8 +336,11 @@ def _load_sources(root: Path, limitations: List[str],
         # never follow a symlinked target out of the requested tree
         raise ValueError(f"refusing to analyze a symlinked target: {root}")
     if root.is_file() and root.suffix.lower() == ".asar":
-        with open(root, "rb") as fh:
-            data = fh.read(MAX_TOTAL_BYTES + 1)
+        try:
+            with open(root, "rb") as fh:
+                data = fh.read(MAX_TOTAL_BYTES + 1)
+        except OSError as exc:
+            raise ValueError(f"cannot read archive {root}: {exc}") from exc
         if len(data) > MAX_TOTAL_BYTES:
             limitations.append("INCOMPLETE: archive larger than the total-bytes cap; tail not scanned")
             data = data[:MAX_TOTAL_BYTES]
@@ -358,7 +365,7 @@ def _load_sources(root: Path, limitations: List[str],
             if not name.endswith(".asar"):
                 continue
             full = os.path.join(dirpath, name)
-            if os.path.islink(full) or not _within(root_real, full):
+            if os.path.islink(full) or not _within(root_real, full) or not os.path.isfile(full):
                 continue
             rel = os.path.relpath(full, root).replace(os.sep, "/")
             files_left = max_files - len(sources)
@@ -370,7 +377,8 @@ def _load_sources(root: Path, limitations: List[str],
             try:
                 with open(full, "rb") as fh:
                     data = fh.read(bytes_left + 1)
-            except OSError:
+            except OSError as exc:
+                limitations.append(f"INCOMPLETE: archive {rel} could not be read: {exc}")
                 continue
             if len(data) > bytes_left:
                 limitations.append(f"INCOMPLETE: archive {rel} exceeds the remaining byte budget; tail not scanned")
@@ -405,7 +413,9 @@ def _resolve_entrypoints(sources: Dict[str, str]) -> Dict[str, List[str]]:
     main: List[str] = []
     preload: List[str] = []
     renderer: List[str] = []
-    pkg_text = sources.get("package.json")
+    # the app's packaged manifest (inside app.asar) wins over a loose root one
+    packaged = sorted(k for k in sources if k.endswith("!/package.json"))
+    pkg_text = sources[packaged[0]] if packaged else sources.get("package.json")
     main_hint = None
     preload_hint = None
     if pkg_text:
@@ -611,7 +621,7 @@ def _scan_dynamic_and_shell(sf: SourceFile, starts: List[int], out: List[Finding
             snippet=_snippet(text, starts, dm.start()),
             rationale="eval / new Function on any attacker-influenced string is direct code execution.",
             remediation="Remove eval/new Function; parse data instead of executing it."))
-    for om in re.finditer(r"shell\.openExternal\s*\(\s*([^)'\"`])", text):
+    for om in re.finditer(r"shell\.openExternal\s*\(\s*(?:[^)\s'\"`]|(['\"])[^'\"]*\1\s*\+|`[^`]*\$\{)", text):
         out.append(Finding(
             id="electron.shell.open-external",
             severity="medium", title="shell.openExternal with a non-literal argument",
@@ -743,7 +753,7 @@ _SEV_LABEL = {"high": "HIGH", "medium": "MED ", "low": "LOW ", "info": "INFO"}
 
 def format_report(report: dict, fmt: str = "text") -> str:
     if fmt == "json":
-        return json.dumps(report, indent=2, ensure_ascii=False)
+        return json.dumps(report, indent=2, ensure_ascii=True)
     if fmt == "md":
         return _format_md(report)
     return _format_text(report)
@@ -754,11 +764,11 @@ def _format_text(report: dict) -> str:
     lines = [
         f"# {report['tool']} {report['version']} - Electron injection-point map",
         f"target: {_clean(t['root'])}",
-        f"electron: {t['is_electron']}   asar: {', '.join(t['asar']) or '-'}   source files: {t['source_files']}",
+        f"electron: {t['is_electron']}   asar: {_clean(', '.join(t['asar'])) or '-'}   source files: {t['source_files']}",
         "entrypoints:",
-        f"  main:     {', '.join(report['entrypoints']['main']) or '-'}",
-        f"  preload:  {', '.join(report['entrypoints']['preload']) or '-'}",
-        f"  renderer: {', '.join(report['entrypoints']['renderer_html']) or '-'}",
+        f"  main:     {_clean(', '.join(report['entrypoints']['main'])) or '-'}",
+        f"  preload:  {_clean(', '.join(report['entrypoints']['preload'])) or '-'}",
+        f"  renderer: {_clean(', '.join(report['entrypoints']['renderer_html'])) or '-'}",
         "",
     ]
     c = report["counts"]
@@ -767,8 +777,8 @@ def _format_text(report: dict) -> str:
         lines.append("scan: INCOMPLETE (a cap was hit or a member could not be read - see limitations)")
     lines.append("")
     for f in report["findings"]:
-        lines.append(f"[{_SEV_LABEL.get(f['severity'], f['severity'])}] {f['title']}  ({f['surface']})")
-        lines.append(f"    {f['file']}:{f['line']}")
+        lines.append(f"[{_SEV_LABEL.get(f['severity'], f['severity'])}] {_clean(f['title'])}  ({f['surface']})")
+        lines.append(f"    {_clean(f['file'])}:{f['line']}")
         if f["snippet"]:
             lines.append(f"    > {f['snippet']}")
         lines.append(f"    why: {f['rationale']}")
@@ -843,7 +853,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     try:
         report = analyze_app(args.target, max_files=args.max_files)
-    except (FileNotFoundError, AsarError, ValueError) as exc:
+    except (OSError, AsarError, ValueError) as exc:
         sys.stderr.write(f"error: {exc}\n")
         return 2
 
